@@ -37,7 +37,13 @@
 	</developers>
 	<contributors>
 		<contributor>
-			<name></name>
+			<name>Ivan Lozitski (ai-github)</name>
+		</contributor>
+		<contributor>
+			<name>Basil Zabairatsky (bsl-zcs)</name>
+		</contributor>
+		<contributor>
+			<name>Tomas Bezdek</name>
 		</contributor>
 	</contributors>	
 	<build>
