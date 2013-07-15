@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.docx4j</groupId>
+	<artifactId>docx4j-ImportXHTML</artifactId>
+	<name>docx4j-ImportXHTML</name>
+	<version>3.0.0-SNAPSHOT</version>
+	<description>
+		docx4j-ImportXHTML converts XHTML to OpenXML WordML (docx) using docx4j 
+	</description>
+	<url>http://www.docx4java.org/</url>
+	<licenses>
+	  <license>
+	    <name>LGPL v2.1</name>
+	    <url>http://www.gnu.org/licenses/lgpl-2.1.html</url>
+	    <distribution>repo</distribution>
+	    <comments>The same license as Flying Saucer.  See legals/NOTICE for details.</comments>
+	  </license>
+  	</licenses>
+	<scm>
+	    <developerConnection>scm:git|git@github.com:plutext/docx4j-ImportXHTML.git</developerConnection>
+    </scm>
+	<inceptionYear>2013</inceptionYear>
+	<developers>
+		<developer>
+			<id>jharrop</id>
+			<name>Jason Harrop</name>
+			<email>jharrop@plutext.com</email>
+			<organization>Plutext</organization>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>+10</timezone>
+		</developer>
+	</developers>
+	<contributors>
+		<contributor>
+			<name></name>
+		</contributor>
+	</contributors>	
+	<build>
+		<sourceDirectory>src/main/java</sourceDirectory>
+		<testSourceDirectory>src/test/java</testSourceDirectory>
+		<outputDirectory>bin</outputDirectory>
+		<testOutputDirectory>bin</testOutputDirectory>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>1.3</version>
+				<executions>
+					<execution>
+						<id>add-source</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>src/samples/java</source>
+							</sources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<!-- The objective is to generate a jar which is compatible with Java
+						1.5, whilst at the same time allowing @Override annotations in the source
+						code on methods which merely implement an interface (Java 6 allows this,
+						but 1.5 gives an error). When I played around with this, I found that both
+						maven and ant would happily compile to target 1.5 with the pesky @Override
+						annotations present (irrespective of whether source was set to 1.5 or 1.6).
+						You are not allowed source=1.6, target=1.5; this results in: Failure executing
+						javac, but could not parse the error javac: source release 1.6 requires target
+						release 1.6 So we need source=1.5, target=1.5 The downside is that m2eclipse
+						mirrors this in Eclipse's compiler settings, and Eclipse then complains about
+						the @Override annotations :-( So you must manually change the Eclipse compiler
+						setting back to 1.6. -->
+					<source>1.5</source>
+					<target>1.5</target>
+
+					<verbose>false</verbose>
+					<!-- maxmemory>512m</maxmemory On Linux, use: MAVEN_OPTS="-Xmx512m" mvn install -->
+					<!-- try to help maven to find package com.sun.xml.internal.bind.marshaller:
+						<bootclasspath>${java.home}/lib/rt.jar</bootclasspath> but this doesn't help -->
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>2.0</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<!-- The Surefire Plugin is used during the test phase of the build lifecycle
+					to execute the unit tests of an application -->
+				<version>2.6</version>
+				<configuration>
+					<excludes>
+						<exclude>**/samples/*.java</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.3.1</version>
+				<configuration>
+					<excludes>
+						<exclude>**/*.docx</exclude>
+						<exclude>src/test/resources/**</exclude>
+						<!-- TODO this still leaves some ugly directories in our jar. Anyone
+							know how to leave out all files and directories in src/test/resources? -->
+					</excludes>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-source-plugin</artifactId>
+				<!-- The Source Plugin creates a jar archive of the source files of the
+					current project. -->
+				<version>2.1.2</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- maven-javadoc-plugin seems to require large -Xmx so comment this
+				out if your build is failing because you don't have enough. -->
+			<plugin>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.8</version>
+				<configuration>
+					<maxmemory>512m</maxmemory>
+					<!-- 18 MB without the exclusion; still 15MB with -->
+					<!-- <excludePackageNames>org.plutext.jaxb.svg11:org.plutext.jaxb.xslfo</excludePackageNames> -->
+				</configuration>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>com.soebes.maven.plugins</groupId>
+				<artifactId>maven-echo-plugin</artifactId>
+				<version>0.1</version>
+				<executions>
+					<execution>
+						<id>install-echo</id>
+						<phase>install</phase>
+						<goals>
+							<goal>echo</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>deploy-echo</id>
+						<phase>deploy</phase>
+						<goals>
+							<goal>echo</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<echos>
+						<echo>+-------------------------------------------------------+</echo>
+						<echo>!       Join the docx4j developers mailing list by      !</echo>
+						<echo>!       emailing docx4j-dev-subscribe@docx4java.org     !</echo>
+						<echo>+-------------------------------------------------------+</echo>
+					</echos>
+				</configuration>
+			</plugin>
+		</plugins>
+    	<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>org.codehaus.mojo</groupId>
+										<artifactId>build-helper-maven-plugin</artifactId>
+										<versionRange>[1.3,2.0)</versionRange>
+										<goals>
+											<goal>add-source</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<execute>
+											<runOnIncremental>true</runOnIncremental>
+										</execute>
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+		<resources>
+			<!-- be sure to get xml,xlst resources in various src trees -->
+			<resource>
+				<directory>src/main/java</directory>
+				<includes>
+					<include>**/*.xslt</include>
+					<include>**/*.xml</include>
+					<include>**/jaxb.properties</include>
+				</includes>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<includes>
+					<include>XhtmlNamespaceHandler.css</include>
+					<include>xhtmlrenderer.conf</include>
+				</includes>
+			</resource>
+			<!-- <resource> <directory>src/test/resources</directory> <excludes> <exclude>*.docx</exclude>
+				</excludes> </resource> -->
+		</resources>
+	</build>
+	<reporting>
+		<plugins>
+			<plugin>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.8</version>
+				<reportSets>
+					<reportSet>
+						<id>standard-javadoc</id>
+						<inherited>true</inherited>
+						<configuration>
+							<description>
+								docx4j XHTML import
+							</description>
+							<docfilessubdirs>true</docfilessubdirs>
+							<failOnError>false</failOnError>
+							<locale>en_AU</locale>
+							<name>Javadoc report</name>
+							<quiet>true</quiet>
+							<serialwarn>false</serialwarn>
+							<show>private</show>
+							<source>1.6</source>
+							<stylesheet>maven</stylesheet>
+							<version>true</version>
+						</configuration>
+						<reports>
+							<report>javadoc</report>
+						</reports>
+					</reportSet>
+				</reportSets>
+			</plugin>
+		</plugins>
+	</reporting>
+	
+	<dependencies>
+	
+		<dependency>
+			<groupId>org.docx4j</groupId>
+			<artifactId>xhtmlrenderer</artifactId><!--  supports xhtml import -->
+			<version>1.0.0</version>
+			<!-- currently itext is required (fonts for width calculations)
+				<exclusions>
+					<exclusion>
+						<groupId>com.lowagie</groupId>
+						<artifactId>itext</artifactId>
+					</exclusion>
+				</exclusions>
+				 -->
+		</dependency>
+		
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.5</version>
+		</dependency>
+		
+		<dependency>
+		  <groupId>org.slf4j</groupId>
+		  <artifactId>slf4j-log4j12</artifactId>
+		  <version>1.7.5</version>
+		</dependency>		
+
+		<dependency>
+		  <groupId>org.docx4j</groupId>
+		  <artifactId>docx4j</artifactId>
+			<version>3.0.0-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.8.2</version>
+		</dependency>
+	 	
+	</dependencies>
+
+		<profiles> <!--  use -P eg mvn -Psign-artifacts  -->
+		<profile>
+			<id>sign-artifacts</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>1.4</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+   	</profiles>
+</project>
