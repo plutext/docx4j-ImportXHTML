@@ -50,6 +50,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.transform.Source;
 
 import org.apache.commons.codec.binary.Base64;
+import org.docx4j.wml.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.docx4j.UnitsOfMeasurement;
@@ -85,34 +86,13 @@ import org.docx4j.org.xhtmlrenderer.render.BlockBox;
 import org.docx4j.org.xhtmlrenderer.render.Box;
 import org.docx4j.org.xhtmlrenderer.render.InlineBox;
 import org.docx4j.org.xhtmlrenderer.resource.XMLResource;
-import org.docx4j.wml.CTBookmark;
-import org.docx4j.wml.CTMarkupRange;
-import org.docx4j.wml.CTTblLayoutType;
 import org.docx4j.wml.CTTblPrBase.TblStyle;
-import org.docx4j.wml.Numbering;
-import org.docx4j.wml.P;
 import org.docx4j.wml.P.Hyperlink;
-import org.docx4j.wml.PPr;
 import org.docx4j.wml.PPrBase.NumPr;
 import org.docx4j.wml.PPrBase.NumPr.Ilvl;
 import org.docx4j.wml.PPrBase.NumPr.NumId;
-import org.docx4j.wml.CTShd;
-import org.docx4j.wml.R;
-import org.docx4j.wml.RPr;
-import org.docx4j.wml.RStyle;
-import org.docx4j.wml.STTblLayoutType;
-import org.docx4j.wml.Tbl;
-import org.docx4j.wml.TblBorders;
-import org.docx4j.wml.TblGrid;
-import org.docx4j.wml.TblGridCol;
-import org.docx4j.wml.TblPr;
-import org.docx4j.wml.TblWidth;
-import org.docx4j.wml.Tc;
-import org.docx4j.wml.TcPr;
 import org.docx4j.wml.TcPrInner.GridSpan;
 import org.docx4j.wml.TcPrInner.VMerge;
-import org.docx4j.wml.Text;
-import org.docx4j.wml.Tr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -363,7 +343,7 @@ public class XHTMLImporter {
     /**
      * Convert the well formed XHTML found at the specified URI to a list of WML objects.
      * 
-     * @param uri
+     * @param url
      * @param wordMLPackage
      * @return
      */
@@ -574,19 +554,27 @@ public class XHTMLImporter {
             		tblStyle.setVal("TableGrid");
             		tblPr.setTblStyle(tblStyle);  
             		
-            		// borders.  rudimentary support
-            		// for now, look just at border-top-style.
-            		// If it is not 'none', for example 'solid', display a border.
-            		// cssTable.getBorder requires a CssContext; so just
-            		FSDerivedValue borderTopStyle = box.getStyle().valueByName(CSSName.BORDER_TOP_STYLE);
-            		if (borderTopStyle!=null  // what to default to if its null?
-            				&& borderTopStyle.asString().toLowerCase().contains("none")) {
-            			log.debug("setting borders to none");
-            			try {
-							TblBorders borders = (TblBorders)XmlUtils.unmarshalString(WORDML_TABLE_BORDERS, Context.jc, TblBorders.class);
-							tblPr.setTblBorders(borders);
-						} catch (JAXBException e1) {}            			
-            		} 
+					// table borders
+					TblBorders borders = Context.getWmlObjectFactory().createTblBorders();
+					borders.setTop( copyBorderStyle(cssTable, "top", true) );
+					borders.setBottom( copyBorderStyle(cssTable, "bottom", true) );
+					borders.setLeft( copyBorderStyle(cssTable, "left", true) );
+					borders.setRight( copyBorderStyle(cssTable, "right", true) );
+					borders.setInsideH( createBorderStyle(STBorder.NONE, "000000", BigInteger.ZERO) );
+					borders.setInsideV( createBorderStyle(STBorder.NONE, "000000", BigInteger.ZERO) );
+					tblPr.setTblBorders(borders);
+
+					TblWidth spacingWidth = Context.getWmlObjectFactory().createTblWidth();
+					if(cssTable.getStyle().isCollapseBorders()) {
+						spacingWidth.setW(BigInteger.ZERO);
+						spacingWidth.setType(TblWidth.TYPE_AUTO);
+					} else {
+						int cssSpacing = UnitsOfMeasurement.pxToTwip(
+								cssTable.getStyle().valueByName(CSSName.FS_BORDER_SPACING_VERTICAL).asFloat() );
+						spacingWidth.setW( BigInteger.valueOf(cssSpacing  / 2) );	// appears twice thicker, probably taken from both sides 
+						spacingWidth.setType(TblWidth.TYPE_DXA);
+					}
+					tblPr.setTblCellSpacing(spacingWidth); 
             		
             		// Table indent.  
             		// cssTable.getLeftMBP() which is setLeftMBP((int) margin.left() + (int) border.left() + (int) padding.left());
@@ -786,7 +774,16 @@ public class XHTMLImporter {
             				shd.setFill(
             						UnitsOfMeasurement.rgbTripleToHex(rgbResult.getRed(), rgbResult.getGreen(), rgbResult.getBlue())  );
             				tcPr.setShd(shd);
-            		}            		
+            		}
+					
+					// cell borders
+					TcPrInner.TcBorders tcBorders = Context.getWmlObjectFactory().createTcPrInnerTcBorders();
+					tcBorders.setTop( copyBorderStyle(tcb, "top", false) );
+					tcBorders.setBottom( copyBorderStyle(tcb, "bottom", false) );
+					tcBorders.setLeft( copyBorderStyle(tcb, "left", false) );
+					tcBorders.setRight( copyBorderStyle(tcb, "right", false) );
+					tcPr.setTcBorders(tcBorders);
+					
             		
 					// search for vertically spanned cells to the right from current, and insert dummy cells after it
 					insertDummyVMergedCells(trContext, tcb, false);
@@ -917,6 +914,52 @@ public class XHTMLImporter {
         }
     
     }
+
+	/**
+	 * Table borders support
+	 * @param box table or cell to copy css border properties from
+	 * @param side "top"/"bottom"/"left"/"right"
+	 * @param keepNone if true, then missed borders returned as border with style NONE (for tables), else as null (for cells) 
+	 * @return reproduced border style
+	 */
+	private CTBorder copyBorderStyle(Box box, String side, boolean keepNone) {
+		FSDerivedValue borderStyle = box.getStyle().valueByName( CSSName.getByPropertyName("border-"+side+"-style") );
+		FSDerivedValue borderColor = box.getStyle().valueByName( CSSName.getByPropertyName("border-"+side+"-color") );
+		FSDerivedValue borderWidth = box.getStyle().valueByName( CSSName.getByPropertyName("border-"+side+"-width") );
+
+		STBorder stBorder = null;
+		float width = borderWidth.asFloat();
+
+		// zero-width border still drawn as "hairline", so remove it
+		if(width == 0.0f) {
+			stBorder = STBorder.NONE;
+		}
+		
+		// a table have default borders which we need to disable explicitly, 
+		// while a cell with no own border can obtain a border from the table and shouldn't overwrite it
+		if(!keepNone && (stBorder != null || borderStyle.asIdentValue() == IdentValue.NONE) ) { 
+			return null;
+		}
+
+		try {
+			stBorder = STBorder.fromValue( borderStyle.asString() );
+		} catch (IllegalArgumentException e) {
+			stBorder = STBorder.SINGLE; 
+		}
+
+		// w:ST_EighthPointMeasure - Measurement in Eighths of a Point
+		width = UnitsOfMeasurement.twipToPoint( UnitsOfMeasurement.pxToTwip( width ) ) * 8.0f;
+		
+		return createBorderStyle( stBorder, borderColor.asString(), BigInteger.valueOf( Math.round(width) ) );
+	}
+
+	private CTBorder createBorderStyle(STBorder val, String color, BigInteger sz) {
+		CTBorder border = Context.getWmlObjectFactory().createCTBorder();
+		border.setVal(val);
+		border.setColor(color);
+		border.setSz(sz);
+		return border;
+	}
 
 	/**
 	 * Rowspan and colspan support.
