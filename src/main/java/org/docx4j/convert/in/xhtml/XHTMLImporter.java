@@ -1591,15 +1591,6 @@ public class XHTMLImporter {
 		
 		
 	}
-	
-	static String  WORDML_TABLE_BORDERS = "<w:tblBorders xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >"
-			+"  <w:top w:val=\"none\" w:sz=\"0\" w:space=\"0\" w:color=\"auto\"/>"
-			  +"  <w:left w:val=\"none\" w:sz=\"0\" w:space=\"0\" w:color=\"auto\"/>"
-			  +"<w:bottom w:val=\"none\" w:sz=\"0\" w:space=\"0\" w:color=\"auto\"/>"
-			  +"<w:right w:val=\"none\" w:sz=\"0\" w:space=\"0\" w:color=\"auto\"/>"
-			  +"<w:insideH w:val=\"none\" w:sz=\"0\" w:space=\"0\" w:color=\"auto\"/>"
-			  +"<w:insideV w:val=\"none\" w:sz=\"0\" w:space=\"0\" w:color=\"auto\"/>"
-			  +"</w:tblBorders>";
 
 	
 	public final static class TableProperties {
