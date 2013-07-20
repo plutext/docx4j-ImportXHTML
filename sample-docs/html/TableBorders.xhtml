@@ -1,0 +1,79 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>table borders example</title>
+	<style type="text/css">
+		#t1
+		{
+			border: 1px dashed red;
+			border-collapse: collapse;
+		}
+		#t2
+		{
+			border: 1px dashed red;
+			border-spacing: 3px;
+		}
+		#t3, #t3 td
+		{
+			border: none !important;
+			border-collapse: collapse;
+		}
+		td { border: 1px solid blue; }
+		p { margin: 0; }
+	</style>
+</head>
+<body>
+	<table id="t1">
+		<tbody>
+			<tr>
+				<td style="border-width: 2px 3px 0px 3px; border-right-style: double;" rowspan="3"><p>1</p></td>
+				<td style="border-style: none solid;"><p>2</p></td>
+				<td style="border-width: 0.1pt 0px 1px 1pt"><p>3</p></td>
+				<td style="border-style: hidden;"><p>4</p></td>
+			</tr>
+			<tr>
+				<td style="border-width: 0px 1mm 2mm 3px;  border-left-style: double;" rowspan="2" colspan="2"><p>5</p></td>
+				<td style="border: 2pt dotted green;"><p>6</p></td>
+			</tr>
+			<tr>
+				<td style="border: none"><p>7</p></td>
+			</tr>
+		</tbody>
+	</table>
+	
+	<p> </p>
+	
+	<table id="t2">
+		<tbody>
+			<tr>
+				<td style="border-width: 2px 3px 0px 3px; border-right-style: double;" rowspan="3"><p>1</p></td>
+				<td style="border-style: none solid;"><p>2</p></td>
+				<td style="border-width: 0.1pt 0px 1px 1pt"><p>3</p></td>
+				<td style="border-style: hidden;"><p>4</p></td>
+			</tr>
+			<tr>
+				<td style="border-width: 0px 1mm 2mm 3px;  border-left-style: double;" rowspan="2" colspan="2"><p>5</p></td>
+				<td style="border: 2pt dotted green;"><p>6</p></td>
+			</tr>
+			<tr>
+				<td style="border: none"><p>7</p></td>
+			</tr>
+		</tbody>
+	</table>
+	
+	<p> </p>
+	
+	<table id="t3">
+		<tbody>
+			<tr>
+				<td style="border-width: 2px 1px 0px 3px" rowspan="2"><p>1</p></td>
+				<td style="border-style: none solid;"><p>2</p></td>
+				<td style="border-width: 0.1pt 0px 1px 1px"><p>3</p></td>
+			</tr>
+			<tr>
+				<td style="border-width: 0px 1mm 2mm 1px" colspan="2"><p>4</p></td>
+			</tr>
+		</tbody>
+	</table>
+</body>
+</html>
