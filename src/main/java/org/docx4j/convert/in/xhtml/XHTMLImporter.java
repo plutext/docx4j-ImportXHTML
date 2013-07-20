@@ -560,8 +560,8 @@ public class XHTMLImporter {
 					borders.setBottom( copyBorderStyle(cssTable, "bottom", true) );
 					borders.setLeft( copyBorderStyle(cssTable, "left", true) );
 					borders.setRight( copyBorderStyle(cssTable, "right", true) );
-					borders.setInsideH( createBorderStyle(STBorder.NONE, "000000", BigInteger.ZERO) );
-					borders.setInsideV( createBorderStyle(STBorder.NONE, "000000", BigInteger.ZERO) );
+					borders.setInsideH( createBorderStyle(STBorder.NONE, null, null) );
+					borders.setInsideV( createBorderStyle(STBorder.NONE, null, null) );
 					tblPr.setTblBorders(borders);
 
 					TblWidth spacingWidth = Context.getWmlObjectFactory().createTblWidth();
@@ -777,12 +777,7 @@ public class XHTMLImporter {
             		}
 					
 					// cell borders
-					TcPrInner.TcBorders tcBorders = Context.getWmlObjectFactory().createTcPrInnerTcBorders();
-					tcBorders.setTop( copyBorderStyle(tcb, "top", false) );
-					tcBorders.setBottom( copyBorderStyle(tcb, "bottom", false) );
-					tcBorders.setLeft( copyBorderStyle(tcb, "left", false) );
-					tcBorders.setRight( copyBorderStyle(tcb, "right", false) );
-					tcPr.setTcBorders(tcBorders);
+					tcPr.setTcBorders( copyCellBorderStyles(tcb) );
 					
             		
 					// search for vertically spanned cells to the right from current, and insert dummy cells after it
@@ -926,21 +921,26 @@ public class XHTMLImporter {
 		FSDerivedValue borderStyle = box.getStyle().valueByName( CSSName.getByPropertyName("border-"+side+"-style") );
 		FSDerivedValue borderColor = box.getStyle().valueByName( CSSName.getByPropertyName("border-"+side+"-color") );
 		FSDerivedValue borderWidth = box.getStyle().valueByName( CSSName.getByPropertyName("border-"+side+"-width") );
-
-		STBorder stBorder = null;
 		float width = borderWidth.asFloat();
 
-		// zero-width border still drawn as "hairline", so remove it
-		if(width == 0.0f) {
-			stBorder = STBorder.NONE;
-		}
-		
-		// a table have default borders which we need to disable explicitly, 
-		// while a cell with no own border can obtain a border from the table and shouldn't overwrite it
-		if(!keepNone && (stBorder != null || borderStyle.asIdentValue() == IdentValue.NONE) ) { 
-			return null;
+		// zero-width border still drawn as "hairline", so remove it too
+		if(borderStyle.asIdentValue() == IdentValue.NONE || width == 0.0f) {
+			// a table have default borders which we need to disable explicitly, 
+			// while a cell with no own border can obtain a border from the table or other cell and shouldn't overwrite it
+			return keepNone ? createBorderStyle(STBorder.NONE, null, null) : null;
 		}
 
+		// there is a special style for such an overwrite
+		if(borderStyle.asIdentValue() == IdentValue.HIDDEN) {
+			return createBorderStyle(STBorder.NONE, "FFFFFF", BigInteger.ZERO);
+		}
+		
+		// double border width in html is applied to the whole border, while the word applying it to each bar and the gap in between 
+		if(borderStyle.asIdentValue() == IdentValue.DOUBLE) {
+			width /= 3;
+		}
+
+		STBorder stBorder;
 		try {
 			stBorder = STBorder.fromValue( borderStyle.asString() );
 		} catch (IllegalArgumentException e) {
@@ -959,6 +959,15 @@ public class XHTMLImporter {
 		border.setColor(color);
 		border.setSz(sz);
 		return border;
+	}
+
+	private TcPrInner.TcBorders copyCellBorderStyles(TableCellBox box) {
+		TcPrInner.TcBorders tcBorders = Context.getWmlObjectFactory().createTcPrInnerTcBorders();
+		tcBorders.setTop( copyBorderStyle(box, "top", false) );
+		tcBorders.setBottom( copyBorderStyle(box, "bottom", false) );
+		tcBorders.setLeft( copyBorderStyle(box, "left", false) );
+		tcBorders.setRight( copyBorderStyle(box, "right", false) );
+		return tcBorders;
 	}
 
 	/**
@@ -1021,6 +1030,10 @@ public class XHTMLImporter {
 				gs.setVal( BigInteger.valueOf(colspan));
 				tcPr.setGridSpan(gs);
 			}
+
+			TcPrInner.TcBorders borders = copyCellBorderStyles(adjCell);
+			borders.setTop( createBorderStyle(STBorder.NIL, null, null) );
+			tcPr.setTcBorders(borders);
 
 			this.setCellWidthAuto(tcPr);
 
