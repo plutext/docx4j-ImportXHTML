@@ -45,7 +45,12 @@
 		<contributor>
 			<name>Tomas Bezdek</name>
 		</contributor>
-	</contributors>	
+	</contributors>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+	  	
 	<build>
 		<sourceDirectory>src/main/java</sourceDirectory>
 		<testSourceDirectory>src/test/java</testSourceDirectory>
@@ -230,7 +235,7 @@
 				</includes>
 			</resource>
 			<resource>
-				<directory>src/resources</directory>
+				<directory>src/main/resources</directory>
 				<includes>
 					<include>XhtmlNamespaceHandler.css</include>
 					<include>xhtmlrenderer.conf</include>

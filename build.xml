@@ -127,7 +127,7 @@
             </fileset>
         </copy>
         <copy includeemptydirs="false" todir="bin">
-            <fileset dir="src/resources">
+            <fileset dir="src/main/resources">
                 <exclude name="**/*.java"/>
             </fileset>
         </copy>
@@ -153,10 +153,6 @@
         <echo message="${ant.project.name}: ${ant.file}"/>
         <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
             <src path="src/main/java"/>
-            <classpath refid="docx4j-ImportXHTML.classpath"/>
-        </javac>
-        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
-            <src path="src/resources"/>
             <classpath refid="docx4j-ImportXHTML.classpath"/>
         </javac>
         <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
