@@ -569,8 +569,7 @@ public class XHTMLImporter {
 						spacingWidth.setW(BigInteger.ZERO);
 						spacingWidth.setType(TblWidth.TYPE_AUTO);
 					} else {
-						int cssSpacing = UnitsOfMeasurement.pxToTwip(
-								cssTable.getStyle().valueByName(CSSName.FS_BORDER_SPACING_VERTICAL).asFloat() );
+						int cssSpacing = cssTable.getStyle().getBorderHSpacing(renderer.getLayoutContext());
 						spacingWidth.setW( BigInteger.valueOf(cssSpacing  / 2) );	// appears twice thicker, probably taken from both sides 
 						spacingWidth.setType(TblWidth.TYPE_DXA);
 					}
@@ -920,8 +919,8 @@ public class XHTMLImporter {
 	private CTBorder copyBorderStyle(Box box, String side, boolean keepNone) {
 		FSDerivedValue borderStyle = box.getStyle().valueByName( CSSName.getByPropertyName("border-"+side+"-style") );
 		FSDerivedValue borderColor = box.getStyle().valueByName( CSSName.getByPropertyName("border-"+side+"-color") );
-		FSDerivedValue borderWidth = box.getStyle().valueByName( CSSName.getByPropertyName("border-"+side+"-width") );
-		float width = borderWidth.asFloat();
+		float width = box.getStyle().getFloatPropertyProportionalHeight(
+				CSSName.getByPropertyName("border-"+side+"-width"), 0, renderer.getLayoutContext() );
 
 		// zero-width border still drawn as "hairline", so remove it too
 		if(borderStyle.asIdentValue() == IdentValue.NONE || width == 0.0f) {
@@ -948,7 +947,7 @@ public class XHTMLImporter {
 		}
 
 		// w:ST_EighthPointMeasure - Measurement in Eighths of a Point
-		width = UnitsOfMeasurement.twipToPoint( UnitsOfMeasurement.pxToTwip( width ) ) * 8.0f;
+		width = UnitsOfMeasurement.twipToPoint( Math.round(width) ) * 8.0f;
 		
 		return createBorderStyle( stBorder, borderColor.asString(), BigInteger.valueOf( Math.round(width) ) );
 	}
