@@ -121,6 +121,7 @@ public class TableBordersTest {
 	@Test public void testTableBorderStyles() throws Docx4JException {
 		HashMap<String, STBorder> styles = new HashMap<String, STBorder>();
 		styles.put("none", STBorder.NONE);
+		styles.put("hidden", STBorder.NONE);
 		styles.put("solid", STBorder.SINGLE);
 		styles.put("dotted", STBorder.DOTTED);
 		styles.put("dashed", STBorder.DASHED);
@@ -152,8 +153,8 @@ public class TableBordersTest {
 		Tbl tbl = table("<table style='border-style: solid; border-width: 0px 1px 2px 3px;'><tr><th>1</th></tr></table>");
 		TblBorders borders = tbl.getTblPr().getTblBorders();
 
-		assertEquals(0, borders.getTop().getSz().longValue());
-		assertTrue(borders.getRight().getSz().longValue() > borders.getTop().getSz().longValue());
+		assertNull(borders.getTop().getSz());
+		assertTrue(borders.getRight().getSz().longValue() > 0);
 		assertTrue(borders.getBottom().getSz().longValue() > borders.getRight().getSz().longValue());
 		assertTrue(borders.getLeft().getSz().longValue() > borders.getBottom().getSz().longValue());
 	}
