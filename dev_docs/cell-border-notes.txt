@@ -1,0 +1,120 @@
+Table borders & table cell border notes
+=========================================
+
+ 
+CSS and Word both have conflict models (see references below), so in this simple implementation, we let it do the work.
+Where there are differences in the conflict resolution rules, there'll be differences in the appearance of the resulting output.
+
+In Word, the conflict model is applied if cell spacing is zero (and zero is the default per http://webapp.docx4java.org/OnlineDemo/ecma376/WordML/tblCellSpacing_3.html).
+ie collapse is effectively the default.
+
+OUr code is explicit:
+
+					TblWidth spacingWidth = Context.getWmlObjectFactory().createTblWidth();
+					if(cssTable.getStyle().isCollapseBorders()) {
+						spacingWidth.setW(BigInteger.ZERO);
+						spacingWidth.setType(TblWidth.TYPE_AUTO);
+					} else {
+						int cssSpacing = cssTable.getStyle().getBorderHSpacing(renderer.getLayoutContext());
+						spacingWidth.setW( BigInteger.valueOf(cssSpacing  / 2) );	// appears twice thicker, probably taken from both sides 
+						spacingWidth.setType(TblWidth.TYPE_DXA);
+					}
+ 
+CSS
++++
+
+http://www.w3.org/TR/CSS2/tables.html 
+
+CSS property border-collapse: collapse | separate | inherit
+Default is separate [spec 17.6]
+
+Esoteric features:
+
+
+.. for border-collapse: collapse
+
+1 rows, cols, row groups, col groups *can* have borders
+
+   Not implemented; sample-docs/xhtml/TableBorders-Collapse.xhtml
+   
+   
+
+.. for border-collapse: separate
+
+1 rows, cols, row groups, col groups cannot have borders
+
+2 empty-cells property  [see spec 17.6.1.1]
+
+   Not implemented; see sample-docs/xhtml/TableBorders-Separate.xhtml
+
+   [aside NB: we don't honour background color on a column group; see that example]
+
+ 
+Flying Saucer known issues:
++++++++++++++++++++++++++++
+ 
+due to this method in CalculatedStyle table pagination and border collapse cannot be used at the same time: 
+
+     public boolean isCollapseBorders() { 
+         return isIdent(CSSName.BORDER_COLLAPSE, IdentValue.COLLAPSE) && ! isPaginateTable(); 
+     } 
+(See https://groups.google.com/forum/?fromgroups=#!topic/flying-saucer-dev/LowYFzOADE4
+      
+ 
+ border-collapse: collapse and -fs-table-paginate: paginate cannot be used
+together. border-collapse is reset to separate when -fs-table-paginate is set to
+paginate
+
+workaround is probably to set border-spacing to zero and halve the relevant border-width settings.
+
+
+OpenXML
++++++++
+
+http://webapp.docx4java.org/OnlineDemo/ecma376/WordML/tblBorders_2.docx
+
+This element specifies the set of borders for the edges of the current table, using the six border types defined by its child elements.
+
+If the cell spacing for any row is non-zero as specified using the tblCellSpacing element (§2.4.41; §2.4.42; §2.4.43), then there is no border conflict and the table border (or table-level exception border, if one is specified) shall be displayed.
+
+If the cell spacing is zero, then there is a conflict [Example: Between the left border of all cells in the first column and the left border of the table. end example], which shall be resolved as follows:
+
+• If there is a cell border, then the cell border shall be displayed
+
+•  If there is no cell border but there is a table-level exception border on this table row, then the table-level exception border shall be displayed
+
+•  If there is no cell or table-level exception border, then the table border shall be displayed
+
+There's also:
+
+  <w:tblPrEx>
+    <w:tblBorders>
+    
+http://webapp.docx4java.org/OnlineDemo/ecma376/WordML/tblBorders_1.docx
+
+-------------
+
+"separate" is like non-zero tblCellSpacing: http://webapp.docx4java.org/OnlineDemo/ecma376/WordML/tblCellSpacing_3.docx
+
+tcBorders (Table Cell Borders)  http://webapp.docx4java.org/OnlineDemo/ecma376/WordML/tcBorders.docx
+
+ This element specifies the set of borders for the edges of the current table cell, using the eight border types defined by its child elements.
+
+ If the cell spacing for any row is non-zero as specified using the tblCellSpacing element (§2.4.41; §2.4.42; §2.4.43), then there is never a border conflict (as the non-zero cell spacing is applied above and beyond each individual cell border's width) and all table, table-level exception, and table cell borders shall be displayed.
+
+If the cell spacing is zero, then there may be a conflict between two adjacent cell borders [Example: Between the left border of all cells in the second column and the right border of all cells in the first column of the table. end example], which shall be resolved as follows:
+
+1. If either conflicting table cell border is nil or none (no border), then the opposing border shall be displayed.
+
+1. If a cell border conflicts with a table border, the cell border always wins.
+
+2. Each border shall then be assigned a weight using the following formula, and the border value using this calculation shall be displayed over the alternative border:
+
+---------
+
+Note there are some differences between the spec, and Word's implementation documented at [MS-OE376], notably in the following cases:
+
+1.  where a conflicting tc border is nil or none.
+
+2.  the weight of dotted and dashed styles, which is 1 "regardless of the border width and number".
+

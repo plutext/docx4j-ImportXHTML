@@ -1,0 +1,78 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>table borders example</title>
+	<style type="text/css">
+		 table{
+		   border-width: 0px;
+		   border-style: none;
+		   border-collapse: collapse;
+		   width: 400px;
+		 }
+	</style>
+</head>
+<body>
+
+  
+<!--  rows, cols, row groups, col groups can have borders - these should be honoured -->  
+
+  <table >
+    <caption>Example 3. tr border</caption>
+    <thead>
+	    <tr>
+	      <th>Values</th>
+	      <td>blagh</td>
+	    </tr>
+	    <tr style="border-style:none;">
+	      <tc>Initial value</tc>
+	      <tc>blagh</tc>
+	    </tr>    
+	    <tr style="border-style:none;">
+	      <tc>Initial value</tc>
+	      <tc>blagh</tc>
+	    </tr>  
+	    <tr style="border-style:solid;"> <!--  should be ignored -->
+	      <tc>Initial value</tc>
+	      <tc>blagh</tc>
+	    </tr>    
+	    <tr style="border-style:none;">
+	      <tc>Initial value</tc>
+	      <tc>blagh</tc>
+	    </tr>    
+    </thead>  
+    <tbody style="border-width:1px; border-style: solid;"> <!--  row group should be honoured -->
+	    <tr>
+	      <th>Values</th>
+	      <td>blagh</td>
+	    </tr>
+	    <tr>
+	      <tc>Initial value</tc>
+	      <tc>blagh</tc>
+	    </tr>    
+	    <tr>
+	      <tc>Initial value</tc>
+	      <tc>blagh</tc>
+	    </tr>  
+    </tbody>
+  </table>
+  
+<table >
+    <caption>Example 4. col group</caption>
+  <colgroup>
+    <col span="2" style="background-color:red;border-width:3px; border-style: solid;"/> <!--  should be honoured -->
+    <col style="background-color:yellow"/>
+  </colgroup>
+  <tr>
+    <th>ISBN</th>
+    <th>Title</th>
+    <th>Price</th>
+  </tr>
+  <tr>
+    <td>3476896</td>
+    <td>My first HTML</td>
+    <td>$53</td>
+  </tr>
+</table>  
+
+</body>
+</html>

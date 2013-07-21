@@ -42,7 +42,7 @@ import org.junit.Before;
 import java.math.BigInteger;
 import java.util.List;
 
-public class XHTMLImporterTest {
+public class TableCellMergeTest {
 
 	private WordprocessingMLPackage wordMLPackage;
 

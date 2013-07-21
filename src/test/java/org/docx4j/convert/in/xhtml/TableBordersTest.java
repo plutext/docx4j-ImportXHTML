@@ -77,6 +77,25 @@ public class TableBordersTest {
 		assertNull(borders2.getInsideV());
 	}
 
+	@Test public void testTableBorderAbsenceExplicit() throws Docx4JException {
+		Tbl tbl = table("<table border='0'><tr><td>1</td></tr></table>");
+		TblBorders borders = tbl.getTblPr().getTblBorders();
+		assertEquals(STBorder.NONE, borders.getTop().getVal());
+		assertEquals(STBorder.NONE, borders.getBottom().getVal());
+		assertEquals(STBorder.NONE, borders.getLeft().getVal());
+		assertEquals(STBorder.NONE, borders.getRight().getVal());
+		assertEquals(STBorder.NONE, borders.getInsideH().getVal());
+		assertEquals(STBorder.NONE, borders.getInsideV().getVal());
+
+		TcPrInner.TcBorders borders2 = ((Tc) ((Tr) tbl.getContent().get(0)).getContent().get(0)).getTcPr().getTcBorders();
+		assertNull(borders2.getTop());
+		assertNull(borders2.getBottom());
+		assertNull(borders2.getLeft());
+		assertNull(borders2.getRight());
+		assertNull(borders2.getInsideH());
+		assertNull(borders2.getInsideV());
+	}
+	
 	@Test public void testTableBorderPresence() throws Docx4JException {
 		Tbl tbl = table("<table border='1'><tr><th>1</th></tr></table>");
 		TblBorders borders = tbl.getTblPr().getTblBorders();

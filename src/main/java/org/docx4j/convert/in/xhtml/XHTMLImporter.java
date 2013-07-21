@@ -1054,6 +1054,9 @@ public class XHTMLImporter {
 	 */
 	private List<Object> nestedTableHierarchyFix(List<Object> contentContext,
 			Box parent) {
+		
+		if (parent==null) return contentContext; // where importing a table fragment 
+		
 		if (parent instanceof TableBox
 				|| parent.getElement().getNodeName().equals("table") ) {
 			log.warn("table: Constructing missing w:tr/w:td..");
