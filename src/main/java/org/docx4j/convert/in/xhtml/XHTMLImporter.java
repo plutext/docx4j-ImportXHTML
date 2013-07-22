@@ -831,6 +831,8 @@ public class XHTMLImporter {
 	                	
 	                    if ( ((BlockBox)box).getInlineContent()!=null) {
 
+	                    	List<Object> savedContext = contentContext;
+	                    	contentContext = currentP.getContent();
 	                    	
 	                        for (Object o : ((BlockBox)box).getInlineContent() ) {
 	//                            log.debug("        " + o.getClass().getName() ); 
@@ -838,22 +840,42 @@ public class XHTMLImporter {
 	//                                    && ((InlineBox)o).getElement()!=null // skip these (pseudo-elements?)
 	//                                    && ((InlineBox)o).isStartsHere()) {
 	                                
-	                            	processInlineBox( (InlineBox)o, contentContext);
+	                            	contentContext = processInlineBox( (InlineBox)o, contentContext);
 	                            	
-	                            	if (markuprange!=null) {        		
-	                            		currentP.getContent().add( markuprange);
-	                            		markuprange = null;
+	                            	if (contentContext==null) {
+	                            		// signal to effectively pop
+	                            		contentContext = currentP.getContent();
 	                            	}
-	                        		inAlreadyProcessed = false;        		
-	                            	
 	                            	
 	                            } else if (o instanceof BlockBox ) {
+	                            	//List<Object> tmpContext = contentContext;
+	                            	contentContext = savedContext;
+	                            	
+	                        		// handle bare text (eg <td>apple</td>)
+	                        		// we need a p for it
+	                        		currentP = Context.getWmlObjectFactory().createP();                                        	
+	                        		savedContext.add(currentP);            		
+	            		            paraStillEmpty = true;	
+	            		            
+	            		            contentContext = currentP.getContent();
+	                            	
 	                                traverse((Box)o, contentContext, box, tableProperties); // commenting out gets rid of unwanted extra parent elements
+	                                //contentContext = tmpContext;
 	                            } else {
 	                                log.debug("What to do with " + box.getClass().getName() );                        
 	                            }
 		                        log.debug(".. processed child " + o.getClass().getName() );
 	                        }
+	                        
+	                        // Restore context 
+	                        contentContext = savedContext;
+	                        
+                        	if (markuprange!=null) {        		
+                        		currentP.getContent().add( markuprange);
+                        		markuprange = null;
+                        	}
+//                    		inAlreadyProcessed = false;        		
+	                        
 	                    }
 	                    break;
 	            } 
@@ -1114,7 +1136,7 @@ public class XHTMLImporter {
 		tcPr.setTcW(tblW);    	
     }
 
-		private void addImage(Element e) {
+	private void addImage(Element e) {
 		boolean isError = false;
 		try {
 			byte[] imageBytes = null;
@@ -1241,9 +1263,6 @@ public class XHTMLImporter {
 		}
 	}
 
-	// For a hyperlink, we do all the processing when
-	// we hit that element.  No need to add its children again
-	private boolean inAlreadyProcessed = false; // Assume no nested hyperlinks
 	private CTMarkupRange markuprange;
 	private void storeBookmarkEnd() {
 		
@@ -1254,7 +1273,21 @@ public class XHTMLImporter {
 	
 	private AtomicInteger bookmarkId = new AtomicInteger();	
 	
-    private void processInlineBox( InlineBox inlineBox, List<Object> contentContext) {
+	
+//	private void addHyperlinkIfNec(String href, Map<String, CSSValue> cssMap) {
+//		
+//		if (href!=null
+//				&& !href.trim().equals("")) {
+//			
+//        	Hyperlink h = createHyperlink(
+//            			href, 
+//            			addRunProperties( cssMap ),
+//            			href, rp);                                    	            		
+//                currentP.getContent().add(h);	
+//		}
+//	}
+	
+    private List<Object>  processInlineBox( InlineBox inlineBox, List<Object> contentContext) {
     	
         // Doesn't extend box
         Styleable s = ((InlineBox)inlineBox );
@@ -1282,6 +1315,7 @@ public class XHTMLImporter {
     			&& !inlineBox.getElement().hasChildNodes()
     			) {
     		// self closing tag
+    		log.debug("anchor which starts and ends here");
     		
     		/* Don't use inlineBox.isEndsHere(), since it incorrectly
     		 * returns true for opening anchor of:
@@ -1291,6 +1325,7 @@ public class XHTMLImporter {
     		 */
         
     		String name = s.getElement().getAttribute("name");
+    		String href = s.getElement().getAttribute("href"); 
     		if (name!=null
     				&& !name.trim().equals("")) {
         		log.debug("[NAMED ANCHOR] " + name);
@@ -1301,25 +1336,21 @@ public class XHTMLImporter {
     		        bookmark.setName( name ); 
     		        bookmark.setId( BigInteger.valueOf( bookmarkId.get()) ); 
     		        
+//    		        addHyperlinkIfNec(href, getCascadedProperties(s.getStyle()));
+    		        
     		        storeBookmarkEnd();    	
             		currentP.getContent().add( markuprange); 
             		markuprange = null;
             		
             	paraStillEmpty = false;            		
+    		} 
+    		
+    		if (href!=null && !href.trim().equals("")) {
+    			log.warn("Ignoring @href on <a> without content.");
     		}
-    		log.debug("anchor which starts and ends here");
-    		return;
+    		return contentContext;
     		
-    	} else if (inAlreadyProcessed) {
-    		
-    		log.debug(".. state: hyperlink children processed already");
-    		log.debug(s.getElement().getNodeName());
-    		
-    		// We can't detect end of hyperlink element with s.getElement().getNodeName().equals("a")
-    		// since sometimes s.getElement() ==null
-    		// So workaround is to do end of hyperlink processing when we exit 
-    		return; 
-    	}
+    	} 
         
         Map<String, CSSValue> cssMap = getCascadedProperties(s.getStyle());
 //        Map cssMap = styleReference.getCascadedPropertiesMap(s.getElement());
@@ -1356,10 +1387,9 @@ public class XHTMLImporter {
                 				|| href.trim().equals("")) {
         		        	
 		                	String theText = inlineBox.getElement().getTextContent();
-		                    addRun(cssMap, theText);
+		                    addRun(contentContext, cssMap, theText);
 	
-		                	inAlreadyProcessed = true;
-	        		        return;
+		                	return contentContext;
         		        }
             		}
             		
@@ -1371,43 +1401,44 @@ public class XHTMLImporter {
 	                	log.debug(linkText);
 	                	if (linkText!=null
 	                			&& !linkText.trim().equals("")) {
-	                		// Cases 1 & 2
+	                		
 	                    	h = createHyperlink(
 	                    			href, 
 	                    			addRunProperties( cssMap ),
-	                    			linkText, rp);                                    	            		
+	                    			inlineBox.getText(), rp);                                    	            		
 	                        currentP.getContent().add(h);
 	                        
-	//                        if (inlineBox.getElement().getChildNodes().getLength()==1
-	//                        		&& inlineBox.getElement().getChildNodes().item(0).getNodeType()==Node.TEXT_NODE) {
-	//                        	// eg <a href="/wiki/Ecma_International" title="Ecma International">Ecma</a>
-	//                        	// endsHere incorrectly set to true in that case?
-	//                        	inAlreadyProcessed = true;                        	                        	
-	//                        } else 
-	                        
-	                        if (!inlineBox.isEndsHere() ) {
-	                        	inAlreadyProcessed = true;
-	                        }
-	                	} else {
-	                    	// Case 3           	
+		                	paraStillEmpty = false;  
+		                	
+		                	if (inlineBox.isEndsHere()) {
+		                    	log.debug("Processing ..</a> (ends here as well) ");
+		                    	return contentContext; // don't change contentContext
+		                		
+		                	} else {		                	
+		                		return h.getContent();
+		                	}
+		                	
+	                	} 
+	                	else {
+	                    	// No text content.  An image or something?  TODO handle hyperlink around inline image
+	                		log.warn("Expected hyperlink content, since tag not self-closing");
 	                    	h = createHyperlink(
 	                    			href, 
 	                    			addRunProperties( cssMap ),
 	                    			href, rp);                                    	            		
 	                        currentP.getContent().add(h);
-	                        // No need to set inAlreadyProcessed = true;
-	                        // since no children to process
+		                	paraStillEmpty = false;            				                	
+		                	return contentContext;
 	                	}
-	                	paraStillEmpty = false;            		
-	                	
-	                	return;
             		}
             		
             	} else if (inlineBox.isEndsHere()) {
                 	log.debug("Processing ..</a> ");
-            		
+                	return null; // signal to 'pop' contentContext
+            		// Could do bookmark end processing here...
             	} else {
                 	log.debug("Processing <a> content!");
+                	// Add it ...
             		
             	}
             	
@@ -1430,17 +1461,17 @@ public class XHTMLImporter {
             debug +=  " " + s.getStyle().toStringMine();
         }
         
-//        // We've processed the hyperlink, so skip the inline boxes
-//        // representing its children
-//        if (awaitingEnd) return;
         
         log.debug(debug );
         //log.debug("'" + ((InlineBox)o).getTextNode().getTextContent() );  // don't use .getText()
         
-        processInlineBoxContent(inlineBox, s, cssMap);
+        processInlineBoxContent(contentContext, inlineBox, s, cssMap);
+        
+    	return contentContext;
+        
     }
 
-	private void processInlineBoxContent(InlineBox inlineBox, Styleable s,
+	private void processInlineBoxContent(List<Object> contentContext, InlineBox inlineBox, Styleable s,
 			Map<String, CSSValue> cssMap) {
 				
 		
@@ -1468,7 +1499,7 @@ public class XHTMLImporter {
             
             paraStillEmpty = false;                                    
                         
-            addRun(cssMap, theText);
+            addRun(contentContext, cssMap, theText);
     	            
 //                                    else {
 //                                    	// Get it from the parent element eg p
@@ -1483,7 +1514,7 @@ public class XHTMLImporter {
 	 * @param cssMap
 	 * @param theText
 	 */
-	private void addRun(Map<String, CSSValue> cssMap, String theText) {
+	private void addRun(List<Object> contentContext, Map<String, CSSValue> cssMap, String theText) {
 		R run = Context.getWmlObjectFactory().createR();
 		Text text = Context.getWmlObjectFactory().createText();
 		text.setValue( theText );
@@ -1493,7 +1524,7 @@ public class XHTMLImporter {
 		}
 		run.getContent().add(text);
 		
-		currentP.getContent().add(run);
+		contentContext.add(run);
 		
 		// Run level styling
 		run.setRPr(

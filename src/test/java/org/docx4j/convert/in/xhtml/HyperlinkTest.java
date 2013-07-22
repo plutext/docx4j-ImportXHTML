@@ -105,6 +105,32 @@ public class HyperlinkTest {
 		testContent(h, P.Hyperlink.class, content);
 	}
 
+	@Test public void testHrefNoNameNoContent() throws Docx4JException {
+		String name = null;
+		String href= "http://www.google.com";
+		String content = null;
+		List<Object> objects = fromXHTML(a( href,  name,  content));
+		P p = (P)objects.get(0);
+		
+		// No link
+		assertEquals( p.getContent().get(0).getClass(), R.class);
+	}
+
+	@Test public void testHrefNameButNoContent() throws Docx4JException {
+		String name = "anchor0";
+		String href= "http://www.google.com";
+		String content = null;
+		List<Object> objects = fromXHTML(a( href,  name,  content));
+		P p = (P)objects.get(0);
+		
+		// Test bookmark
+		testBookmarkName(XmlUtils.unwrap(p.getContent().get(0)), name);
+				
+		// Test just bookmark start + end + span
+		assertEquals(XmlUtils.unwrap(p.getContent().get(1)).getClass(), CTMarkupRange.class);
+		assertTrue(p.getContent().size()==3);
+	}
+	
 	@Test public void testNamedAnchorEmpty() throws Docx4JException {
 		String name = "anchor1";
 		String href= null;
@@ -120,7 +146,6 @@ public class HyperlinkTest {
 		assertEquals(XmlUtils.unwrap(p.getContent().get(1)).getClass(), CTMarkupRange.class);
 	}
 
-	// BROKEN - see workaround below
 	@Test public void testNamedAnchorContent() throws Docx4JException {
 		String name = "anchor2";
 		String href= null;
@@ -134,13 +159,11 @@ public class HyperlinkTest {
 		// Test content - not hyperlinked
 		R r = (R) p.getContent().get(1);
 		testContent(r, R.class, content);
-		
-		// HELP! SPAN content is missing!
 	}
 	
-	@Test public void testNamedAnchorContentWorkaround() throws Docx4JException {
+	@Test public void testNamedAnchorInSpan() throws Docx4JException {
 
-		String name = "anchor2";
+		String name = "anchor3";
 		String href= null;
 		String content = "Google";
 		List<Object> objects = fromXHTML("<span>" + a( href,  name,  content) + "</span>");
@@ -155,7 +178,7 @@ public class HyperlinkTest {
 	}
 
 	@Test public void testFull() throws Docx4JException {
-		String name = "anchor3";
+		String name = "anchor4";
 		String href= "http://www.google.com";
 		String content = "Google";
 		List<Object> objects = fromXHTML(a( href,  name,  content));
@@ -172,10 +195,13 @@ public class HyperlinkTest {
 		testContent(h, P.Hyperlink.class, content);
 	}
 
+	/**
+	 * This test illustrates how Flying Saucer handles rich hyperlink content.
+	 */
 	@Test public void testRichContent() throws Docx4JException {
-		String name = "anchor4";
+		
+		String name = "anchor5";
 		String href= "http://www.google.com";
-		String content = "Google";
 		
 		String followingSpanContent = "SPAN";
 		String followingPContent = "NEXTP";
@@ -200,7 +226,49 @@ public class HyperlinkTest {
 		testLink(h.getId(), href);
 		
 		// Test content
-		testContent(h, P.Hyperlink.class, content);
+		assertTrue(h.getContent().size()==4);
+
+		/*
+	    <w:hyperlink r:id="rId2">
+	        <w:r>
+	            <w:rPr>
+	                <w:b w:val="false"/>
+	                <w:i w:val="false"/>
+	                <w:color w:val="0000ff"/>
+	                <w:sz w:val="22"/>
+	                <w:u w:val="single"/>
+	            </w:rPr>
+	            <w:t>Some </w:t>
+	        </w:r>
+	        <w:r>
+	            <w:rPr>
+	                <w:b w:val="false"/>
+	                <w:i w:val="false"/>
+	                <w:color w:val="0000ff"/>
+	                <w:sz w:val="22"/>
+	            </w:rPr>
+	            <w:t>rich</w:t>
+	        </w:r>
+	        <w:r>
+	            <w:rPr>
+	                <w:b w:val="false"/>
+	                <w:i w:val="false"/>
+	                <w:color w:val="0000ff"/>
+	                <w:sz w:val="22"/>
+	                <w:u w:val="single"/>
+	            </w:rPr>
+	            <w:t xml:space="preserve"> </w:t>
+	        </w:r>
+	        <w:r>
+	            <w:rPr>
+	                <w:b/>
+	                <w:i w:val="false"/>
+	                <w:color w:val="0000ff"/>
+	                <w:sz w:val="22"/>
+	            </w:rPr>
+	            <w:t>content</w:t>
+	        </w:r>
+	    </w:hyperlink> */		
 	}
 	
 	private void testBookmarkName(Object o, String name) {
