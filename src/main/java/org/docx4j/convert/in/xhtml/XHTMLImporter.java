@@ -461,6 +461,7 @@ public class XHTMLImporter {
         
         log.debug(box.getClass().getName() );
         if (box instanceof BlockBox) {
+        	        	
             BlockBox blockBox = ((BlockBox)box);
 
             Element e = box.getElement(); 
@@ -471,6 +472,7 @@ public class XHTMLImporter {
                 log.debug("<NULL>");
             } else {            
                 log.debug("BB"  + "<" + e.getNodeName() + " " + box.getStyle().toStringMine() );
+                log.debug(box.getStyle().getDisplayMine() );
                 
                 
             	//Map cssMap = styleReference.getCascadedPropertiesMap(e);
@@ -837,6 +839,13 @@ public class XHTMLImporter {
 	//                                    && ((InlineBox)o).isStartsHere()) {
 	                                
 	                            	processInlineBox( (InlineBox)o, contentContext);
+	                            	
+	                            	if (markuprange!=null) {        		
+	                            		currentP.getContent().add( markuprange);
+	                            		markuprange = null;
+	                            	}
+	                        		inAlreadyProcessed = false;        		
+	                            	
 	                            	
 	                            } else if (o instanceof BlockBox ) {
 	                                traverse((Box)o, contentContext, box, tableProperties); // commenting out gets rid of unwanted extra parent elements
@@ -1234,22 +1243,38 @@ public class XHTMLImporter {
 
 	// For a hyperlink, we do all the processing when
 	// we hit that element.  No need to add its children again
-	private boolean inAlreadyProcessed = false; // TODO may need a stack of these.
+	private boolean inAlreadyProcessed = false; // Assume no nested hyperlinks
+	private CTMarkupRange markuprange;
+	private void storeBookmarkEnd() {
+		
+	    markuprange = Context.getWmlObjectFactory().createCTMarkupRange(); 
+	    JAXBElement<org.docx4j.wml.CTMarkupRange> markuprangeWrapped = Context.getWmlObjectFactory().createPBookmarkEnd(markuprange); 
+	        markuprange.setId( BigInteger.valueOf(bookmarkId.getAndIncrement() ) );          		        
+	}
 	
 	private AtomicInteger bookmarkId = new AtomicInteger();	
 	
     private void processInlineBox( InlineBox inlineBox, List<Object> contentContext) {
     	
-    	log.debug(inlineBox.toString());
-    	
-
         // Doesn't extend box
         Styleable s = ((InlineBox)inlineBox );
+    	
+    	if (log.isDebugEnabled() ) {
+        	log.debug(inlineBox.toString());
+
+        	if (s.getElement() == null)
+        		log.debug("Null element name" ); 
+        	else 
+        		log.debug(s.getElement().getNodeName());
+    	}
+    			
+    			
         if (s.getStyle()==null) { // Assume this won't happen
         	log.error("getStyle returned null!");
         }
         
 
+        // Short circuit for <a /> ie no child elements
     	if (s.getElement() !=null
     			&& s.getElement().getNodeName().equals("a")
     			&& inlineBox.isStartsHere()
@@ -1275,34 +1300,24 @@ public class XHTMLImporter {
     		    currentP.getContent().add( bookmarkWrapped); 
     		        bookmark.setName( name ); 
     		        bookmark.setId( BigInteger.valueOf( bookmarkId.get()) ); 
-
-    		    CTMarkupRange markuprange = Context.getWmlObjectFactory().createCTMarkupRange(); 
-    		    JAXBElement<org.docx4j.wml.CTMarkupRange> markuprangeWrapped = Context.getWmlObjectFactory().createPBookmarkEnd(markuprange); 
-    		    currentP.getContent().add( markuprangeWrapped); 
-    		        markuprange.setId( BigInteger.valueOf(bookmarkId.getAndIncrement() ) );          		        
+    		        
+    		        storeBookmarkEnd();    	
+            		currentP.getContent().add( markuprange); 
+            		markuprange = null;
+            		
+            	paraStillEmpty = false;            		
     		}
     		log.debug("anchor which starts and ends here");
     		return;
     		
     	} else if (inAlreadyProcessed) {
-    		log.debug(".. already done?!");
-        	if (s.getElement() !=null
-        			&& s.getElement().getNodeName().equals("a")
-        			&& inlineBox.isEndsHere() ) {
-        		// When we hit the end of the hyperlink
-        		inAlreadyProcessed = false; // ready for next element
-        		
-        		String name = s.getElement().getAttribute("name");
-        		if (name!=null
-        				&& !name.trim().equals("")) {
-        			log.debug(".. /NAMED ANCHOR " + name);
-        			
-        		    CTMarkupRange markuprange = Context.getWmlObjectFactory().createCTMarkupRange(); 
-        		    JAXBElement<org.docx4j.wml.CTMarkupRange> markuprangeWrapped = Context.getWmlObjectFactory().createPBookmarkEnd(markuprange); 
-        		    currentP.getContent().add( markuprangeWrapped); 
-        		        markuprange.setId( BigInteger.valueOf( bookmarkId.getAndIncrement()) );      
-        		}
-        	}                	
+    		
+    		log.debug(".. state: hyperlink children processed already");
+    		log.debug(s.getElement().getNodeName());
+    		
+    		// We can't detect end of hyperlink element with s.getElement().getNodeName().equals("a")
+    		// since sometimes s.getElement() ==null
+    		// So workaround is to do end of hyperlink processing when we exit 
     		return; 
     	}
         
@@ -1316,39 +1331,13 @@ public class XHTMLImporter {
             debug = "<" + s.getElement().getNodeName();
             
             if (s.getElement().getNodeName().equals("a")) {
-            	log.debug("Ha!  found a hyperlink. ");
-            	
-            	/* For hyperlink anchors, there are three cases.
-            	 * 
-            	 * Case 1: hyperlink inline box contains another
-            	 * inline box eg <a href=".."><span>my inline box</span></a>
-            	 * 
-            	 * Case 2: hyperlink inline box doesn't contain
-            	 * another inline box eg <a href="..">no inline box</a>
-            	 * 
-            	 * Case 3: empty point tag eg 
-            	 * <a href="http://slashdot.org/" /> ie empty - malformed
-            	 * 
-            	 * The code has been tested with the following examples:
-            	 * 
-			        String xhtml= "<p ><a href=\"http://davidpritchard.org/images/pacsoc-s1b.png\"><span>http://davidpritchard.org/images/pacsoc-s1b.png</span></a></p>";
-			    	
-			        String xhtml= "<p ><a href=\"http://davidpritchard.org/images/pacsoc-s1b.png\">http://davidpritchard.org/images/pacsoc-s1b.png</a></p>";        
-			    	
-			        String xhtml= "<p ><a href=\"slashdot.org\" /></p>";        
-			        
-			        String xhtml= "<p ><a href=\"slashdot.org\" >slash<b>dot</b>.<span>o<i>r</i>g</span> </a></p>";
-			        
-			          in the last case, the link formatting is dropped.
-			          
-			        TODO: there is still a weird case in http://en.wikipedia.org/wiki/Office_Open_XML
-			        where the contents are repeated.  Seems very sensitive to the context?
-			        
-                    	 */
             	
             	if (inlineBox.isStartsHere()) {
+                	log.debug("Processing <a>... ");
             		
             		String name = s.getElement().getAttribute("name");
+            		String href = s.getElement().getAttribute("href"); 
+            		
             		if (name!=null
             				&& !name.trim().equals("")) {
             			log.debug("NAMED ANCHOR " + name);
@@ -1356,17 +1345,24 @@ public class XHTMLImporter {
             		    CTBookmark bookmark = Context.getWmlObjectFactory().createCTBookmark(); 
             		    JAXBElement<org.docx4j.wml.CTBookmark> bookmarkWrapped = Context.getWmlObjectFactory().createPBookmarkStart(bookmark); 
             		    currentP.getContent().add( bookmarkWrapped); 
+                    	paraStillEmpty = false;            		
+            		    
         		        bookmark.setName( name ); 
         		        bookmark.setId( BigInteger.valueOf( bookmarkId.get()) );
-            		        
-	                	String theText = inlineBox.getElement().getTextContent();
-	                    addRun(cssMap, theText);
-
-	                	inAlreadyProcessed = true;
-        		        return;
+            		    
+        		        storeBookmarkEnd();    		                		        
+        		        
+        		        if (href==null
+                				|| href.trim().equals("")) {
+        		        	
+		                	String theText = inlineBox.getElement().getTextContent();
+		                    addRun(cssMap, theText);
+	
+		                	inAlreadyProcessed = true;
+	        		        return;
+        		        }
             		}
             		
-            		String href = s.getElement().getAttribute("href"); 
             		if (href!=null
             				&& !href.trim().equals("")) {
             			
@@ -1381,6 +1377,7 @@ public class XHTMLImporter {
 	                    			addRunProperties( cssMap ),
 	                    			linkText, rp);                                    	            		
 	                        currentP.getContent().add(h);
+	                        
 	//                        if (inlineBox.getElement().getChildNodes().getLength()==1
 	//                        		&& inlineBox.getElement().getChildNodes().item(0).getNodeType()==Node.TEXT_NODE) {
 	//                        	// eg <a href="/wiki/Ecma_International" title="Ecma International">Ecma</a>
@@ -1401,8 +1398,16 @@ public class XHTMLImporter {
 	                        // No need to set inAlreadyProcessed = true;
 	                        // since no children to process
 	                	}
+	                	paraStillEmpty = false;            		
+	                	
 	                	return;
             		}
+            		
+            	} else if (inlineBox.isEndsHere()) {
+                	log.debug("Processing ..</a> ");
+            		
+            	} else {
+                	log.debug("Processing <a> content!");
             		
             	}
             	
