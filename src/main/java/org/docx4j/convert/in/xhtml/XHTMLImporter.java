@@ -165,13 +165,7 @@ public class XHTMLImporter {
 	private static String hyperlinkStyleId = null;	
 	
     private Body imports = null; 
-//    public List<Object>  getImportedContent() {
-//    	return imports;
-//    }
-    private LinkedList<ContentAccessor> contentContextStack = new LinkedList<ContentAccessor>();
-//    private ContentAccessor contentContext;
     
-//    private P currentP;
     
     private WordprocessingMLPackage wordMLPackage;
     private RelationshipsPart rp;
@@ -458,28 +452,62 @@ public class XHTMLImporter {
     	
     }
 
-    // A paragraph created for a div can be replaced by
-    // one created for a p within it, if it is still empty
-    boolean paraStillEmpty;
+    
+    
+    /**
+     * The Block level elements that our content may go into, ie
+     * Body, Table, Tr, Td.
+     * 
+     *  P and P.Hyperlink are NOT added to contentContextStack.
+     */
+    private LinkedList<ContentAccessor> contentContextStack = new LinkedList<ContentAccessor>();
+    
+    private void pushStack(ContentAccessor ca) {
+    	contentContextStack.push(ca);
+    	attachmentPointP = null;
+    }
+    private ContentAccessor popStack() {
+    	attachmentPointP = null;
+    	return contentContextStack.pop();
+    }
     
 
-    private void traverse(Box box, TableProperties tableProperties) throws Docx4JException {
-    	traverse( box, null,  tableProperties);
-    	}    
+    // Our runs may go into a P, or a hyperlink.
+    // Currently the approach to tracking this is simple.
+    // The content goes into a P, unless the hyperlink object is non-null.
+    // And we clear the P object whenever we transition in/out of a tc,
+    // or away from body level.
     
+    P attachmentPointP = null;
+    P.Hyperlink attachmentPointH = null;
     private P getCurrentParagraph(boolean create) {
-    	ContentAccessor head = contentContextStack.peek();
-    	if (head instanceof P) return (P)head;
+    	if (attachmentPointP !=null) return attachmentPointP;  
     	if (create) {
 			P newP = Context.getWmlObjectFactory().createP();
-			contentContextStack.peek().getContent().add(newP);
-			contentContextStack.push(newP);
+			attachmentPointP = newP;
+			this.contentContextStack.peek().getContent().add(newP);
             paraStillEmpty = true;
             return newP;
     	} else {
     		return null;
     	}
     }
+    
+    private ContentAccessor getListForRun() {
+    	
+    	if (attachmentPointH!=null) return attachmentPointH;
+    	return getCurrentParagraph(true);
+    }
+    
+    // A paragraph created for a div can be replaced by
+    // one created for a p within it, if it is still empty
+    // TODO revisit this
+    boolean paraStillEmpty;
+
+    
+    private void traverse(Box box, TableProperties tableProperties) throws Docx4JException {
+    	traverse( box, null,  tableProperties);
+    }    
     
     private void traverse(Box box,  Box parent, TableProperties tableProperties) throws Docx4JException {
         
@@ -568,13 +596,13 @@ public class XHTMLImporter {
             		//           table-layout: fixed; text-align: left; text-decoration: none; text-indent: 0; text-transform: none; top: auto; ; vertical-align: baseline; visibility: visible; white-space: normal; word-wrap: normal; widows: 2; width: auto; word-spacing: normal; z-index: auto; border-top-color: #000000; border-right-color: #000000; border-bottom-color: #000000; border-left-color: #000000; border-top-style: solid; border-right-style: solid; border-bottom-style: solid; border-left-style: solid; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0in; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;
             		
             		if (this.contentContextStack.peek() instanceof P) {
-            			this.contentContextStack.pop();
+            			popStack();
             		}
             		if (this.contentContextStack.peek() instanceof Tr) {
-            			this.contentContextStack.pop();
+            			popStack();
             		}
             		if (this.contentContextStack.peek() instanceof Tbl) {
-            			this.contentContextStack.pop();
+            			popStack();
             		}
             		
             		ContentAccessor contentContext = this.contentContextStack.peek();
@@ -584,7 +612,7 @@ public class XHTMLImporter {
             		contentContext.getContent().add(tbl);
 		            paraStillEmpty = true;
 //		            contentContext = tbl;
-		            this.contentContextStack.push(tbl);
+		            pushStack(tbl);
 		            mustPop = true;
 		            
             		TblPr tblPr = Context.getWmlObjectFactory().createTblPr();
@@ -692,13 +720,13 @@ public class XHTMLImporter {
             		log.warn("Encountered non-TableBox table: " + box.getClass().getName() );
 
             		if (this.contentContextStack.peek() instanceof P) {
-            			this.contentContextStack.pop();
+            			popStack();
             		}
             		if (this.contentContextStack.peek() instanceof Tr) {
-            			this.contentContextStack.pop();
+            			popStack();
             		}
             		if (this.contentContextStack.peek() instanceof Tbl) {
-            			this.contentContextStack.pop();
+            			popStack();
             		}
             		
             		ContentAccessor contentContext = this.contentContextStack.peek();
@@ -707,7 +735,7 @@ public class XHTMLImporter {
             		Tbl tbl = Context.getWmlObjectFactory().createTbl();
             		contentContext.getContent().add(tbl);
 		            paraStillEmpty = true;
-		            this.contentContextStack.push(tbl);
+		            pushStack(tbl);
 		            mustPop = true;
 		            
             		
@@ -726,7 +754,7 @@ public class XHTMLImporter {
             		Tr tr = Context.getWmlObjectFactory().createTr();
             		this.contentContextStack.peek().getContent().add(tr);
 		            paraStillEmpty = true;
-		            this.contentContextStack.push(tr);
+		            pushStack(tr);
 		            mustPop = true;
             		
             		
@@ -755,14 +783,14 @@ public class XHTMLImporter {
             		
                     // The cell proper
 					if (this.contentContextStack.peek() instanceof P) {
-            			this.contentContextStack.pop();						
+            			popStack();
 					}
 					if (this.contentContextStack.peek() instanceof Tc) {
-            			this.contentContextStack.pop();						
+            			popStack();
 					}
 					Tc tc = Context.getWmlObjectFactory().createTc();
             		contentContextStack.peek().getContent().add(tc);
-            		contentContextStack.push(tc);//.getContent();
+            		pushStack(tc);//.getContent();
 		            mustPop = true;
 
             		// if the td contains bare text (eg <td>apple</td>)
@@ -933,63 +961,35 @@ public class XHTMLImporter {
             log.debug("Done processing children of " + box.getClass().getName() );
             // contentContext gets its old value back each time recursion finishes,
             // ensuring elements are added at the appropriate level (eg inside tr) 
-            if (mustPop) this.contentContextStack.pop();
             
-            // An empty tc shouldn't make the table disappear!
-            // TODO - make more elegant
-            if (e.getNodeName().equals("table")) {            	
-            	paraStillEmpty = false;
-            }
-
-//        	if ( (lastChild instanceof Box)
-//        			&& ((Box)lastChild).getElement().getNodeName().equals("table") ) {
-//        		System.out.println("## " + e.getNodeName() );
-//        	}       
-        	
-
-            // nested tables must end with a <p/> or Word 2010 can't open the docx!
-            // ie:
-            // <w:tc>
-            //   <w:tbl>..</w:tbl>
-            //   <w:p/>                <---------- 
-            // </w:tc>
-        	// This fixes the dodgy table/table case
-    		if (box instanceof TableBox
-    				|| box.getElement().getNodeName().equals("table") ) {
-        	
-            	if ( (lastChild instanceof Box)
-            			&& ((Box)lastChild).getElement().getNodeName().equals("table") ) {
-            		log.debug("Adding <w:p/> after nested table");
-            		P extraP = Context.getWmlObjectFactory().createP();                                        	
-
-// TODO
-//            		ContentAccessor ca = this.contentContextStack.peek();
-//            		
-//            		Tr tr = (Tr)
-//            				this.contentContextStack.peek().getContent().get(
-//            						this.contentContextStack.peek().getContent().size()-1);
-//            		((Tc)tr.getContent().get(tr.getContent().size()-1)).getContent().add(extraP);
-            		//contentContext.add(extraP);            		
-                	paraStillEmpty = false; // ??           		
+            
+            if (this.contentContextStack.peek() instanceof Tc) {
+                // nested tables must end with a <p/> or Word 2010 can't open the docx!
+                // ie:
+                // <w:tc>
+                //   <w:tbl>..</w:tbl>
+                //   <w:p/>                <---------- 
+                // </w:tc>
+            	// This fixes the dodgy table/table case
+            	Tc tc = (Tc)this.contentContextStack.peek();
+            	if (tc.getContent().get(tc.getContent().size()-1) instanceof Tbl) {
+            		tc.getContent().add(
+            				Context.getWmlObjectFactory().createP());
             	}
             }
-          
-    		
-          if (e.getNodeName().equals("td") ) {  // untested
-        	  
-          	if ( (lastChild instanceof Box)
-        			&& ((Box)lastChild).getElement().getNodeName().equals("table") ) {
-        		log.debug("Adding <w:p/> after nested table");
-        		P extraP = Context.getWmlObjectFactory().createP();                                        	
-	            
-            	if (this.contentContextStack.peek() instanceof P) {
-            	} else {
-            		this.contentContextStack.peek().getContent().add(extraP);            		
-            		paraStillEmpty = false; // ??
-            	}
-        	}
-        }
+
+            // new P
+            attachmentPointP = null; 
             
+            if (mustPop) popStack();
+            	
+//            // An empty tc shouldn't make the table disappear!
+//            // TODO - make more elegant
+//            if (e.getNodeName().equals("table")) {            	
+//            	paraStillEmpty = false;
+//            }
+//
+//            
             
         } else if (box instanceof AnonymousBlockBox) {
             log.debug("AnonymousBlockBox");            
@@ -1481,7 +1481,7 @@ public class XHTMLImporter {
 		                    	return; // don't change contentContext
 		                		
 		                	} else {
-		                		this.contentContextStack.push(h);
+		                		attachmentPointH = h;
 		                		return; //.getContent();
 		                	}
 		                	
@@ -1501,7 +1501,7 @@ public class XHTMLImporter {
             		
             	} else if (inlineBox.isEndsHere()) {
                 	log.debug("Processing ..</a> ");
-                	this.contentContextStack.pop();
+                	attachmentPointH = null;
                 	return; 
             		// Could do bookmark end processing here...
             	} else {
@@ -1548,8 +1548,7 @@ public class XHTMLImporter {
             if (s.getElement().getNodeName().equals("br") ) {
                 
                 R run = Context.getWmlObjectFactory().createR();
-//                currentP.getContent().add(run);                
-                this.contentContextStack.peek().getContent().add(run);                
+                getListForRun().getContent().add(run);                
            		run.getContent().add(Context.getWmlObjectFactory().createBr());
             	
             } else {
@@ -1585,15 +1584,6 @@ public class XHTMLImporter {
 	 */
 	private void addRun(Map<String, CSSValue> cssMap, String theText) {
 		
-		ContentAccessor contentContext = this.contentContextStack.peek();
-		
-		if (contentContext instanceof P
-				|| contentContext instanceof P.Hyperlink) {			
-		} else {
-			contentContext = this.getCurrentParagraph(true);
-			//throw new InvalidOperationException("Can't add a run to " + contentContext.getClass().getName());
-		}
-		
 		R run = Context.getWmlObjectFactory().createR();
 		Text text = Context.getWmlObjectFactory().createText();
 		text.setValue( theText );
@@ -1603,7 +1593,7 @@ public class XHTMLImporter {
 		}
 		run.getContent().add(text);
 		
-		contentContext.getContent().add(run);
+		getListForRun().getContent().add(run);
 		
 		// Run level styling
 		run.setRPr(
