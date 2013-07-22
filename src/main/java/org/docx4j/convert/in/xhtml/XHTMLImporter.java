@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -57,12 +58,14 @@ import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.XmlUtils;
 import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.jaxb.Context;
+import org.docx4j.model.fields.FieldRef;
 import org.docx4j.model.properties.Property;
 import org.docx4j.model.properties.PropertyFactory;
 import org.docx4j.model.properties.paragraph.AbstractParagraphProperty;
 import org.docx4j.model.properties.run.AbstractRunProperty;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.exceptions.InvalidFormatException;
+import org.docx4j.openpackaging.exceptions.InvalidOperationException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
 import org.docx4j.openpackaging.parts.WordprocessingML.NumberingDefinitionsPart;
@@ -160,7 +163,8 @@ public class XHTMLImporter {
 		hyperlinkStyleId = hyperlinkStyleID;
 	}
 	private static String hyperlinkStyleId = null;	
-    private List<Object> imports = new ArrayList<Object>(); 
+	
+    private Body imports = null; 
 //    public List<Object>  getImportedContent() {
 //    	return imports;
 //    }
@@ -185,6 +189,8 @@ public class XHTMLImporter {
 		if (hyperlinkStyleId !=null && wordMLPackage instanceof WordprocessingMLPackage) {
 			((WordprocessingMLPackage)wordMLPackage).getMainDocumentPart().getPropertyResolver().activateStyle(hyperlinkStyleId);
 		}
+		
+		imports = Context.getWmlObjectFactory().createBody();
     }
 
     /**
@@ -217,7 +223,7 @@ public class XHTMLImporter {
                     
         importer.traverse(importer.renderer.getRootBox(), importer.imports, null);
         
-        return importer.imports;    	
+        return importer.imports.getContent();    	
     }
 
     /**
@@ -242,7 +248,7 @@ public class XHTMLImporter {
                     
         importer.traverse(importer.renderer.getRootBox(), importer.imports, null);
         
-        return importer.imports;    	
+        return importer.imports.getContent();    	
     }
 
     /**
@@ -264,7 +270,7 @@ public class XHTMLImporter {
                     
         importer.traverse(importer.renderer.getRootBox(), importer.imports, null);
         
-        return importer.imports;    	    	
+        return importer.imports.getContent();    	
     }
     
     /**
@@ -289,7 +295,7 @@ public class XHTMLImporter {
                     
         importer.traverse(importer.renderer.getRootBox(), importer.imports, null);
         
-        return importer.imports;    	    	
+        return importer.imports.getContent();    	
     }
     
     /**
@@ -311,7 +317,7 @@ public class XHTMLImporter {
                     
         importer.traverse(importer.renderer.getRootBox(), importer.imports, null);
         
-        return importer.imports;    	    	
+        return importer.imports.getContent();    	
     }
     
     /**
@@ -334,7 +340,7 @@ public class XHTMLImporter {
                     
         importer.traverse(importer.renderer.getRootBox(), importer.imports, null);
         
-        return importer.imports;    	    	
+        return importer.imports.getContent();    	
     }
     
     //public static List<Object> convert(XMLEventReader reader, WordprocessingMLPackage wordMLPackage) throws IOException {
@@ -360,7 +366,7 @@ public class XHTMLImporter {
                     
         importer.traverse(importer.renderer.getRootBox(), importer.imports, null);
         
-        return importer.imports;    	
+        return importer.imports.getContent();    	
     }
 
     /**
@@ -412,7 +418,7 @@ public class XHTMLImporter {
                     
         importer.traverse(importer.renderer.getRootBox(), importer.imports, null);
         
-        return importer.imports;    	
+        return importer.imports.getContent();    	
     }
     
     
@@ -452,12 +458,14 @@ public class XHTMLImporter {
     // A paragraph created for a div can be replaced by
     // one created for a p within it, if it is still empty
     boolean paraStillEmpty;
+    
+    //private LinkedList<ContentAccessor> contentContext;    
 
-    private void traverse(Box box, List<Object> contentContext, TableProperties tableProperties) throws Docx4JException {
+    private void traverse(Box box, ContentAccessor contentContext, TableProperties tableProperties) throws Docx4JException {
     	traverse( box, contentContext, null,  tableProperties);
     	}    
     
-    private void traverse(Box box, List<Object> contentContext, Box parent, TableProperties tableProperties) throws Docx4JException {
+    private void traverse(Box box, ContentAccessor contentContext, Box parent, TableProperties tableProperties) throws Docx4JException {
         
         log.debug(box.getClass().getName() );
         if (box instanceof BlockBox) {
@@ -489,7 +497,7 @@ public class XHTMLImporter {
                 	// Don't add a paragraph for this, unless ..
                 	if (currentP==null) {
                 		currentP = Context.getWmlObjectFactory().createP();
-    		            contentContext.add(currentP);
+    		            contentContext.getContent().add(currentP);
     		            paraStillEmpty = true;
                 	}            		
                 	
@@ -545,9 +553,9 @@ public class XHTMLImporter {
 							parent);
             		
             		Tbl tbl = Context.getWmlObjectFactory().createTbl();
-            		contentContext.add(tbl);
+            		contentContext.getContent().add(tbl);
 		            paraStillEmpty = true;
-		            contentContext = tbl.getContent();
+		            contentContext = tbl;//.getContent();
 
             		TblPr tblPr = Context.getWmlObjectFactory().createTblPr();
             		tbl.setTblPr(tblPr);    
@@ -657,9 +665,9 @@ public class XHTMLImporter {
 							parent);
             		
             		Tbl tbl = Context.getWmlObjectFactory().createTbl();
-            		contentContext.add(tbl);
+            		contentContext.getContent().add(tbl);
 		            paraStillEmpty = true;
-		            contentContext = tbl.getContent();
+		            contentContext = tbl;//.getContent();
             		
             	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableRowBox) {
             		
@@ -670,16 +678,16 @@ public class XHTMLImporter {
             		log.debug(".. processing <tr");            		
 
             		Tr tr = Context.getWmlObjectFactory().createTr();
-            		contentContext.add(tr);
+            		contentContext.getContent().add(tr);
 		            paraStillEmpty = true;
-		            contentContext = tr.getContent();
+		            contentContext = tr;//.getContent();
             		
             	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableCellBox) {
             		            		
             		log.debug(".. processing <td");            		
             		// eg <td color: #000000; background-color: transparent; background-image: none; background-repeat: repeat; background-attachment: scroll; background-position: [0%, 0%]; background-size: [auto, auto]; border-collapse: collapse; -fs-border-spacing-horizontal: 0; -fs-border-spacing-vertical: 0; -fs-font-metric-src: none; -fs-keep-with-inline: auto; -fs-page-width: auto; -fs-page-height: auto; -fs-page-sequence: auto; -fs-pdf-font-embed: auto; -fs-pdf-font-encoding: Cp1252; -fs-page-orientation: auto; -fs-table-paginate: auto; -fs-text-decoration-extent: line; bottom: auto; caption-side: top; clear: none; ; content: normal; counter-increment: none; counter-reset: none; cursor: auto; ; display: table-row; empty-cells: show; float: none; font-style: normal; font-variant: normal; font-weight: normal; font-size: medium; line-height: normal; font-family: serif; -fs-table-cell-colspan: 1; -fs-table-cell-rowspan: 1; height: auto; left: auto; letter-spacing: normal; list-style-type: disc; list-style-position: outside; list-style-image: none; max-height: none; max-width: none; min-height: 0; min-width: 0; orphans: 2; ; ; ; overflow: visible; page: auto; page-break-after: auto; page-break-before: auto; page-break-inside: auto; position: static; ; right: auto; src: none; table-layout: auto; text-align: left; text-decoration: none; text-indent: 0; text-transform: none; top: auto; ; vertical-align: top; visibility: visible; white-space: normal; word-wrap: normal; widows: 2; width: auto; word-spacing: normal; z-index: auto; border-top-color: #000000; border-right-color: #000000; border-bottom-color: #000000; border-left-color: #000000; border-top-style: none; border-right-style: none; border-bottom-style: none; border-left-style: none; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;
 
-            		List<Object> trContext = contentContext;
+            		ContentAccessor trContext = contentContext;
             		org.docx4j.org.xhtmlrenderer.newtable.TableCellBox tcb = (org.docx4j.org.xhtmlrenderer.newtable.TableCellBox)box;
             		// tcb.getVerticalAlign()
             		
@@ -699,13 +707,13 @@ public class XHTMLImporter {
             		
                     // The cell proper
             		Tc tc = Context.getWmlObjectFactory().createTc();
-            		contentContext.add(tc);
-		            contentContext = tc.getContent();
+            		contentContext.getContent().add(tc);
+		            contentContext = tc;//.getContent();
 
             		// if the td contains bare text (eg <td>apple</td>)
             		// we need a p for it
             		currentP = Context.getWmlObjectFactory().createP();                                        	
-    	            contentContext.add(currentP);            		
+    	            contentContext.getContent().add(currentP);            		
 		            paraStillEmpty = true;
             		
             		// Do we need a vMerge tag with "restart" attribute?
@@ -787,13 +795,16 @@ public class XHTMLImporter {
 	            } else {
 	            	
 	            	// Avoid creating paragraphs for html, body
-	            	if (contentContext.size()>0 && paraStillEmpty) {
-			            contentContext.remove( contentContext.size()-1);                                        		
+	            	if (contentContext.getContent().size()>0 && paraStillEmpty) {
+			            contentContext.getContent().remove( contentContext.getContent().size()-1);                                        		
 	            	} 
 	            	
-		            currentP = Context.getWmlObjectFactory().createP();
-		            contentContext.add(currentP);
-		            paraStillEmpty = true;
+	            	if (contentContext instanceof P) {
+	            	} else {
+			            currentP = Context.getWmlObjectFactory().createP();
+			            contentContext.getContent().add(currentP);
+			            paraStillEmpty = true;
+	            	}
 		            
 		            // Paragraph level styling
 		            currentP.setPPr(
@@ -812,7 +823,15 @@ public class XHTMLImporter {
             // the recursive bit:
             
             Object lastChild = null;
-            
+
+        	if (contentContext instanceof Body) {
+        		currentP = Context.getWmlObjectFactory().createP();                                        	
+        		contentContext.getContent().add(currentP);            		
+	            paraStillEmpty = true;	
+	            contentContext = currentP;
+        	}
+
+        	
             	log.debug("Processing children of " + box.getElement().getNodeName() );
 	            switch (blockBox.getChildrenContentType()) {
 	                case BlockBox.CONTENT_BLOCK:
@@ -831,8 +850,8 @@ public class XHTMLImporter {
 	                	
 	                    if ( ((BlockBox)box).getInlineContent()!=null) {
 
-	                    	List<Object> savedContext = contentContext;
-	                    	contentContext = currentP.getContent();
+	                    	ContentAccessor savedContext = contentContext;
+	                    	contentContext = currentP;
 	                    	
 	                        for (Object o : ((BlockBox)box).getInlineContent() ) {
 	//                            log.debug("        " + o.getClass().getName() ); 
@@ -844,7 +863,7 @@ public class XHTMLImporter {
 	                            	
 	                            	if (contentContext==null) {
 	                            		// signal to effectively pop
-	                            		contentContext = currentP.getContent();
+	                            		contentContext = currentP;//.getContent();
 	                            	}
 	                            	
 	                            } else if (o instanceof BlockBox ) {
@@ -853,11 +872,12 @@ public class XHTMLImporter {
 	                            	
 	                        		// handle bare text (eg <td>apple</td>)
 	                        		// we need a p for it
-	                        		currentP = Context.getWmlObjectFactory().createP();                                        	
-	                        		savedContext.add(currentP);            		
-	            		            paraStillEmpty = true;	
-	            		            
-	            		            contentContext = currentP.getContent();
+	                            	if (contentContext instanceof Tc) {
+		                        		currentP = Context.getWmlObjectFactory().createP();                                        	
+		                        		savedContext.getContent().add(currentP);            		
+		            		            paraStillEmpty = true;	
+		            		            contentContext = currentP;//.getContent();
+	                            	}
 	                            	
 	                                traverse((Box)o, contentContext, box, tableProperties); // commenting out gets rid of unwanted extra parent elements
 	                                //contentContext = tmpContext;
@@ -913,7 +933,7 @@ public class XHTMLImporter {
             		P extraP = Context.getWmlObjectFactory().createP();                                        	
     	            
             		Tr tr = (Tr)
-            				contentContext.get(contentContext.size()-1);
+            				contentContext.getContent().get(contentContext.getContent().size()-1);
             		((Tc)tr.getContent().get(tr.getContent().size()-1)).getContent().add(extraP);
             		//contentContext.add(extraP);            		
                 	paraStillEmpty = false; // ??           		
@@ -928,8 +948,11 @@ public class XHTMLImporter {
         		log.debug("Adding <w:p/> after nested table");
         		P extraP = Context.getWmlObjectFactory().createP();                                        	
 	            
-        		contentContext.add(extraP);            		
-            	paraStillEmpty = false; // ??           		
+            	if (contentContext instanceof P) {
+            	} else {
+            		contentContext.getContent().add(extraP);            		
+            		paraStillEmpty = false; // ??
+            	}
         	}
         }
             
@@ -1008,7 +1031,7 @@ public class XHTMLImporter {
 	 * @param tcb current cell
 	 * @param backwards direction flag: if true, then scan to the left
 	 */
-	private void insertDummyVMergedCells(List<Object> trContext, TableCellBox tcb, boolean backwards) {
+	private void insertDummyVMergedCells(ContentAccessor trContext, TableCellBox tcb, boolean backwards) {
 
 		log.debug("Scanning cells from " + tcb.getRow() + ", " + tcb.getCol() + " to the " + (backwards ? "left" : "right") );
 
@@ -1045,7 +1068,7 @@ public class XHTMLImporter {
 
 		for (TableCellBox adjCell : adjCells) {
 			Tc dummy = Context.getWmlObjectFactory().createTc();
-			trContext.add(dummy);
+			trContext.getContent().add(dummy);
 
 			TcPr tcPr = Context.getWmlObjectFactory().createTcPr();
 			dummy.setTcPr(tcPr);
@@ -1083,7 +1106,7 @@ public class XHTMLImporter {
 	 * @param parent
 	 * @return
 	 */
-	private List<Object> nestedTableHierarchyFix(List<Object> contentContext,
+	private ContentAccessor nestedTableHierarchyFix(ContentAccessor contentContext,
 			Box parent) {
 		
 		if (parent==null) return contentContext; // where importing a table fragment 
@@ -1094,13 +1117,22 @@ public class XHTMLImporter {
 			
 			//if table was with caption move P (generated for caption) to nested column
 			P captionP = null;
-			Iterator<Object> contentIterator = contentContext.iterator();
+//			Iterator<Object> contentIterator = contentContext.iterator();
+//			Object next;
+//			while(contentIterator.hasNext()){
+//			    next = contentIterator.next();
+//			    if(next instanceof P){
+//			        captionP = (P)XmlUtils.deepCopy((P)next);
+//			        contentIterator.remove();
+//			        break;
+//			    }
+//			}
 			Object next;
-			while(contentIterator.hasNext()){
-			    next = contentIterator.next();
+			for (int i=0; i<contentContext.getContent().size(); i++) {
+			    next = contentContext.getContent().get(i);
 			    if(next instanceof P){
 			        captionP = (P)XmlUtils.deepCopy((P)next);
-			        contentIterator.remove();
+			        contentContext.getContent().remove(i);
 			        break;
 			    }
 			}
@@ -1110,19 +1142,19 @@ public class XHTMLImporter {
             TblStyle tblStyle = Context.getWmlObjectFactory().createCTTblPrBaseTblStyle();
             tblStyle.setVal("none");
             tblPr.setTblStyle(tblStyle);
-            contentContext.add(tblPr);
+            contentContext.getContent().add(tblPr);
 			
 			Tr tr = Context.getWmlObjectFactory().createTr();
-			contentContext.add(tr);
-		    contentContext = tr.getContent();            			
+			contentContext.getContent().add(tr);
+		    contentContext = tr;            			
 			
 			Tc tc = Context.getWmlObjectFactory().createTc();
-			contentContext.add(tc);
-		    contentContext = tc.getContent();
+			contentContext.getContent().add(tc);
+		    contentContext = tc;
 		    
 		    //if caption was found add it
 		    if(captionP != null){
-		        contentContext.add(captionP);
+		        contentContext.getContent().add(captionP);
 		    }
 		}
 		return contentContext;
@@ -1287,7 +1319,7 @@ public class XHTMLImporter {
 //		}
 //	}
 	
-    private List<Object>  processInlineBox( InlineBox inlineBox, List<Object> contentContext) {
+    private ContentAccessor  processInlineBox( InlineBox inlineBox, ContentAccessor contentContext) {
     	
         // Doesn't extend box
         Styleable s = ((InlineBox)inlineBox );
@@ -1415,7 +1447,7 @@ public class XHTMLImporter {
 		                    	return contentContext; // don't change contentContext
 		                		
 		                	} else {		                	
-		                		return h.getContent();
+		                		return h; //.getContent();
 		                	}
 		                	
 	                	} 
@@ -1443,19 +1475,21 @@ public class XHTMLImporter {
             	}
             	
             	
-            } else if (s.getElement().getNodeName().equals("p")) {
-            	// This seems to be the usual case. Odd?
-            	log.debug("p in inline");
-        		currentP = Context.getWmlObjectFactory().createP();                                        	
-            	if (paraStillEmpty) {
-            		// Replace it
-		            contentContext.remove( contentContext.size()-1);                                        		
-            	} 
-	            contentContext.add(currentP);
-	            paraStillEmpty = true;
-	            currentP.setPPr(
-	            		addParagraphProperties( cssMap ));
-            }	            
+            } 
+            
+//            else if (s.getElement().getNodeName().equals("p")) {
+//            	// This seems to be the usual case. Odd?
+//            	log.debug("p in inline");
+//        		currentP = Context.getWmlObjectFactory().createP();                                        	
+//            	if (paraStillEmpty) {
+//            		// Replace it
+//		            contentContext.getContent().remove( contentContext.getContent().size()-1);                                        		
+//            	} 
+//	            contentContext.getContent().add(currentP);
+//	            paraStillEmpty = true;
+//	            currentP.setPPr(
+//	            		addParagraphProperties( cssMap ));
+//            }	            
         }
         if (s.getStyle()!=null) {
             debug +=  " " + s.getStyle().toStringMine();
@@ -1471,7 +1505,7 @@ public class XHTMLImporter {
         
     }
 
-	private void processInlineBoxContent(List<Object> contentContext, InlineBox inlineBox, Styleable s,
+	private void processInlineBoxContent(ContentAccessor contentContext, InlineBox inlineBox, Styleable s,
 			Map<String, CSSValue> cssMap) {
 				
 		
@@ -1480,7 +1514,8 @@ public class XHTMLImporter {
             if (s.getElement().getNodeName().equals("br") ) {
                 
                 R run = Context.getWmlObjectFactory().createR();
-                currentP.getContent().add(run);                
+//                currentP.getContent().add(run);                
+                (contentContext).getContent().add(run);                
            		run.getContent().add(Context.getWmlObjectFactory().createBr());
             	
             } else {
@@ -1514,7 +1549,14 @@ public class XHTMLImporter {
 	 * @param cssMap
 	 * @param theText
 	 */
-	private void addRun(List<Object> contentContext, Map<String, CSSValue> cssMap, String theText) {
+	private void addRun(ContentAccessor contentContext, Map<String, CSSValue> cssMap, String theText) {
+		
+		if (contentContext instanceof P
+				|| contentContext instanceof P.Hyperlink) {			
+		} else {
+			throw new InvalidOperationException("Can't add a run to " + contentContext.getClass().getName());
+		}
+		
 		R run = Context.getWmlObjectFactory().createR();
 		Text text = Context.getWmlObjectFactory().createText();
 		text.setValue( theText );
@@ -1524,7 +1566,7 @@ public class XHTMLImporter {
 		}
 		run.getContent().add(text);
 		
-		contentContext.add(run);
+		contentContext.getContent().add(run);
 		
 		// Run level styling
 		run.setRPr(
