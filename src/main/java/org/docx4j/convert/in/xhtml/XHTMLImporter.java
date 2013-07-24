@@ -595,15 +595,12 @@ public class XHTMLImporter {
             		//           border-collapse: collapse; -fs-border-spacing-horizontal: 2px; -fs-border-spacing-vertical: 2px; -fs-font-metric-src: none; -fs-keep-with-inline: auto; -fs-page-width: auto; -fs-page-height: auto; -fs-page-sequence: auto; -fs-pdf-font-embed: auto; -fs-pdf-font-encoding: Cp1252; -fs-page-orientation: auto; -fs-table-paginate: auto; -fs-text-decoration-extent: line; bottom: auto; caption-side: top; clear: none; ; content: normal; counter-increment: none; counter-reset: none; cursor: auto; ; display: table; empty-cells: show; float: none; font-style: normal; font-variant: normal; font-weight: normal; font-size: medium; line-height: normal; font-family: serif; -fs-table-cell-colspan: 1; -fs-table-cell-rowspan: 1; height: auto; left: auto; letter-spacing: normal; list-style-type: disc; list-style-position: outside; list-style-image: none; max-height: none; max-width: none; min-height: 0; min-width: 0; orphans: 2; ; ; ; overflow: visible; page: auto; page-break-after: auto; page-break-before: auto; page-break-inside: auto; position: relative; ; right: auto; src: none; 
             		//           table-layout: fixed; text-align: left; text-decoration: none; text-indent: 0; text-transform: none; top: auto; ; vertical-align: baseline; visibility: visible; white-space: normal; word-wrap: normal; widows: 2; width: auto; word-spacing: normal; z-index: auto; border-top-color: #000000; border-right-color: #000000; border-bottom-color: #000000; border-left-color: #000000; border-top-style: solid; border-right-style: solid; border-bottom-style: solid; border-left-style: solid; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0in; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;
             		
-            		if (this.contentContextStack.peek() instanceof P) {
-            			popStack();
-            		}
-            		if (this.contentContextStack.peek() instanceof Tr) {
-            			popStack();
-            		}
-            		if (this.contentContextStack.peek() instanceof Tbl) {
-            			popStack();
-            		}
+//            		if (this.contentContextStack.peek() instanceof Tr) {
+//            			popStack();
+//            		}
+//            		if (this.contentContextStack.peek() instanceof Tbl) {
+//            			popStack();
+//            		}
             		
             		ContentAccessor contentContext = this.contentContextStack.peek();
             		nestedTableHierarchyFix(contentContext,parent);
@@ -719,15 +716,12 @@ public class XHTMLImporter {
 
             		log.warn("Encountered non-TableBox table: " + box.getClass().getName() );
 
-            		if (this.contentContextStack.peek() instanceof P) {
-            			popStack();
-            		}
-            		if (this.contentContextStack.peek() instanceof Tr) {
-            			popStack();
-            		}
-            		if (this.contentContextStack.peek() instanceof Tbl) {
-            			popStack();
-            		}
+//            		if (this.contentContextStack.peek() instanceof Tr) {
+//            			popStack();
+//            		}
+//            		if (this.contentContextStack.peek() instanceof Tbl) {
+//            			popStack();
+//            		}
             		
             		ContentAccessor contentContext = this.contentContextStack.peek();
             		nestedTableHierarchyFix(contentContext,parent);
@@ -747,9 +741,9 @@ public class XHTMLImporter {
             		
             		log.debug(".. processing <tr");            		
 
-            		if (this.contentContextStack.peek() instanceof Tr) {
-            			this.contentContextStack.pop();
-            		} 
+//            		if (this.contentContextStack.peek() instanceof Tr) {
+//            			this.contentContextStack.pop();
+//            		} 
             		
             		Tr tr = Context.getWmlObjectFactory().createTr();
             		this.contentContextStack.peek().getContent().add(tr);
@@ -782,12 +776,9 @@ public class XHTMLImporter {
 					int effCol = tcb.getTable().colToEffCol(tcb.getCol());
             		
                     // The cell proper
-					if (this.contentContextStack.peek() instanceof P) {
-            			popStack();
-					}
-					if (this.contentContextStack.peek() instanceof Tc) {
-            			popStack();
-					}
+//					if (this.contentContextStack.peek() instanceof Tc) {
+//            			popStack();
+//					}
 					Tc tc = Context.getWmlObjectFactory().createTc();
             		contentContextStack.peek().getContent().add(tc);
             		pushStack(tc);//.getContent();
@@ -899,7 +890,6 @@ public class XHTMLImporter {
             
             // the recursive bit:
             
-            Object lastChild = null;
 
 //        	if (contentContext instanceof Body) {
 //        		currentP = Context.getWmlObjectFactory().createP();                                        	
@@ -915,8 +905,6 @@ public class XHTMLImporter {
 	                case BlockBox.CONTENT_BLOCK:
 	                	log.debug(".. which are BlockBox.CONTENT_BLOCK");	                	
 	                    for (Object o : ((BlockBox)box).getChildren() ) {
-	                    	
-	                    	lastChild = o;
 	                    	
 	                        traverse((Box)o,  box, tableProperties);                    
 	                        log.debug(".. processed child " + o.getClass().getName() );
@@ -947,10 +935,10 @@ public class XHTMLImporter {
 	                        }
 	                        
 	                        
-//                        	if (markuprange!=null) {        		
-//                        		currentP.getContent().add( markuprange);
-//                        		markuprange = null;
-//                        	}
+                        	if (markuprange!=null) {        		
+                        		getCurrentParagraph(true).getContent().add( markuprange);
+                        		markuprange = null;
+                        	}
 //                    		inAlreadyProcessed = false;        		
 	                        
 	                    }
@@ -1503,7 +1491,8 @@ public class XHTMLImporter {
                 	log.debug("Processing ..</a> ");
                 	attachmentPointH = null;
                 	return; 
-            		// Could do bookmark end processing here...
+            		// Can't do bookmark end processing here,
+                	// since this isn't always triggered
             	} else {
                 	log.debug("Processing <a> content!");
                 	// Add it ...
