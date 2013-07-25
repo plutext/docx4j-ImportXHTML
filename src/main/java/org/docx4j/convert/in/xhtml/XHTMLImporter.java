@@ -1004,7 +1004,9 @@ public class XHTMLImporter {
                 // </w:tc>
             	// This fixes the dodgy table/table case
             	Tc tc = (Tc)this.contentContextStack.peek();
-            	if (tc.getContent().get(tc.getContent().size()-1) instanceof Tbl) {
+            	
+            	if (tc.getContent().size()==0
+            			|| tc.getContent().get(tc.getContent().size()-1) instanceof Tbl) {
             		tc.getContent().add(
             				Context.getWmlObjectFactory().createP());
             	}
