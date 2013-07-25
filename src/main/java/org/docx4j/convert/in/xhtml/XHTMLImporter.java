@@ -44,6 +44,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.xml.bind.JAXBElement;
@@ -175,7 +176,50 @@ public class XHTMLImporter {
     
     private DocxRenderer renderer;
     
-    private XHTMLImporter(WordprocessingMLPackage wordMLPackage) {
+    private static FontFamilyMap fontFamilyToFont = new FontFamilyMap();
+    /**
+	 * Map a font family, for example "Century Gothic" in:
+	 * 
+	 *    font-family:"Century Gothic", Helvetica, Arial, sans-serif;
+	 * 
+	 * to a w:rFonts object, for example:
+	 * 
+	 *    <w:rFonts w:ascii="Arial Black" w:hAnsi="Arial Black"/>
+	 * 
+	 * Assuming style font-family:"Century Gothic", Helvetica, Arial, sans-serif;
+	 * the first font family for which there is a mapping is the one
+	 * which will be used. 
+	 * 
+	 * It is your responsibility to ensure a suitable font is available 
+	 * on the target system (or embedded in the docx package).  If we 
+	 * (eventually) support CSS @font-face, docx4j could do that
+	 * for you (at least for font formats we can convert to something
+	 * embeddable).
+	 * 
+	 * @since 3.0
+	 */
+	public static void addFontMapping(String cssFontFamily, RFonts rFonts) {
+		fontFamilyToFont.put(cssFontFamily, rFonts);
+	}
+	
+	/**
+	 * Case insensitive key
+	 * (matching http://www.w3.org/TR/css3-fonts/#font-family-casing
+	 */
+	private static class FontFamilyMap extends HashMap<String, RFonts> {
+
+	    @Override
+	    public RFonts put(String key, RFonts value) {
+	       return super.put(key.toLowerCase(), value);
+	    }
+
+	    // not @Override because that would require the key parameter to be of type Object
+	    public RFonts get(String key) {
+	       return super.get(key.toLowerCase());
+	    }
+	}	
+
+	private XHTMLImporter(WordprocessingMLPackage wordMLPackage) {
     	this.wordMLPackage= wordMLPackage;
     	rp = wordMLPackage.getMainDocumentPart().getRelationshipsPart();
     	ndp = wordMLPackage.getMainDocumentPart().getNumberingDefinitionsPart();
@@ -1587,8 +1631,43 @@ public class XHTMLImporter {
 		// Run level styling
 		run.setRPr(
 				addRunProperties( cssMap ));
+		
+		// Font is handled separately
+		CSSValue fontFamily = cssMap.get("font-family");
+		setRFont(fontFamily, run.getRPr() );
+
 	}
+	
+	private void setRFont(CSSValue fontFamily, RPr rpr) {
+		
+		if (fontFamily==null) return;
+		log.debug(fontFamily.getCssText());
+		
+		// Short circuit
+		RFonts rfonts = fontFamiliesToFont.get(fontFamily.getCssText());
+		if (rfonts!=null) {
+			rpr.setRFonts(rfonts);
+			return;
+		}
+		
+		StringTokenizer st = new StringTokenizer(fontFamily.getCssText(), ",");
+		// font-family:"Century Gothic", Helvetica, Arial, sans-serif;
+		while (st.hasMoreTokens()) {
+			String thisFontFamily = st.nextToken().trim();
+			RFonts mappedTo = this.fontFamilyToFont.get(thisFontFamily);
+			// Assume the first font family for which we have a mapping will contain a glyph
+			// TODO should check. See fonts.txt
+			if (mappedTo!=null) {
+				rpr.setRFonts(mappedTo);
+				// Save for re-use
+				fontFamiliesToFont.put(fontFamily.getCssText(), mappedTo);
+				return;
+			}
+		}
+	}
+    private Map<String, RFonts> fontFamiliesToFont = new HashMap<String, RFonts>(); 
     
+	
     private PPr addParagraphProperties(Map cssMap) {
 
         PPr pPr =  Context.getWmlObjectFactory().createPPr();

@@ -1,0 +1,80 @@
+See http://www.w3.org/TR/css3-fonts/ for a very readable intro to fonts generally.
+
+------------
+
+Per http://www.w3.org/TR/css3-fonts/#font-style-matching
+
+    The procedure for choosing a font for a given character in a run of text consists of 
+    iterating over the font families named by the ‘font-family’ property, selecting a 
+    font face with the appropriate style based on other font properties and then determining 
+    whether a glyph exists for the given character. This is done using the character map 
+    of the font, data which maps characters to the default glyph for that character. A 
+    font is considered to support a given character if (1) the character is contained in
+    the font's character map and (2) if required by the containing script, shaping 
+    information is available for that character.
+
+https://github.com/plutext/flyingsaucer/blob/master/demos/samples/src/VerifyGlyphExists.java
+uses java.awt.Font.canDisplay(char c)
+
+FOP also has some way of doing this:- http://xmlgraphics.apache.org/fop/trunk/fonts.html
+
+But our implementation currently assumes the first font family for which we have a mapping
+will contain a glyph.
+
+-----------
+
+TODO: test whether FS supports shorthand font property http://www.w3.org/TR/css3-fonts/#font-prop
+
+Examples:
+
+p { font: 12pt/14pt sans-serif }
+p { font: 80% sans-serif }
+p { font: x-large/110% "new century schoolbook", serif }
+p { font: bold italic large Palatino, serif }
+p { font: normal small-caps 120%/120% fantasy }
+p { font: condensed oblique 12pt "Helvetica Neue", serif; }
+
+-----------
+
+Flying-saucer gives us something like:
+
+font-style: normal; 
+font-variant: normal; 
+font-weight: normal; 
+font-size: 8pt; 
+font-family: Century Gothic,Helvetica,Arial,sans-serif;
+
+----------
+
+flying-saucer can embed custom fonts via CSS, using @font-face. [Note that 
+
+In principle, docx4j could automatically embed this font in the docx. But we don't try to do this
+ in the current implementation.
+ 
+See http://www.w3.org/TR/css3-fonts/#src-desc for some known font formats.
+
+------
+
+unicode-range  http://www.w3.org/TR/css3-fonts/#unicode-range-desc
+
+TEST whether FS supports this?
+
+
+ 
+------ 
+
+Per https://code.google.com/p/flying-saucer/wiki/FAQPDF
+
+Embedding fonts using CSS @font-face
+flying-saucer can embed custom fonts via CSS. Make sure the path to the font file is relative to the path of the CSS file.
+
+@font-face {
+        font-family: "UbuntuMono";
+        src: url("UbuntuMono-R.ttf");
+        -fs-pdf-font-embed: embed;
+        -fs-pdf-font-encoding: Identity-H; 
+}
+
+* {
+        font-family: "UbuntuMono";
+}
