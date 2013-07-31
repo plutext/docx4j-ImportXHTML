@@ -64,12 +64,14 @@ import org.docx4j.model.properties.Property;
 import org.docx4j.model.properties.PropertyFactory;
 import org.docx4j.model.properties.paragraph.AbstractParagraphProperty;
 import org.docx4j.model.properties.run.AbstractRunProperty;
+import org.docx4j.model.properties.run.FontSize;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.exceptions.InvalidFormatException;
 import org.docx4j.openpackaging.exceptions.InvalidOperationException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
 import org.docx4j.openpackaging.parts.WordprocessingML.NumberingDefinitionsPart;
+import org.docx4j.openpackaging.parts.WordprocessingML.StyleDefinitionsPart;
 import org.docx4j.openpackaging.parts.relationships.Namespaces;
 import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
 import org.docx4j.org.xhtmlrenderer.css.constants.CSSName;
@@ -91,6 +93,7 @@ import org.docx4j.org.xhtmlrenderer.render.Box;
 import org.docx4j.org.xhtmlrenderer.render.InlineBox;
 import org.docx4j.org.xhtmlrenderer.resource.XMLResource;
 import org.docx4j.wml.CTTblPrBase.TblStyle;
+import org.docx4j.wml.DocDefaults.RPrDefault;
 import org.docx4j.wml.P.Hyperlink;
 import org.docx4j.wml.PPrBase.NumPr;
 import org.docx4j.wml.PPrBase.NumPr.Ilvl;
@@ -233,6 +236,36 @@ public class XHTMLImporter {
 		imports = Context.getWmlObjectFactory().createBody();
 		contentContextStack.push(imports);
     }
+	
+	/**
+	 * Use the default font size in this docx, as equivalent of CSS font-size: medium
+	 * @since 3.0
+	 */
+	private void setDefaultFontSize() {
+		
+		StyleDefinitionsPart sdp = wordMLPackage.getMainDocumentPart().getStyleDefinitionsPart();
+		if (sdp!=null
+			 && sdp.getJaxbElement().getDocDefaults()!=null) {
+			
+			RPrDefault rPrDefault = sdp.getJaxbElement().getDocDefaults().getRPrDefault();
+			
+			// <w:rPrDefault>
+			//   <w:rPr>
+			//     <w:sz w:val="22"/>
+		        
+			if (rPrDefault!=null
+					&& rPrDefault.getRPr()!=null
+						&& rPrDefault.getRPr().getSz()!=null) {
+				
+				HpsMeasure sz = rPrDefault.getRPr().getSz();
+				FontSize.mediumHalfPts.set(sz.getVal());
+			}
+		}
+	}
+	
+	private void unsetDefaultFontSize() {
+		FontSize.mediumHalfPts.remove(); // remove thread local var when we're done
+	}
 
     /**
      * Convert the well formed XHTML contained in file to a list of WML objects.
@@ -550,7 +583,9 @@ public class XHTMLImporter {
 
     
     private void traverse(Box box, TableProperties tableProperties) throws Docx4JException {
+    	setDefaultFontSize();
     	traverse( box, null,  tableProperties);
+    	unsetDefaultFontSize();
     }    
     
     private void traverse(Box box,  Box parent, TableProperties tableProperties) throws Docx4JException {
