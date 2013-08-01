@@ -44,6 +44,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -193,6 +194,8 @@ public class XHTMLImporter {
 	 * the first font family for which there is a mapping is the one
 	 * which will be used. 
 	 * 
+	 * xhtml-renderer's CSSName defaults font-family: serif
+	 * 
 	 * It is your responsibility to ensure a suitable font is available 
 	 * on the target system (or embedded in the docx package).  If we 
 	 * (eventually) support CSS @font-face, docx4j could do that
@@ -221,6 +224,18 @@ public class XHTMLImporter {
 	       return super.get(key.toLowerCase());
 	    }
 	}	
+
+	
+	private static Set<String> cssWhiteList = null;
+	
+	/**
+	 * If the CSS white list is non-null,
+	 * a CSS property will only be honoured if it is on the list.
+	 * @param cssWhiteList the cssWhiteList to set
+	 */
+	public static void setCssWhiteList(Set<String> cssWhiteList) {
+		XHTMLImporter.cssWhiteList = cssWhiteList;
+	}
 
 	private XHTMLImporter(WordprocessingMLPackage wordMLPackage) {
     	this.wordMLPackage= wordMLPackage;
@@ -506,6 +521,14 @@ public class XHTMLImporter {
             CSSName name = CSSName.getByID(i);
             
             if (name.toString().startsWith("-fs")) continue;
+            
+            if (cssWhiteList!=null) {
+            	if (cssWhiteList.contains(name.toString())) {
+//            		log.debug("Whitelist: contains " + name.toString() );
+            	} else {
+            		continue; // ignore it
+            	}
+            }
                         
             FSDerivedValue val = cs.valueByName(name); // walks parents as necessary to get the value
             
