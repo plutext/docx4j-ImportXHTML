@@ -48,8 +48,10 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.Source;
 
 import org.apache.commons.codec.binary.Base64;
@@ -66,6 +68,7 @@ import org.docx4j.model.properties.PropertyFactory;
 import org.docx4j.model.properties.paragraph.AbstractParagraphProperty;
 import org.docx4j.model.properties.run.AbstractRunProperty;
 import org.docx4j.model.properties.run.FontSize;
+import org.docx4j.model.styles.StyleTree;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.exceptions.InvalidFormatException;
 import org.docx4j.openpackaging.exceptions.InvalidOperationException;
@@ -99,6 +102,7 @@ import org.docx4j.wml.P.Hyperlink;
 import org.docx4j.wml.PPrBase.NumPr;
 import org.docx4j.wml.PPrBase.NumPr.Ilvl;
 import org.docx4j.wml.PPrBase.NumPr.NumId;
+import org.docx4j.wml.PPrBase.PStyle;
 import org.docx4j.wml.TcPrInner.GridSpan;
 import org.docx4j.wml.TcPrInner.VMerge;
 import org.w3c.dom.Document;
@@ -133,10 +137,8 @@ import org.xml.sax.InputSource;
  * the classpath.  Once this problem is fixed, things work better.
  * 
  * TODO:
- * - fonts
- * - underline, insert, delete
+ * - insert, delete
  * - space-before, space-after unrecognized CSS property
- * - no attempt is made to convert CSS classes to Word styles
  * 
  * @author jharrop
  * @since 2.8
@@ -248,6 +250,8 @@ public class XHTMLImporter {
 			((WordprocessingMLPackage)wordMLPackage).getMainDocumentPart().getPropertyResolver().activateStyle(hyperlinkStyleId);
 		}
 		
+		initStyleMap(wordMLPackage.getMainDocumentPart().getStyleDefinitionsPart());
+		
 		imports = Context.getWmlObjectFactory().createBody();
 		contentContextStack.push(imports);
     }
@@ -281,6 +285,19 @@ public class XHTMLImporter {
 	private void unsetDefaultFontSize() {
 		FontSize.mediumHalfPts.remove(); // remove thread local var when we're done
 	}
+	
+	java.util.Map<String, org.docx4j.wml.Style> stylesByID = new java.util.HashMap<String, org.docx4j.wml.Style>();
+    private void initStyleMap(StyleDefinitionsPart sdp) {
+    	
+    	if (sdp==null) return;
+
+    	org.docx4j.wml.Styles styles = sdp.getJaxbElement();
+    	
+		for ( org.docx4j.wml.Style s : styles.getStyle() ) {				
+			stylesByID.put(s.getStyleId(), s);				
+		}
+    }
+	
 
     /**
      * Convert the well formed XHTML contained in file to a list of WML objects.
@@ -629,6 +646,7 @@ public class XHTMLImporter {
             } else {            
                 log.debug("BB"  + "<" + e.getNodeName() + " " + box.getStyle().toStringMine() );
                 log.debug(box.getStyle().getDisplayMine() );
+//                log.debug(box.getElement().getAttribute("class"));
                 
                 
             	//Map cssMap = styleReference.getCascadedPropertiesMap(e);
@@ -970,6 +988,8 @@ public class XHTMLImporter {
 
 	            } else {
 	            	
+	            	// Paragraph processing
+	            	
 	            	// Avoid creating paragraphs for html, body
 //	            	if (contentContext.getContent().size()>0 && paraStillEmpty) {
 //			            contentContext.getContent().remove( contentContext.getContent().size()-1);                                        		
@@ -977,8 +997,50 @@ public class XHTMLImporter {
 	            	
 		            // Paragraph level styling
 	            	P currentP = this.getCurrentParagraph(true);
-		            currentP.setPPr(
-		            		addParagraphProperties( cssMap ));
+	            	
+	                PPr pPr =  Context.getWmlObjectFactory().createPPr();
+	                currentP.setPPr(pPr);
+	            	
+	            	if (box.getElement()!=null
+	            			&& box.getElement().getAttribute("class")!=null) {
+	            		
+	            		String cssClass = box.getElement().getAttribute("class").trim();
+	            		if (cssClass.equals("")) {
+		            		addParagraphProperties(pPr, cssMap );	            			
+	            		} else {
+		            		// Our XHTML export gives a space separated list of class names,
+		            		// reflecting the style hierarchy.  Here, we just want the first one.
+		            		// TODO, replace this with a configurable stylenamehandler.
+		            		int pos = cssClass.indexOf(" ");
+		            		if (pos>-1) {
+		            			cssClass = cssClass.substring(0,  pos);
+		            		}
+		            		
+		            		// if the docx contains this stylename, set it
+		            		Style s = this.stylesByID.get(cssClass);
+		            		if (s==null) {
+		            			log.debug("No docx style for @class='" + cssClass + "'");
+			            		addParagraphProperties(pPr, cssMap );	            			
+		            		} else if (s.getType()!=null && s.getType().equals("paragraph")) {
+		            			PStyle pStyle = Context.getWmlObjectFactory().createPPrBasePStyle();
+		            			pPr.setPStyle(pStyle);
+		            			pStyle.setVal(cssClass);
+		            			// don't honour ad-hoc formatting made in XHTML,
+		            			// where a proper style is available.
+		            			// 1. as a practical matter, we can't distinguish Flying Saucer defaults from real XHTML input
+		            			// 2. where the XHTML has come from a web editor,
+		            			//    (i)  the web editor isn't a great approximation of what they might want in Word,
+		            			//    (ii) often you'd want to cleanse the user input in this way anyway
+		            			// That said, maybe we'll need to add a switch/config option to 
+			            		// addParagraphProperties(pPr, cssMap );
+		            		} else {
+		            			log.debug("For docx style for @class='" + cssClass + "', but its not a paragraph style ");
+			            		addParagraphProperties(pPr, cssMap );	            			
+		            		}
+	            		}
+	            	} else {	            	
+	            		addParagraphProperties(pPr, cssMap );
+	            	}
 		            
 		            if (e.getNodeName().equals("li")) {
 		            	addNumbering(e, cssMap);
@@ -1448,15 +1510,17 @@ public class XHTMLImporter {
     private void  processInlineBox( InlineBox inlineBox) {
     	
         // Doesn't extend box
-        Styleable s = ((InlineBox)inlineBox );
+        Styleable s = inlineBox;
     	
     	if (log.isDebugEnabled() ) {
         	log.debug(inlineBox.toString());
 
         	if (s.getElement() == null)
         		log.debug("Null element name" ); 
-        	else 
+        	else {
         		log.debug(s.getElement().getNodeName());
+//                log.debug(s.getElement().getAttribute("class"));
+        	}
     	}
     			
     			
@@ -1701,7 +1765,7 @@ public class XHTMLImporter {
 	private void setRFont(CSSValue fontFamily, RPr rpr) {
 		
 		if (fontFamily==null) return;
-		log.debug(fontFamily.getCssText());
+//		log.debug(fontFamily.getCssText());
 		
 		// Short circuit
 		RFonts rfonts = fontFamiliesToFont.get(fontFamily.getCssText());
@@ -1728,9 +1792,8 @@ public class XHTMLImporter {
     private Map<String, RFonts> fontFamiliesToFont = new HashMap<String, RFonts>(); 
     
 	
-    private PPr addParagraphProperties(Map cssMap) {
+    private void addParagraphProperties(PPr pPr, Map cssMap) {
 
-        PPr pPr =  Context.getWmlObjectFactory().createPPr();
         
         for (Object o : cssMap.keySet()) {
         	
@@ -1763,7 +1826,6 @@ public class XHTMLImporter {
 //        }
         
     	
-        return pPr;
     }
 
     RPr addRunProperties(Map cssMap) {
