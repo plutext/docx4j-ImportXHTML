@@ -62,6 +62,7 @@ import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.XmlUtils;
 import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.jaxb.Context;
+import org.docx4j.model.PropertyResolver;
 import org.docx4j.model.fields.FieldRef;
 import org.docx4j.model.properties.Property;
 import org.docx4j.model.properties.PropertyFactory;
@@ -1620,13 +1621,18 @@ public class XHTMLImporter {
             			
 	                	Hyperlink h = null;
 	                	String linkText = inlineBox.getElement().getTextContent();
+	                	
+	                    RPr rPr =  Context.getWmlObjectFactory().createRPr();
+            			addRunProperties(rPr, cssMap );
+	                	
 	                	log.debug(linkText);
 	                	if (linkText!=null
 	                			&& !linkText.trim().equals("")) {
+
 	                		
 	                    	h = createHyperlink(
 	                    			href, 
-	                    			addRunProperties( cssMap ),
+	                    			rPr,
 	                    			inlineBox.getText(), rp);                                    	            		
 	                    	this.getCurrentParagraph(true).getContent().add(h);
 	                        
@@ -1647,7 +1653,7 @@ public class XHTMLImporter {
 	                		log.warn("Expected hyperlink content, since tag not self-closing");
 	                    	h = createHyperlink(
 	                    			href, 
-	                    			addRunProperties( cssMap ),
+	                    			rPr,
 	                    			href, rp);                                    	            		
 	                    	this.getCurrentParagraph(true).getContent().add(h);
 		                	paraStillEmpty = false;            				                	
@@ -1739,7 +1745,7 @@ public class XHTMLImporter {
 	 * @param cssMap
 	 * @param theText
 	 */
-	private void addRun(Map<String, CSSValue> cssMap, String theText) {
+	private void addRun( Map<String, CSSValue> cssMap, String theText) {
 		
 		R run = Context.getWmlObjectFactory().createR();
 		Text text = Context.getWmlObjectFactory().createText();
@@ -1753,8 +1759,10 @@ public class XHTMLImporter {
 		getListForRun().getContent().add(run);
 		
 		// Run level styling
-		run.setRPr(
-				addRunProperties( cssMap ));
+        RPr rPr =  Context.getWmlObjectFactory().createRPr();
+        run.setRPr(rPr);
+        // TODO add run level style handling here..
+		addRunProperties(rPr, cssMap );
 		
 		// Font is handled separately
 		CSSValue fontFamily = cssMap.get("font-family");
@@ -1828,26 +1836,38 @@ public class XHTMLImporter {
     	
     }
 
-    RPr addRunProperties(Map cssMap) {
-
-        RPr rPr =  Context.getWmlObjectFactory().createRPr();
-        
+    private void addRunProperties(RPr rPr, Map cssMap) {
+    	
         for (Object o : cssMap.keySet()) {
         	
         	String cssName = (String)o;
         	CSSValue cssValue = (CSSValue)cssMap.get(cssName);
         	
-        	Property p = PropertyFactory.createPropertyFromCssName(cssName, cssValue);
+        	Property runProp = PropertyFactory.createPropertyFromCssName(cssName, cssValue);
         	
-        	if (p!=null) {
-	        	if (p instanceof AbstractRunProperty) {        		
-	        		((AbstractRunProperty)p).set(rPr);
+        	if (runProp!=null) {
+	        	if (runProp instanceof AbstractRunProperty) {  
+	        		((AbstractRunProperty)runProp).set(rPr);
 	        	} else {
 	            	//log.debug(p.getClass().getName() );
 	        	}
         	}
         }
-        return rPr;
+        
+    	// An objective here is to avoid adding a run-level property which
+    	// simply duplicates something which is already in the paragraph style,
+    	// since such direct formatting is probably not the author's intent,
+    	// and makes the document less maintainable
+    	RPr pLevelRPr = null;
+    	PropertyResolver propertyResolver = this.wordMLPackage.getMainDocumentPart().getPropertyResolver();
+    	if (this.getCurrentParagraph(false).getPPr()!=null
+    			&& this.getCurrentParagraph(false).getPPr().getPStyle()!=null) {
+    		String styleId = this.getCurrentParagraph(false).getPPr().getPStyle().getVal();
+    		pLevelRPr = propertyResolver.getEffectiveRPr(styleId);
+    		RPrCleanser.removeRedundantProperties(pLevelRPr, rPr);
+    		// Works nicely, except for color.  TODO: look into that
+    	}
+        
     }
 
 	private Hyperlink createHyperlink(String url, RPr rPr, String linkText, RelationshipsPart rp) {
