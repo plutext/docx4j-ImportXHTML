@@ -217,29 +217,73 @@ public class XHTMLImporter {
 	 */
 	private static class FontFamilyMap extends HashMap<String, RFonts> {
 
-	    @Override
-	    public RFonts put(String key, RFonts value) {
-	       return super.put(key.toLowerCase(), value);
-	    }
+		@Override
+		public RFonts put(String key, RFonts value) {
+			return super.put(key.toLowerCase(), value);
+		}
 
-	    // not @Override because that would require the key parameter to be of type Object
-	    public RFonts get(String key) {
-	       return super.get(key.toLowerCase());
-	    }
-	}	
+		// not @Override because that would require the key parameter to be of
+		// type Object
+		public RFonts get(String key) {
+			return super.get(key.toLowerCase());
+		}
+	}
 
+	/**
+	 * CLASS_TO_STYLE_ONLY: a Word style matching a class attribute will
+	 * be used, another nothing else
+	 * 
+	 * CLASS_PLUS_OTHER: a Word style matching a class attribute will
+	 * be used; other css will be translated to direct formatting
+	 * 
+	 * IGNORE_CLASS: css will be translated to direct formatting
+	 *
+	 */
+	public enum FormattingOption {
+
+		CLASS_TO_STYLE_ONLY, CLASS_PLUS_OTHER, IGNORE_CLASS;
+	}
+
+	/**
+	 * @param runFormatting
+	 *            the runFormatting to set
+	 */
+	public static void setRunFormatting(FormattingOption runFormatting) {
+		XHTMLImporter.runFormatting = runFormatting;
+	}
+	private static FormattingOption runFormatting = FormattingOption.CLASS_PLUS_OTHER;
+
+	/**
+	 * @param paragraphFormatting
+	 *            the paragraphFormatting to set
+	 */
+	public static void setParagraphFormatting(
+			FormattingOption paragraphFormatting) {
+		XHTMLImporter.paragraphFormatting = paragraphFormatting;
+	}
+	private static FormattingOption paragraphFormatting = FormattingOption.CLASS_PLUS_OTHER;
+
+	// private static FormattingOption tableFormatting =
+	// FormattingOption.CLASS_PLUS_OTHER;
 	
-	private static Set<String> cssWhiteList = null;
 	
 	/**
 	 * If the CSS white list is non-null,
 	 * a CSS property will only be honoured if it is on the list.
+	 * 
+	 * Useful where suitable default values aren't being provided via
+	 * @class, or direct values are otherwise providing unwanted results.
+	 * 
+	 * Using this should be a last resort.
+	 * 
 	 * @param cssWhiteList the cssWhiteList to set
 	 */
 	public static void setCssWhiteList(Set<String> cssWhiteList) {
 		XHTMLImporter.cssWhiteList = cssWhiteList;
 	}
+	private static Set<String> cssWhiteList = null;
 
+	
 	private XHTMLImporter(WordprocessingMLPackage wordMLPackage) {
     	this.wordMLPackage= wordMLPackage;
     	rp = wordMLPackage.getMainDocumentPart().getRelationshipsPart();
@@ -1002,46 +1046,41 @@ public class XHTMLImporter {
 	                PPr pPr =  Context.getWmlObjectFactory().createPPr();
 	                currentP.setPPr(pPr);
 	            	
-	            	if (box.getElement()!=null
-	            			&& box.getElement().getAttribute("class")!=null) {
-	            		
-	            		String cssClass = box.getElement().getAttribute("class").trim();
-	            		if (cssClass.equals("")) {
-		            		addParagraphProperties(pPr, cssMap );	            			
-	            		} else {
-		            		// Our XHTML export gives a space separated list of class names,
-		            		// reflecting the style hierarchy.  Here, we just want the first one.
-		            		// TODO, replace this with a configurable stylenamehandler.
-		            		int pos = cssClass.indexOf(" ");
-		            		if (pos>-1) {
-		            			cssClass = cssClass.substring(0,  pos);
-		            		}
-		            		
-		            		// if the docx contains this stylename, set it
-		            		Style s = this.stylesByID.get(cssClass);
-		            		if (s==null) {
-		            			log.debug("No docx style for @class='" + cssClass + "'");
-			            		addParagraphProperties(pPr, cssMap );	            			
-		            		} else if (s.getType()!=null && s.getType().equals("paragraph")) {
-		            			PStyle pStyle = Context.getWmlObjectFactory().createPPrBasePStyle();
-		            			pPr.setPStyle(pStyle);
-		            			pStyle.setVal(cssClass);
-		            			// don't honour ad-hoc formatting made in XHTML,
-		            			// where a proper style is available.
-		            			// 1. as a practical matter, we can't distinguish Flying Saucer defaults from real XHTML input
-		            			// 2. where the XHTML has come from a web editor,
-		            			//    (i)  the web editor isn't a great approximation of what they might want in Word,
-		            			//    (ii) often you'd want to cleanse the user input in this way anyway
-		            			// That said, maybe we'll need to add a switch/config option to 
-			            		// addParagraphProperties(pPr, cssMap );
-		            		} else {
-		            			log.debug("For docx style for @class='" + cssClass + "', but its not a paragraph style ");
-			            		addParagraphProperties(pPr, cssMap );	            			
-		            		}
-	            		}
-	            	} else {	            	
+	                if (paragraphFormatting.equals(FormattingOption.IGNORE_CLASS)) {
 	            		addParagraphProperties(pPr, cssMap );
-	            	}
+	                } else {
+	                	// CLASS_TO_STYLE_ONLY or CLASS_PLUS_OTHER
+		            	if (box.getElement()!=null
+		            			&& box.getElement().getAttribute("class")!=null) {
+		            		
+		            		String cssClass = box.getElement().getAttribute("class").trim();
+		            		if (!cssClass.equals("")) {
+			            		// Our XHTML export gives a space separated list of class names,
+			            		// reflecting the style hierarchy.  Here, we just want the first one.
+			            		// TODO, replace this with a configurable stylenamehandler.
+			            		int pos = cssClass.indexOf(" ");
+			            		if (pos>-1) {
+			            			cssClass = cssClass.substring(0,  pos);
+			            		}
+			            		
+			            		// if the docx contains this stylename, set it
+			            		Style s = this.stylesByID.get(cssClass);
+			            		if (s==null) {
+			            			log.debug("No docx style for @class='" + cssClass + "'");
+			            		} else if (s.getType()!=null && s.getType().equals("paragraph")) {
+			            			PStyle pStyle = Context.getWmlObjectFactory().createPPrBasePStyle();
+			            			pPr.setPStyle(pStyle);
+			            			pStyle.setVal(cssClass);
+			            		} else {
+			            			log.debug("For docx style for @class='" + cssClass + "', but its not a paragraph style ");
+			            		}
+		            		}
+		            	}
+            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
+            				addParagraphProperties(pPr, cssMap );
+            			}
+		            	
+	            	} 
 		            
 		            if (e.getNodeName().equals("li")) {
 		            	addNumbering(e, cssMap);
@@ -1584,6 +1623,11 @@ public class XHTMLImporter {
         } else {
             debug = "<" + s.getElement().getNodeName();
             
+            String cssClass = null;
+        	if (s.getElement().getAttribute("class")!=null) {
+        	 	cssClass=s.getElement().getAttribute("class").trim();
+        	}
+            
             if (s.getElement().getNodeName().equals("a")) {
             	
             	if (inlineBox.isStartsHere()) {
@@ -1610,7 +1654,7 @@ public class XHTMLImporter {
                 				|| href.trim().equals("")) {
         		        	
 		                	String theText = inlineBox.getElement().getTextContent();
-		                    addRun(cssMap, theText);
+		                    addRun(cssClass, cssMap, theText);
 	
 		                	return;
         		        }
@@ -1623,8 +1667,8 @@ public class XHTMLImporter {
 	                	String linkText = inlineBox.getElement().getTextContent();
 	                	
 	                    RPr rPr =  Context.getWmlObjectFactory().createRPr();
-            			addRunProperties(rPr, cssMap );
-	                	
+	                    formatRPr(rPr, cssClass, cssMap);
+	                    	                	
 	                	log.debug(linkText);
 	                	if (linkText!=null
 	                			&& !linkText.trim().equals("")) {
@@ -1728,9 +1772,14 @@ public class XHTMLImporter {
             String theText = inlineBox.getTextNode().getTextContent(); 
             log.debug("Processing " + theText);
             
-            paraStillEmpty = false;                                    
-                        
-            addRun(cssMap, theText);
+            paraStillEmpty = false;   
+            
+            String cssClass = null;
+        	if (s.getElement()!=null
+        			&& s.getElement().getAttribute("class")!=null) {
+        	 	cssClass=s.getElement().getAttribute("class").trim();
+        	}
+            addRun(cssClass, cssMap, theText);
     	            
 //                                    else {
 //                                    	// Get it from the parent element eg p
@@ -1745,7 +1794,7 @@ public class XHTMLImporter {
 	 * @param cssMap
 	 * @param theText
 	 */
-	private void addRun( Map<String, CSSValue> cssMap, String theText) {
+	private void addRun( String cssClass, Map<String, CSSValue> cssMap, String theText) {
 		
 		R run = Context.getWmlObjectFactory().createR();
 		Text text = Context.getWmlObjectFactory().createText();
@@ -1761,12 +1810,53 @@ public class XHTMLImporter {
 		// Run level styling
         RPr rPr =  Context.getWmlObjectFactory().createRPr();
         run.setRPr(rPr);
-        // TODO add run level style handling here..
+        formatRPr(rPr, cssClass, cssMap);
+	}
+		
+	private void formatRPr(RPr rPr, String cssClass, Map<String, CSSValue> cssMap) {
+
 		addRunProperties(rPr, cssMap );
 		
-		// Font is handled separately
+        if (runFormatting.equals(FormattingOption.IGNORE_CLASS)) {
+    		addRunProperties(rPr, cssMap );
+        } else {
+        	// CLASS_TO_STYLE_ONLY or CLASS_PLUS_OTHER
+        	if (cssClass!=null) {
+//        	if (box.getElement()!=null
+//        			&& box.getElement().getAttribute("class")!=null) {
+//        		String cssClass = box.getElement().getAttribute("class").trim();
+        		
+        		if (!cssClass.equals("")) {
+            		// Our XHTML export gives a space separated list of class names,
+            		// reflecting the style hierarchy.  Here, we just want the first one.
+            		// TODO, replace this with a configurable stylenamehandler.
+            		int pos = cssClass.indexOf(" ");
+            		if (pos>-1) {
+            			cssClass = cssClass.substring(0,  pos);
+            		}
+            		
+            		// if the docx contains this stylename, set it
+            		Style s = this.stylesByID.get(cssClass);
+            		if (s==null) {
+            			log.debug("No docx style for @class='" + cssClass + "'");
+            		} else if (s.getType()!=null && s.getType().equals("character")) {
+            			RStyle rStyle = Context.getWmlObjectFactory().createRStyle();
+            			rPr.setRStyle(rStyle);
+            			rStyle.setVal(cssClass);
+            		} else {
+            			log.debug("For docx style for @class='" + cssClass + "', but its not a character style ");
+            		}
+        		}
+        	}
+			if (runFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
+				addRunProperties(rPr, cssMap );
+			}
+        	
+    	} 
+				
+		// Font is handled separately.  TODO: review this
 		CSSValue fontFamily = cssMap.get("font-family");
-		setRFont(fontFamily, run.getRPr() );
+		setRFont(fontFamily, rPr );
 
 	}
 	
@@ -1833,6 +1923,23 @@ public class XHTMLImporter {
 //            Property p = PropertyFactory.createPropertyFromCssName(name, value)
 //        }
         
+    	// Avoid adding a property which
+    	// simply duplicates something which is already in the paragraph style,
+    	// since such direct formatting is probably not the author's intent,
+    	// and makes the document less maintainable
+    	PPr stylePPr = null;
+    	PropertyResolver propertyResolver = this.wordMLPackage.getMainDocumentPart().getPropertyResolver();
+    	if (this.getCurrentParagraph(false).getPPr()!=null
+    			&& this.getCurrentParagraph(false).getPPr().getPStyle()!=null) {
+    			// that's only be true for paragraphFormatting = FormattingOption.CLASS_PLUS_OTHER;
+    			// (we never get here for the other options)
+    		
+    		String styleId = this.getCurrentParagraph(false).getPPr().getPStyle().getVal();
+    		stylePPr = propertyResolver.getEffectivePPr(styleId);
+    		PPrCleanser.removeRedundantProperties(stylePPr, pPr);
+    	}
+    	
+    	// TODO: cleansing in table context
     	
     }
 
@@ -1858,16 +1965,27 @@ public class XHTMLImporter {
     	// simply duplicates something which is already in the paragraph style,
     	// since such direct formatting is probably not the author's intent,
     	// and makes the document less maintainable
-    	RPr pLevelRPr = null;
+    	RPr styleRPr = null;
     	PropertyResolver propertyResolver = this.wordMLPackage.getMainDocumentPart().getPropertyResolver();
     	if (this.getCurrentParagraph(false).getPPr()!=null
     			&& this.getCurrentParagraph(false).getPPr().getPStyle()!=null) {
+    		
     		String styleId = this.getCurrentParagraph(false).getPPr().getPStyle().getVal();
-    		pLevelRPr = propertyResolver.getEffectiveRPr(styleId);
-    		RPrCleanser.removeRedundantProperties(pLevelRPr, rPr);
+    		styleRPr = propertyResolver.getEffectiveRPr(styleId);
+    		RPrCleanser.removeRedundantProperties(styleRPr, rPr);
     		// Works nicely, except for color.  TODO: look into that
     	}
-        
+    	// Repeat the process for overlap with run level styles,
+    	propertyResolver = this.wordMLPackage.getMainDocumentPart().getPropertyResolver();
+    	if (rPr.getRStyle()!=null) {
+    		
+    		String styleId = rPr.getRStyle().getVal();
+    		styleRPr = propertyResolver.getEffectiveRPr(styleId);
+    		RPrCleanser.removeRedundantProperties(styleRPr, rPr);
+    	}
+    	
+    	// TODO: cleansing in table context
+    	
     }
 
 	private Hyperlink createHyperlink(String url, RPr rPr, String linkText, RelationshipsPart rp) {
