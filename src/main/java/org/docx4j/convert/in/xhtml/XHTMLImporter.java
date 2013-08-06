@@ -263,10 +263,14 @@ public class XHTMLImporter {
 	}
 	private static FormattingOption paragraphFormatting = FormattingOption.CLASS_PLUS_OTHER;
 
-	// private static FormattingOption tableFormatting =
-	// FormattingOption.CLASS_PLUS_OTHER;
-	
-	
+	/**
+	 * @param tableFormatting the tableFormatting to set
+	 */
+	public static void setTableFormatting(FormattingOption tableFormatting) {
+		XHTMLImporter.tableFormatting = tableFormatting;
+	}
+	private static FormattingOption tableFormatting = FormattingOption.CLASS_PLUS_OTHER;
+
 	/**
 	 * If the CSS white list is non-null,
 	 * a CSS property will only be honoured if it is on the list.
@@ -780,9 +784,12 @@ public class XHTMLImporter {
             		TblPr tblPr = Context.getWmlObjectFactory().createTblPr();
             		tbl.setTblPr(tblPr);    
 
-            		TblStyle tblStyle = Context.getWmlObjectFactory().createCTTblPrBaseTblStyle();
-            		tblStyle.setVal("TableGrid");
-            		tblPr.setTblStyle(tblStyle);  
+                    String cssClass = null;
+                	if (e.getAttribute("class")!=null) {
+                	 	cssClass=e.getAttribute("class").trim();
+                	}
+                    setTableStyle(tblPr, cssClass, "TableGrid");
+            		
             		
 					// table borders
 					TblBorders borders = Context.getWmlObjectFactory().createTblBorders();
@@ -1366,11 +1373,14 @@ public class XHTMLImporter {
 			}
 			
 			TblPr tblPr = Context.getWmlObjectFactory().createTblPr();
-
-            TblStyle tblStyle = Context.getWmlObjectFactory().createCTTblPrBaseTblStyle();
-            tblStyle.setVal("none");
-            tblPr.setTblStyle(tblStyle);
             contentContext.getContent().add(tblPr);
+            
+            String cssClass = null;
+        	if (parent.getElement().getAttribute("class")!=null) {
+        	 	cssClass=parent.getElement().getAttribute("class").trim();
+        	}
+            
+            setTableStyle(tblPr, cssClass, "none");
 			
 			Tr tr = Context.getWmlObjectFactory().createTr();
 			contentContext.getContent().add(tr);
@@ -1386,6 +1396,50 @@ public class XHTMLImporter {
 		    }
 		}
 //		return contentContext;
+	}
+	
+	private void setTableStyle(TblPr tblPr, String cssClass, String fallbackStyle) {
+
+        TblStyle tblStyle = Context.getWmlObjectFactory().createCTTblPrBaseTblStyle();
+        tblPr.setTblStyle(tblStyle);
+		
+        if (tableFormatting.equals(FormattingOption.IGNORE_CLASS)) {
+            tblStyle.setVal(fallbackStyle);
+        } else {
+        	// CLASS_TO_STYLE_ONLY or CLASS_PLUS_OTHER
+        	if (cssClass!=null) {
+//        	if (box.getElement()!=null
+//        			&& box.getElement().getAttribute("class")!=null) {
+//        		String cssClass = box.getElement().getAttribute("class").trim();
+        		
+        		if (!cssClass.equals("")) {
+            		// Our XHTML export gives a space separated list of class names,
+            		// reflecting the style hierarchy.  Here, we just want the first one.
+            		// TODO, replace this with a configurable stylenamehandler.
+            		int pos = cssClass.indexOf(" ");
+            		if (pos>-1) {
+            			cssClass = cssClass.substring(0,  pos);
+            		}
+            		
+            		// if the docx contains this stylename, set it
+            		Style s = this.stylesByID.get(cssClass);
+            		if (s==null) {
+            			log.debug("No docx style for @class='" + cssClass + "'");
+                        tblStyle.setVal(fallbackStyle);
+            		} else if (s.getType()!=null && s.getType().equals("table")) {
+                        tblStyle.setVal(cssClass);
+            		} else {
+            			log.debug("For docx style for @class='" + cssClass + "', but its not a character style ");
+                        tblStyle.setVal(fallbackStyle);
+            		}
+        		}
+        	}
+//			if (tableFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
+//				addRunProperties(rPr, cssMap );
+//			}
+        	
+    	} 
+		
 	}
     
     private void setCellWidthAuto(TcPr tcPr) {
