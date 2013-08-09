@@ -231,7 +231,7 @@ public class XHTMLImporter {
 
 	/**
 	 * CLASS_TO_STYLE_ONLY: a Word style matching a class attribute will
-	 * be used, another nothing else
+	 * be used, and nothing else
 	 * 
 	 * CLASS_PLUS_OTHER: a Word style matching a class attribute will
 	 * be used; other css will be translated to direct formatting
@@ -1092,8 +1092,9 @@ public class XHTMLImporter {
 		            if (e.getNodeName().equals("li")) {
 		            	addNumbering(e, cssMap);
 		            } else if  (e.getNodeName().equals("img")) {
-		        		// TODO, should we be using ReplacedElementFactory approach instead?		            	
-		            	addImage(e);
+		        		// TODO, should we be using ReplacedElementFactory approach instead?		
+		            	
+		            	addImage(blockBox);
 		            }
 		            
 	            }
@@ -1450,7 +1451,10 @@ public class XHTMLImporter {
 		tcPr.setTcW(tblW);    	
     }
 
-	private void addImage(Element e) {
+	private void addImage(BlockBox box) {
+		
+		Element e = box.getElement(); 
+		
 		boolean isError = false;
 		try {
 			byte[] imageBytes = null;
