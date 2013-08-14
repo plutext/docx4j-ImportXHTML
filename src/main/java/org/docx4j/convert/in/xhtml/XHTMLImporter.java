@@ -287,6 +287,8 @@ public class XHTMLImporter {
 	}
 	private static Set<String> cssWhiteList = null;
 
+
+	private XHTMLImporter() {}
 	
 	private XHTMLImporter(WordprocessingMLPackage wordMLPackage) {
     	this.wordMLPackage= wordMLPackage;
@@ -628,16 +630,28 @@ public class XHTMLImporter {
      */
     private LinkedList<ContentAccessor> contentContextStack = new LinkedList<ContentAccessor>();
     
-    private void pushStack(ContentAccessor ca) {
+    private void pushBlockStack(ContentAccessor ca) {
     	contentContextStack.push(ca);
     	attachmentPointP = null;
     }
-    private ContentAccessor popStack() {
+    private ContentAccessor popBlockStack() {
     	attachmentPointP = null;
     	return contentContextStack.pop();
     }
     
+    private LinkedList<BlockBox> listStack = new LinkedList<BlockBox>();
+    	// These are the incoming ul and ol.
+    	// Generally, these will be BlockBox (display:inline or display:inline-block).
+    	// <ul style="display:inline"> hides them entirely..
+    
+    private void pushListStack(BlockBox ca) {
+    	listStack.push(ca);
+    }
+    private BlockBox popListStack() {
+    	return listStack.pop();
+    }
 
+    
     // Our runs may go into a P, or a hyperlink.
     // Currently the approach to tracking this is simple.
     // The content goes into a P, unless the hyperlink object is non-null.
@@ -716,6 +730,10 @@ public class XHTMLImporter {
 //    		            contentContext.getContent().add(currentP);
 //    		            paraStillEmpty = true;
 //                	}            		
+            	} else if (e.getNodeName().equals("ol")
+            			|| e.getNodeName().equals("ul") ) {
+            		
+            		pushListStack(blockBox);
                 	
             	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableSectionBox) {
                 	// nb, both TableBox and TableSectionBox 
@@ -778,7 +796,7 @@ public class XHTMLImporter {
             		contentContext.getContent().add(tbl);
 		            paraStillEmpty = true;
 //		            contentContext = tbl;
-		            pushStack(tbl);
+		            pushBlockStack(tbl);
 		            mustPop = true;
 		            
             		TblPr tblPr = Context.getWmlObjectFactory().createTblPr();
@@ -901,7 +919,7 @@ public class XHTMLImporter {
             		Tbl tbl = Context.getWmlObjectFactory().createTbl();
             		contentContext.getContent().add(tbl);
 		            paraStillEmpty = true;
-		            pushStack(tbl);
+		            pushBlockStack(tbl);
 		            mustPop = true;
 		            
             		
@@ -920,7 +938,7 @@ public class XHTMLImporter {
             		Tr tr = Context.getWmlObjectFactory().createTr();
             		this.contentContextStack.peek().getContent().add(tr);
 		            paraStillEmpty = true;
-		            pushStack(tr);
+		            pushBlockStack(tr);
 		            mustPop = true;
             		
             		
@@ -953,7 +971,7 @@ public class XHTMLImporter {
 //					}
 					Tc tc = Context.getWmlObjectFactory().createTc();
             		contentContextStack.peek().getContent().add(tc);
-            		pushStack(tc);//.getContent();
+            		pushBlockStack(tc);//.getContent();
 		            mustPop = true;
 
             		// if the td contains bare text (eg <td>apple</td>)
@@ -1117,6 +1135,7 @@ public class XHTMLImporter {
 	                case BlockBox.CONTENT_BLOCK:
 	                	log.debug(".. which are BlockBox.CONTENT_BLOCK");	                	
 	                    for (Object o : ((BlockBox)box).getChildren() ) {
+	                        log.debug("   processing child " + o.getClass().getName() );
 	                    	
 	                        traverse((Box)o,  box, tableProperties);                    
 	                        log.debug(".. processed child " + o.getClass().getName() );
@@ -1161,7 +1180,12 @@ public class XHTMLImporter {
             log.debug("Done processing children of " + box.getClass().getName() );
             // contentContext gets its old value back each time recursion finishes,
             // ensuring elements are added at the appropriate level (eg inside tr) 
-            
+
+	    	if (e.getNodeName().equals("ol")
+	    			|| e.getNodeName().equals("ul") ) {
+	    		
+	    		popListStack();
+	    	}    
             
             if (this.contentContextStack.peek() instanceof Tc) {
                 // nested tables must end with a <p/> or Word 2010 can't open the docx!
@@ -1183,7 +1207,7 @@ public class XHTMLImporter {
             // new P
             attachmentPointP = null; 
             
-            if (mustPop) popStack();
+            if (mustPop) popBlockStack();
             	
 //            // An empty tc shouldn't make the table disappear!
 //            // TODO - make more elegant
@@ -1545,8 +1569,9 @@ public class XHTMLImporter {
 			
 			// TODO: support other list-style-type
 			
-			// TODO: generate list definitions based on CSS 
+			// TODO: generate list definitions based on CSS?
 			// (and multiple list definitions)
+			// .. and/or use Word list style?
 			
 		} catch (JAXBException je) {
 			// Shouldn't happen
@@ -1571,10 +1596,14 @@ public class XHTMLImporter {
 		    numPr.setNumId(numIdElement);
 		    numIdElement.setVal( num.getNumId() ); // point to the correct list
 		    
+		    // TODO: restart logic.  Basically, if this is a top-level item, and
+		    // there has been a plain paragraph since it was last used, then
+		    // need to restart numbering
+		    
 		    // The <w:ilvl> element
 		    Ilvl ilvlElement = Context.getWmlObjectFactory().createPPrBaseNumPrIlvl();
 		    numPr.setIlvl(ilvlElement);
-		    ilvlElement.setVal(BigInteger.valueOf(0));
+		    ilvlElement.setVal(BigInteger.valueOf(this.listStack.size()));
 		    
 		    // TMP: don't let this override our numbering
 		    this.getCurrentParagraph(true).getPPr().setInd(null);
