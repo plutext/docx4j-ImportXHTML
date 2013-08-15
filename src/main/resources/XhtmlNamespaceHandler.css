@@ -65,6 +65,12 @@ a:link, a:visited { text-decoration: underline }
   margin: 0.5in;
 }
 
+/* docx4j Flying Saucer overrides */
+
+    ul { list-style-type: disc; }
+    ul ul { list-style-type: circle; }
+    ul ul ul { list-style-type: square; }
+    
 /* Flying Saucer overrides, usually compensate for unimplemented stuff */
 
 /* don't handle all replaced things yet, besides xml should do this via entities!*/

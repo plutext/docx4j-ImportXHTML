@@ -27,248 +27,358 @@
  */
 package org.docx4j.convert.in.xhtml;
 
+import java.math.BigInteger;
+import java.util.LinkedList;
+import java.util.Map;
+
 import javax.xml.bind.JAXBException;
 
+import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.XmlUtils;
+import org.docx4j.jaxb.Context;
+import org.docx4j.model.properties.paragraph.Indent;
 import org.docx4j.openpackaging.parts.WordprocessingML.NumberingDefinitionsPart;
+import org.docx4j.org.xhtmlrenderer.css.constants.CSSName;
+import org.docx4j.org.xhtmlrenderer.css.style.derived.LengthValue;
+import org.docx4j.org.xhtmlrenderer.render.BlockBox;
+import org.docx4j.wml.CTLongHexNumber;
+import org.docx4j.wml.Jc;
+import org.docx4j.wml.Lvl;
+import org.docx4j.wml.NumFmt;
+import org.docx4j.wml.NumberFormat;
 import org.docx4j.wml.Numbering;
+import org.docx4j.wml.ObjectFactory;
+import org.docx4j.wml.P;
+import org.docx4j.wml.PPr;
+import org.docx4j.wml.PPrBase;
+import org.docx4j.wml.PPrBase.Ind;
+import org.docx4j.wml.PPrBase.NumPr;
+import org.docx4j.wml.PPrBase.NumPr.Ilvl;
+import org.docx4j.wml.PPrBase.NumPr.NumId;
+import org.docx4j.wml.RFonts;
+import org.docx4j.wml.RPr;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Element;
+import org.w3c.dom.css.CSSPrimitiveValue;
+import org.w3c.dom.css.CSSValue;
 
 public class ListHelper {
 	
-	Numbering.Num orderedList;
-	Numbering.Num unorderedList;
+	public static Logger log = LoggerFactory.getLogger(XHTMLImporter.class);		
 	
-	protected Numbering.Num getOrderedList(NumberingDefinitionsPart ndp) throws JAXBException {
-		
-		if (orderedList==null) {
-			orderedList = 
-					ndp.addAbstractListNumberingDefinition(
-							(Numbering.AbstractNum)XmlUtils.unmarshalString(olList));
-		}
-		return orderedList;
+	public ListHelper(NumberingDefinitionsPart ndp) {
+		this.ndp=ndp;
 	}
 	
-	protected Numbering.Num getUnorderedList(NumberingDefinitionsPart ndp) throws JAXBException {
-		
-		if (unorderedList==null) {
-			unorderedList = 
-					ndp.addAbstractListNumberingDefinition(
-							(Numbering.AbstractNum)XmlUtils.unmarshalString(ulList));
+	// Commented out for now; See list.txt
+//	public static final String XHTML_AbstractNum_For_OL = "XHTML_AbstractNum_For_OL";
+//	public static final String XHTML_AbstractNum_For_UL = "XHTML_AbstractNum_For_UL";	
+	
+	private ObjectFactory wmlObjectFactory  = Context.getWmlObjectFactory();
+	
+	private NumberingDefinitionsPart ndp;
+	
+    private LinkedList<BlockBox> listStack = new LinkedList<BlockBox>();
+	// These are the incoming ul and ol.
+	// Generally, these will be BlockBox (display:inline or display:inline-block).
+	// <ul style="display:inline"> hides them entirely..
+    
+    // The current list
+    private Numbering.AbstractNum abstractList;
+    private Numbering.Num concreteList;
+
+	protected void pushListStack(BlockBox ca) {
+		listStack.push(ca);
+	}
+	protected BlockBox popListStack() {
+		BlockBox box = listStack.pop();
+		if (listStack.size()==0) {
+			// We're not in a list any more
+			concreteList=null;
 		}
-		return unorderedList;
+		return box;
+	}
+	protected BlockBox peekListStack() {
+		return listStack.peek();
+	}	
+	/**
+	 * Creates a new empty abstract list.
+	 * 
+	 * @return
+	 * @throws JAXBException
+	 */
+	protected Numbering.AbstractNum createNewAbstractList() {
+		
+	    // Create object for abstractNum
+	    Numbering.AbstractNum numberingabstractnum = Context.getWmlObjectFactory().createNumberingAbstractNum(); 
+//	    numbering.getAbstractNum().add( numberingabstractnum); 
+	        numberingabstractnum.setAbstractNumId( BigInteger.valueOf( 0) );		
+	        
+//	        // Create object for nsid
+//	        CTLongHexNumber longhexnumber = Context.getWmlObjectFactory().createCTLongHexNumber(); 
+//	        numberingabstractnum.setNsid(longhexnumber); 
+//	            longhexnumber.setVal( "3DEB26AB"); 
+	            
+	        // Create object for multiLevelType
+	        Numbering.AbstractNum.MultiLevelType numberingabstractnummultileveltype = Context.getWmlObjectFactory().createNumberingAbstractNumMultiLevelType(); 
+	        numberingabstractnum.setMultiLevelType(numberingabstractnummultileveltype); 
+	            numberingabstractnummultileveltype.setVal( "multilevel"); 
+	            
+//	        // Create object for tmpl
+//	        CTLongHexNumber longhexnumber2 = Context.getWmlObjectFactory().createCTLongHexNumber(); 
+//	        numberingabstractnum.setTmpl(longhexnumber2); 
+//	            longhexnumber2.setVal( "0C090023"); 	
+	            
+	        return numberingabstractnum;    
 	}
 	
 	
-	static final String ulList = 
-			  "<w:abstractNum w:abstractNumId=\"0\"  xmlns:ve=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:w10=\"urn:schemas-microsoft-com:office:word\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:wne=\"http://schemas.microsoft.com/office/word/2006/wordml\">"
-			    +"<w:nsid w:val=\"16892FB7\"/>"
-			    +"<w:multiLevelType w:val=\"hybridMultilevel\"/>"
-			    +"<w:tmpl w:val=\"5A4EB96A\"/>"
-			    +"<w:lvl w:ilvl=\"0\" w:tplc=\"0C090001\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"bullet\"/>"
-			      +"<w:lvlText w:val=\"\"/>"
-			      +"<w:lvlJc w:val=\"left\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"720\" w:hanging=\"360\"/>"
-			      +"</w:pPr>"
-			      +"<w:rPr>"
-			        +"<w:rFonts w:ascii=\"Symbol\" w:hAnsi=\"Symbol\" w:hint=\"default\"/>"
-			      +"</w:rPr>"
-			    +"</w:lvl>"
-			    +"<w:lvl w:ilvl=\"1\" w:tplc=\"0C090003\" w:tentative=\"1\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"bullet\"/>"
-			      +"<w:lvlText w:val=\"o\"/>"
-			      +"<w:lvlJc w:val=\"left\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"1440\" w:hanging=\"360\"/>"
-			      +"</w:pPr>"
-			      +"<w:rPr>"
-			        +"<w:rFonts w:ascii=\"Courier New\" w:hAnsi=\"Courier New\" w:cs=\"Courier New\" w:hint=\"default\"/>"
-			      +"</w:rPr>"
-			    +"</w:lvl>"
-			    +"<w:lvl w:ilvl=\"2\" w:tplc=\"0C090005\" w:tentative=\"1\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"bullet\"/>"
-			      +"<w:lvlText w:val=\"\"/>"
-			      +"<w:lvlJc w:val=\"left\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"2160\" w:hanging=\"360\"/>"
-			      +"</w:pPr>"
-			      +"<w:rPr>"
-			        +"<w:rFonts w:ascii=\"Wingdings\" w:hAnsi=\"Wingdings\" w:hint=\"default\"/>"
-			      +"</w:rPr>"
-			    +"</w:lvl>"
-			    +"<w:lvl w:ilvl=\"3\" w:tplc=\"0C090001\" w:tentative=\"1\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"bullet\"/>"
-			      +"<w:lvlText w:val=\"\"/>"
-			      +"<w:lvlJc w:val=\"left\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"2880\" w:hanging=\"360\"/>"
-			      +"</w:pPr>"
-			      +"<w:rPr>"
-			        +"<w:rFonts w:ascii=\"Symbol\" w:hAnsi=\"Symbol\" w:hint=\"default\"/>"
-			      +"</w:rPr>"
-			    +"</w:lvl>"
-			    +"<w:lvl w:ilvl=\"4\" w:tplc=\"0C090003\" w:tentative=\"1\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"bullet\"/>"
-			      +"<w:lvlText w:val=\"o\"/>"
-			      +"<w:lvlJc w:val=\"left\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"3600\" w:hanging=\"360\"/>"
-			      +"</w:pPr>"
-			      +"<w:rPr>"
-			        +"<w:rFonts w:ascii=\"Courier New\" w:hAnsi=\"Courier New\" w:cs=\"Courier New\" w:hint=\"default\"/>"
-			      +"</w:rPr>"
-			    +"</w:lvl>"
-			    +"<w:lvl w:ilvl=\"5\" w:tplc=\"0C090005\" w:tentative=\"1\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"bullet\"/>"
-			      +"<w:lvlText w:val=\"\"/>"
-			      +"<w:lvlJc w:val=\"left\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"4320\" w:hanging=\"360\"/>"
-			      +"</w:pPr>"
-			      +"<w:rPr>"
-			        +"<w:rFonts w:ascii=\"Wingdings\" w:hAnsi=\"Wingdings\" w:hint=\"default\"/>"
-			      +"</w:rPr>"
-			    +"</w:lvl>"
-			    +"<w:lvl w:ilvl=\"6\" w:tplc=\"0C090001\" w:tentative=\"1\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"bullet\"/>"
-			      +"<w:lvlText w:val=\"\"/>"
-			      +"<w:lvlJc w:val=\"left\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"5040\" w:hanging=\"360\"/>"
-			      +"</w:pPr>"
-			      +"<w:rPr>"
-			        +"<w:rFonts w:ascii=\"Symbol\" w:hAnsi=\"Symbol\" w:hint=\"default\"/>"
-			      +"</w:rPr>"
-			    +"</w:lvl>"
-			    +"<w:lvl w:ilvl=\"7\" w:tplc=\"0C090003\" w:tentative=\"1\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"bullet\"/>"
-			      +"<w:lvlText w:val=\"o\"/>"
-			      +"<w:lvlJc w:val=\"left\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"5760\" w:hanging=\"360\"/>"
-			      +"</w:pPr>"
-			      +"<w:rPr>"
-			        +"<w:rFonts w:ascii=\"Courier New\" w:hAnsi=\"Courier New\" w:cs=\"Courier New\" w:hint=\"default\"/>"
-			      +"</w:rPr>"
-			    +"</w:lvl>"
-			    +"<w:lvl w:ilvl=\"8\" w:tplc=\"0C090005\" w:tentative=\"1\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"bullet\"/>"
-			      +"<w:lvlText w:val=\"\"/>"
-			      +"<w:lvlJc w:val=\"left\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"6480\" w:hanging=\"360\"/>"
-			      +"</w:pPr>"
-			      +"<w:rPr>"
-			        +"<w:rFonts w:ascii=\"Wingdings\" w:hAnsi=\"Wingdings\" w:hint=\"default\"/>"
-			      +"</w:rPr>"
-			    +"</w:lvl>"
-			  +"</w:abstractNum>";
+	private Lvl getLevel(Numbering.AbstractNum theList, int level) {
+		
+		if (level>8) level=8; 
+		
+		for (Lvl lvl : theList.getLvl() ) {
+			if (lvl.getIlvl().intValue()==level) return lvl;
+		}
+		return null;
+	}
+
+	private NumberFormat getNumberFormatFromCSSListStyleType(String listStyleType) {
+		
+		//  disc | circle | square | 
+		// decimal | decimal-leading-zero | lower-roman | upper-roman | 
+		// lower-greek | lower-latin | upper-latin | armenian | georgian | 
+		// lower-alpha | upper-alpha | none | inherit
+		if ( listStyleType.equals("disc")
+				|| listStyleType.equals("circle")
+				|| listStyleType.equals("square")
+				) {
+			return NumberFormat.BULLET;
+		}
+
+		if ( listStyleType.equals("decimal")) return NumberFormat.DECIMAL; 
+
+		if ( listStyleType.equals("decimal-leading-zero")) return NumberFormat.DECIMAL_ZERO;   
+
+		if ( listStyleType.equals("lower-roman")) return NumberFormat.LOWER_ROMAN; 
+		if ( listStyleType.equals("upper-roman")) return NumberFormat.UPPER_ROMAN; 
+
+		if ( listStyleType.equals("lower-greek")) return NumberFormat.DECIMAL;  // no match 
+
+		if ( listStyleType.equals("lower-latin")) return NumberFormat.LOWER_LETTER; 
+		if ( listStyleType.equals("upper-latin")) return NumberFormat.UPPER_LETTER; 
+
+		if ( listStyleType.equals("armenian")) return NumberFormat.DECIMAL;  // no match
+		if ( listStyleType.equals("georgian")) return NumberFormat.DECIMAL;  // no match
+
+		if ( listStyleType.equals("lower-alpha")) return NumberFormat.LOWER_LETTER; 
+		if ( listStyleType.equals("upper-alpha")) return NumberFormat.UPPER_LETTER; 
+		
+		if ( listStyleType.equals("none")) return NumberFormat.NONE; 
+		if ( listStyleType.equals("inherit")) return NumberFormat.DECIMAL; // TODO FIXME -
+		
+		return NumberFormat.DECIMAL; // appropriate fallback?
+		
+	}
+
+	private String getLvlTextFromCSSListStyleType(String listStyleType, int level) {
+		
+		if ( listStyleType.equals("disc")) {
+			return "";
+		}
+		if ( listStyleType.equals("circle")) {
+			return "o";
+		}
+		if ( listStyleType.equals("square")) {
+			return "";
+		}
+		
+		return "%"+level;
+	}
 	
-	static final String olList = 
-			  "<w:abstractNum w:abstractNumId=\"1\"   xmlns:ve=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:w10=\"urn:schemas-microsoft-com:office:word\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:wne=\"http://schemas.microsoft.com/office/word/2006/wordml\">"
-			    +"<w:nsid w:val=\"7E706046\"/>"
-			    +"<w:multiLevelType w:val=\"hybridMultilevel\"/>"
-			    +"<w:tmpl w:val=\"336E8F2C\"/>"
-			    +"<w:lvl w:ilvl=\"0\" w:tplc=\"0C09000F\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"decimal\"/>"
-			      +"<w:lvlText w:val=\"%1.\"/>"
-			      +"<w:lvlJc w:val=\"left\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"720\" w:hanging=\"360\"/>"
-			      +"</w:pPr>"
-			    +"</w:lvl>"
-			    +"<w:lvl w:ilvl=\"1\" w:tplc=\"0C090019\" w:tentative=\"1\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"lowerLetter\"/>"
-			      +"<w:lvlText w:val=\"%2.\"/>"
-			      +"<w:lvlJc w:val=\"left\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"1440\" w:hanging=\"360\"/>"
-			      +"</w:pPr>"
-			    +"</w:lvl>"
-			    +"<w:lvl w:ilvl=\"2\" w:tplc=\"0C09001B\" w:tentative=\"1\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"lowerRoman\"/>"
-			      +"<w:lvlText w:val=\"%3.\"/>"
-			      +"<w:lvlJc w:val=\"right\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"2160\" w:hanging=\"180\"/>"
-			      +"</w:pPr>"
-			    +"</w:lvl>"
-			    +"<w:lvl w:ilvl=\"3\" w:tplc=\"0C09000F\" w:tentative=\"1\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"decimal\"/>"
-			      +"<w:lvlText w:val=\"%4.\"/>"
-			      +"<w:lvlJc w:val=\"left\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"2880\" w:hanging=\"360\"/>"
-			      +"</w:pPr>"
-			    +"</w:lvl>"
-			    +"<w:lvl w:ilvl=\"4\" w:tplc=\"0C090019\" w:tentative=\"1\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"lowerLetter\"/>"
-			      +"<w:lvlText w:val=\"%5.\"/>"
-			      +"<w:lvlJc w:val=\"left\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"3600\" w:hanging=\"360\"/>"
-			      +"</w:pPr>"
-			    +"</w:lvl>"
-			    +"<w:lvl w:ilvl=\"5\" w:tplc=\"0C09001B\" w:tentative=\"1\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"lowerRoman\"/>"
-			      +"<w:lvlText w:val=\"%6.\"/>"
-			      +"<w:lvlJc w:val=\"right\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"4320\" w:hanging=\"180\"/>"
-			      +"</w:pPr>"
-			    +"</w:lvl>"
-			    +"<w:lvl w:ilvl=\"6\" w:tplc=\"0C09000F\" w:tentative=\"1\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"decimal\"/>"
-			      +"<w:lvlText w:val=\"%7.\"/>"
-			      +"<w:lvlJc w:val=\"left\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"5040\" w:hanging=\"360\"/>"
-			      +"</w:pPr>"
-			    +"</w:lvl>"
-			    +"<w:lvl w:ilvl=\"7\" w:tplc=\"0C090019\" w:tentative=\"1\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"lowerLetter\"/>"
-			      +"<w:lvlText w:val=\"%8.\"/>"
-			      +"<w:lvlJc w:val=\"left\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"5760\" w:hanging=\"360\"/>"
-			      +"</w:pPr>"
-			    +"</w:lvl>"
-			    +"<w:lvl w:ilvl=\"8\" w:tplc=\"0C09001B\" w:tentative=\"1\">"
-			      +"<w:start w:val=\"1\"/>"
-			      +"<w:numFmt w:val=\"lowerRoman\"/>"
-			      +"<w:lvlText w:val=\"%9.\"/>"
-			      +"<w:lvlJc w:val=\"right\"/>"
-			      +"<w:pPr>"
-			        +"<w:ind w:left=\"6480\" w:hanging=\"180\"/>"
-			      +"</w:pPr>"
-			    +"</w:lvl>"
-			  +"</w:abstractNum>";
+	private RFonts geRFontsForCSSListStyleType(String listStyleType) {
+		RFonts rfonts = null;
+		if (listStyleType.equals("disc")) {
+			rfonts = wmlObjectFactory.createRFonts();
+			rfonts.setAscii("Symbol");
+			rfonts.setHint(org.docx4j.wml.STHint.DEFAULT);
+			rfonts.setHAnsi("Symbol");
+		}
+		if (listStyleType.equals("circle")) {
+			rfonts = wmlObjectFactory.createRFonts();
+			rfonts.setAscii("Courier New");
+			rfonts.setHint(org.docx4j.wml.STHint.DEFAULT);
+			rfonts.setHAnsi("Courier New");
+			rfonts.setCs("Courier New");
+		}
+		if (listStyleType.equals("square")) {
+			rfonts = wmlObjectFactory.createRFonts();
+			rfonts.setAscii("Wingdings");
+			rfonts.setHint(org.docx4j.wml.STHint.DEFAULT);
+			rfonts.setHAnsi("Wingdings");
+		}
+		return rfonts;
+	}
 	
-//			  +"<w:num w:numId=\"1\">"
-//			    +"<w:abstractNumId w:val=\"1\"/>"
-//			  +"</w:num>"
-//			  +"<w:num w:numId=\"2\">"
-//			    +"<w:abstractNumId w:val=\"0\"/>"
-//			  +"</w:num>"
-//			+"</w:numbering>";
+	private Ind getInd(int twip) {
+			
+		Ind ind = Context.getWmlObjectFactory().createPPrBaseInd();
+		
+//		ind.setLeft(BigInteger.valueOf(twip) );
+		
+		// Hanging hack
+		ind.setLeft(BigInteger.valueOf(twip+360) );
+		ind.setHanging(BigInteger.valueOf(360) );
+		return ind;
+	}
+
+	final short ignored = 1;	
+	private int getTwip(LengthValue padding) {
+		
+		float fVal = padding.getCSSPrimitiveValue().getFloatValue(ignored);
+		if (fVal==0f) {
+			return 0;
+		}
+		
+		short type = padding.getCSSPrimitiveValue().getPrimitiveType();
+		int twip;
+		
+		if (CSSPrimitiveValue.CSS_IN == type) {
+			twip = UnitsOfMeasurement.inchToTwip(fVal);
+		} else if (CSSPrimitiveValue.CSS_MM == type) {
+			twip = UnitsOfMeasurement.mmToTwip(fVal);		
+		} else if (CSSPrimitiveValue.CSS_PT == type) {
+			twip = UnitsOfMeasurement.pointToTwip(fVal);	
+		} else if (CSSPrimitiveValue.CSS_PX == type) {
+			twip = UnitsOfMeasurement.pxToTwip(fVal);
+		} else if (CSSPrimitiveValue.CSS_NUMBER == type) {
+			log.error("Indent: No support for unspecified unit: CSS_NUMBER "); 
+			// http://stackoverflow.com/questions/11479985/what-is-the-default-unit-for-margin-left
+			/*
+			 * In quirks mode (without a doctype), most browsers will try to correct the code by 
+			 * using the unit px. In standards compliance mode (with a proper doctype), most browsers 
+			 * will ignore the style.			
+			 **/
+			twip = 0; // TODO: should throw UnsupportedUnitException?
+		} else {
+			log.error("Indent: No support for unit " + type);
+			twip = 0;
+		}
+		return twip;
+	}
+		
+	private Lvl createLevel(int level, Map<String, CSSValue> cssMap) {
+		
+		// TODO fixme
+		
+		
+		if (level>8) level=8; // Word can't open a document with Ilvl>8
+
+        // Create object for lvl
+        Lvl lvl = wmlObjectFactory.createLvl(); 
+            lvl.setIlvl( BigInteger.valueOf( level) );
+            
+//            // Create object for pStyle
+//            Lvl.PStyle lvlpstyle = wmlObjectFactory.createLvlPStyle(); 
+//            lvl.setPStyle(lvlpstyle); 
+//                lvlpstyle.setVal( "Heading1"); 
+                
+            // Create object for pPr
+            PPr ppr = wmlObjectFactory.createPPr(); 
+            lvl.setPPr(ppr); 
+            
+            // Indentation.  Sum of padding-left and margin-left on ancestor ol|ul
+            // Expectation is that one or other would generally be used.
+    		int totalPadding = 0;
+    		for(BlockBox bb : listStack) {
+                LengthValue padding = (LengthValue)bb.getStyle().valueByName(CSSName.PADDING_LEFT);
+                totalPadding +=getTwip(padding);
+                
+                LengthValue margin = (LengthValue)bb.getStyle().valueByName(CSSName.MARGIN_LEFT);
+                totalPadding +=getTwip(margin);    			                
+    		}
+            ppr.setInd(getInd(totalPadding)); 
+                    
+            // Create object for numFmt
+            NumFmt numfmt = wmlObjectFactory.createNumFmt(); 
+            lvl.setNumFmt(numfmt); 
+                numfmt.setVal(
+                		getNumberFormatFromCSSListStyleType(
+                				cssMap.get("list-style-type" ).getCssText()));
+                
+                
+            // Create object for lvlText
+            Lvl.LvlText lvllvltext = wmlObjectFactory.createLvlLvlText(); 
+            lvl.setLvlText(lvllvltext); 
+                lvllvltext.setVal( getLvlTextFromCSSListStyleType(
+        				cssMap.get("list-style-type" ).getCssText(), 
+        				level+1));
+
+            // Bullets have an associated font
+            RFonts rfonts = geRFontsForCSSListStyleType(cssMap.get("list-style-type" ).getCssText());
+            if (rfonts!=null) {
+            	RPr rpr = wmlObjectFactory.createRPr(); 
+    	        rpr.setRFonts(rfonts);
+    	        lvl.setRPr(rpr);
+            }
+                
+                
+            // Create object for lvlJc
+            Jc jc = wmlObjectFactory.createJc(); 
+            lvl.setLvlJc(jc); 
+                jc.setVal(org.docx4j.wml.JcEnumeration.LEFT);
+                
+            // Create object for start
+            Lvl.Start lvlstart = wmlObjectFactory.createLvlStart(); 
+            lvl.setStart(lvlstart); 
+                lvlstart.setVal( BigInteger.valueOf( 1) ); 	
+                
+                return lvl;
+                
+	}
+	
+	void addNumbering(P p, Element e, Map<String, CSSValue> cssMap) {
+		
+		if (concreteList==null) {
+			// We've just entered a list, so create a new one
+			abstractList = createNewAbstractList();		
+			concreteList = ndp.addAbstractListNumberingDefinition(abstractList);			
+		}
+		
+		// Do we have a definition for this level yet?
+		Lvl lvl = getLevel(abstractList, listStack.size()-1);
+		if (lvl==null) {
+			// Nope, need to create it
+			abstractList.getLvl().add( createLevel(listStack.size()-1, cssMap) ); 
+		}
+		
+		setNumbering(p.getPPr(), concreteList.getNumId());
+		
+	}
+	
+	
+	protected void setNumbering(PPr pPr, BigInteger numId) {
+		
+	    // Create and add <w:numPr>
+	    NumPr numPr =  Context.getWmlObjectFactory().createPPrBaseNumPr();
+	    pPr.setNumPr(numPr);
+
+	    // The <w:numId> element
+	    NumId numIdElement = Context.getWmlObjectFactory().createPPrBaseNumPrNumId();
+	    numPr.setNumId(numIdElement);
+	    numIdElement.setVal( numId ); // point to the correct list
+	    	    
+	    // The <w:ilvl> element
+	    Ilvl ilvlElement = Context.getWmlObjectFactory().createPPrBaseNumPrIlvl();
+	    numPr.setIlvl(ilvlElement);
+	    ilvlElement.setVal(BigInteger.valueOf(this.listStack.size()-1));
+	    
+	    // TMP: don't let this override our numbering
+//	    p.getPPr().setInd(null);
+		
+	}
+	
 	
 
 }

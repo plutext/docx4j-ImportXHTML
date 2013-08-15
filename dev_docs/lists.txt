@@ -1,0 +1,159 @@
+We basically have our standard:
+
+		CLASS_TO_STYLE_ONLY, CLASS_PLUS_OTHER, IGNORE_CLASS;
+		
+No need to define this separately to the paragraph setting .. the one setting covers both		
+
+[We could also have SPECIFIED, which would enable defined lists to be used, without the need to set @class,
+ but this is an optional addition.  If we did this, query whether to point directly at a numbering definition
+ (which is clear from a dev point of view, and simpler), or at a list style id (which is consistent with
+  Microsoft's approach, but requires the style to be defined etc)]
+
+Does the class go on the ol|ul, or the li?
+
+    Must go on the ol|ul, consistent with 
+
+What about the interaction between list numbering, and paragraph styles?
+
+    There is no interaction.  A list item becomes a p, styled according to usual rules..
+    
+-------------------------
+
+For the general CSS part, our general approach is to build a new list definition each time a new top level ul|ol list is encountered.
+
+Each time we encounter list items, create a new multilevel list.  This way, bullets and numbering
+and indentation can be altered arbitrarily in the list.  
+Limitation is that you can't alter the appearance of a list item on the fly .. ie at a given level, all are the same.
+
+
+Need to be able to detect when to restart numbering .. basically whenever we encounter a higher level .. but this should just work.
+
+Its only when we exit the list entirely, that the next list must restart numbering.. but that'll just work as well, since we create a new list.
+
+
+http://www.w3.org/TR/CSS2/sample.html
+
+li              { display: list-item }
+
+ol, ul   { display: block; unicode-bidi: embed }
+ul, ol          { margin: 1.12em 0 }
+ol, ul        { margin-left: 40px }
+ol              { list-style-type: decimal }
+ol ul, ul ol,
+ul ul, ol ol    { margin-top: 0; margin-bottom: 0 }
+
+@media print {
+  ul, ol    { page-break-before: avoid }
+}
+
+Flying saucer uses:
+
+ol, ul          { padding-left: 40px }
+ul              { list-style-type: disc }
+ol              { list-style-type: decimal }
+
+From http://www.w3.org/wiki/CSS/Properties/list-style-type
+
+list-style-type property specifies appearance of the list item marker if 'list-style-image' has the value 'none' or if the image pointed to by the URI cannot be displayed.
+
+In nested ul lists, Chrome & Firefox, IE use full bullet, then o bullet, then just square 
+
+In nested ol lists, Chrome & Firefox, IE use roman at all levels
+
+In a mix of nested list, the bullet appropriate for level is used (ie 2nd level bullet is the same, whether the first level is ol or ul).
+
+
+List indentation:
+
+- in Chrome, this is given by rules in the user agent stylesheet:
+
+ol, ul { -webkit-padding-start: 40px; }
+
+Flying Saucer uses padding-left (assuming ltr), which is good for us.
+See http://stackoverflow.com/questions/12549591/webkit-padding-start-40px-what-it-should-be-for-ie-and-firefox
+and http://www.browsersupport.net/CSS/-webkit-padding-start
+
+The hanging behaviour doesn't seem to be given by any CSS though?
+
+TODO: some way to configure whether margin-left or padding-left is used? Currently we sum their values.
+
+-------------------------
+
+
+For the @class bit...
+
+Word has a concept of a list style
+
+If you define a list style in Word, you end up with:
+  <w:abstractNum w:abstractNumId="0">
+    <w:nsid w:val="0FEB6FA1"/>
+    <w:multiLevelType w:val="multilevel"/>
+    <w:tmpl w:val="0409001D"/>
+    <w:numStyleLink w:val="Myliststyle"/>
+  </w:abstractNum>
+  <w:abstractNum w:abstractNumId="1">
+    <w:nsid w:val="18104A24"/>
+    <w:multiLevelType w:val="multilevel"/>
+    <w:tmpl w:val="0409001D"/>
+    <w:styleLink w:val="Myliststyle"/>
+    <w:lvl w:ilvl="0">
+
+  <w:style w:type="paragraph" w:styleId="ListParagraph">
+    <w:name w:val="List Paragraph"/>
+    <w:basedOn w:val="Normal"/>
+    <w:uiPriority w:val="34"/>
+    <w:qFormat/>
+    <w:rsid w:val="00E24659"/>
+    <w:pPr>
+      <w:ind w:left="720"/>
+      <w:contextualSpacing/>
+    </w:pPr>
+  </w:style>
+  <w:style w:type="numbering" w:customStyle="1" w:styleId="Myliststyle">
+    <w:name w:val="My list style"/>
+    <w:uiPriority w:val="99"/>
+    <w:rsid w:val="00E24659"/>
+    <w:pPr>
+      <w:numPr>
+        <w:numId w:val="1"/>
+      </w:numPr>
+    </w:pPr>
+  </w:style>
+
+    <w:p w:rsidR="00E24659" w:rsidRDefault="00E24659" w:rsidP="00E24659">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+        <w:rPr>
+          <w:lang w:val="en-AU"/>
+        </w:rPr>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:lang w:val="en-AU"/>
+        </w:rPr>
+        <w:t>A list paragraph</w:t>
+      </w:r>
+    </w:p>
+
+Note that the paragraph is always give style ListParagraph (even if you define multiple list style)
+
+Its potentially a way for @class to say which numbered list to use.
+
+---------------
+cases:
+- plain old list item
+- a p or other block in a list item
+- a p with display:list-item
+
+TODO review interaction between p and numbering indent etc settings
+    
+---------------
+
+Note that  docx4j's XHTML export could usefully be enhanced:
+1. to create proper ol|ul
+2. to define @class
+3. to use the list style (not ListParagraph!)
+
+
+
+		

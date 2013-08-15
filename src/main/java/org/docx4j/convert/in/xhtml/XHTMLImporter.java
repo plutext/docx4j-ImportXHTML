@@ -86,6 +86,7 @@ import org.docx4j.org.xhtmlrenderer.css.parser.FSRGBColor;
 import org.docx4j.org.xhtmlrenderer.css.style.CalculatedStyle;
 import org.docx4j.org.xhtmlrenderer.css.style.DerivedValue;
 import org.docx4j.org.xhtmlrenderer.css.style.FSDerivedValue;
+import org.docx4j.org.xhtmlrenderer.css.style.derived.LengthValue;
 import org.docx4j.org.xhtmlrenderer.docx.Docx4JFSImage;
 import org.docx4j.org.xhtmlrenderer.docx.Docx4jUserAgent;
 import org.docx4j.org.xhtmlrenderer.docx.DocxRenderer;
@@ -294,8 +295,19 @@ public class XHTMLImporter {
     	this.wordMLPackage= wordMLPackage;
     	rp = wordMLPackage.getMainDocumentPart().getRelationshipsPart();
     	ndp = wordMLPackage.getMainDocumentPart().getNumberingDefinitionsPart();
-    	
-    	listHelper = new ListHelper();
+		if (ndp==null) {
+			log.debug("No NumberingDefinitions part - so adding");
+			try {
+				ndp = new NumberingDefinitionsPart();
+				wordMLPackage.getMainDocumentPart().addTargetPart(ndp);
+				ndp.setJaxbElement( Context.getWmlObjectFactory().createNumbering() );				
+			} catch (InvalidFormatException e1) {
+				// Won't happen
+				e1.printStackTrace();
+			}
+		}
+
+    	listHelper = new ListHelper(ndp);
     	
 		if (hyperlinkStyleId !=null && wordMLPackage instanceof WordprocessingMLPackage) {
 			((WordprocessingMLPackage)wordMLPackage).getMainDocumentPart().getPropertyResolver().activateStyle(hyperlinkStyleId);
@@ -608,6 +620,10 @@ public class XHTMLImporter {
             	
             	cssMap.put(name.toString(), ((IdentValue)val).getCSSPrimitiveValue() );
 
+            } else if (val != null && val instanceof LengthValue) {
+            	
+            	cssMap.put(name.toString(), ((LengthValue)val).getCSSPrimitiveValue() );
+            	
             } else  if (val!=null ) {
             	
 //            	log.debug("Skipping " +  name.toString() + " .. " + val.getClass().getName() );
@@ -639,17 +655,6 @@ public class XHTMLImporter {
     	return contentContextStack.pop();
     }
     
-    private LinkedList<BlockBox> listStack = new LinkedList<BlockBox>();
-    	// These are the incoming ul and ol.
-    	// Generally, these will be BlockBox (display:inline or display:inline-block).
-    	// <ul style="display:inline"> hides them entirely..
-    
-    private void pushListStack(BlockBox ca) {
-    	listStack.push(ca);
-    }
-    private BlockBox popListStack() {
-    	return listStack.pop();
-    }
 
     
     // Our runs may go into a P, or a hyperlink.
@@ -733,7 +738,8 @@ public class XHTMLImporter {
             	} else if (e.getNodeName().equals("ol")
             			|| e.getNodeName().equals("ul") ) {
             		
-            		pushListStack(blockBox);
+            		log.info("entering list");
+            		listHelper.pushListStack(blockBox);
                 	
             	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableSectionBox) {
                 	// nb, both TableBox and TableSectionBox 
@@ -1056,6 +1062,66 @@ public class XHTMLImporter {
 					// search for vertically spanned cells to the right from current, and insert dummy cells after it
 					insertDummyVMergedCells(trContext, tcb, false);
 
+            	} else if (isListItem(blockBox.getElement())) {
+
+		            // Paragraph level styling
+	            	P currentP = this.getCurrentParagraph(true);
+	            	
+	                PPr pPr =  Context.getWmlObjectFactory().createPPr();
+	                currentP.setPPr(pPr);
+	            	
+	                if (paragraphFormatting.equals(FormattingOption.IGNORE_CLASS)) {
+	            		addParagraphProperties(pPr, blockBox, cssMap );
+	                } else {
+	                	// CLASS_TO_STYLE_ONLY or CLASS_PLUS_OTHER
+		            	if (listHelper.peekListStack().getElement()!=null
+		            			&& listHelper.peekListStack().getElement().getAttribute("class")!=null) {
+		            		// NB Currently, you need to put this @class on the ol|ul at each level of nesting,
+		            		// if you want to use the list style.
+		            		// If you only put it on some levels, well, new list(s) will be created for the others,
+		            		// with imperfect results...
+		            		
+		            		String cssClass = listHelper.peekListStack().getElement().getAttribute("class").trim();
+		            		if (!cssClass.equals("")) {
+			            		// Our XHTML export gives a space separated list of class names,
+			            		// reflecting the style hierarchy.  Here, we just want the first one.
+			            		// TODO, replace this with a configurable stylenamehandler.
+			            		int pos = cssClass.indexOf(" ");
+			            		if (pos>-1) {
+			            			cssClass = cssClass.substring(0,  pos);
+			            		}
+			            		
+			            		// if the docx contains this stylename, set it
+			            		Style s = this.stylesByID.get(cssClass);
+			            		if (s==null) {
+			            			log.debug("No docx style for @class='" + cssClass + "'");
+			            		} else if (s.getType()!=null && s.getType().equals("numbering")) {
+			            			log.debug("Using list style from @class='" + cssClass + "'");
+			            			
+			            			/* it should contain something like:
+			            			 * 
+			            			 *     <w:pPr>
+										      <w:numPr>
+										        <w:numId w:val="1"/>
+										      </w:numPr>
+										    </w:pPr>
+			            			 *
+			            			 * Use this... 
+			            			 */
+			            			BigInteger numId = s.getPPr().getNumPr().getNumId().getVal();
+			            			listHelper.setNumbering(pPr, numId);
+			            			
+			            		} else {
+			            			log.debug("For docx style for @class='" + cssClass + "', but its not a paragraph style ");
+			            		}
+		            		}
+		            	}
+//            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
+//            				addParagraphProperties(pPr, blockBox, cssMap );
+//            			}
+		            	
+	            	} 
+            		
 	            } else {
 	            	
 	            	// Paragraph processing
@@ -1072,7 +1138,7 @@ public class XHTMLImporter {
 	                currentP.setPPr(pPr);
 	            	
 	                if (paragraphFormatting.equals(FormattingOption.IGNORE_CLASS)) {
-	            		addParagraphProperties(pPr, cssMap );
+	            		addParagraphProperties(pPr, blockBox, cssMap );
 	                } else {
 	                	// CLASS_TO_STYLE_ONLY or CLASS_PLUS_OTHER
 		            	if (box.getElement()!=null
@@ -1102,14 +1168,15 @@ public class XHTMLImporter {
 		            		}
 		            	}
             			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
-            				addParagraphProperties(pPr, cssMap );
+            				addParagraphProperties(pPr, blockBox, cssMap );
             			}
 		            	
 	            	} 
 		            
-		            if (e.getNodeName().equals("li")) {
-		            	addNumbering(e, cssMap);
-		            } else if  (e.getNodeName().equals("img")) {
+//		            if (e.getNodeName().equals("li")) {
+//		            	addNumbering(e, cssMap);
+//		            } else 
+		            	if  (e.getNodeName().equals("img")) {
 		        		// TODO, should we be using ReplacedElementFactory approach instead?		
 		            	
 		            	addImage(blockBox);
@@ -1184,7 +1251,9 @@ public class XHTMLImporter {
 	    	if (e.getNodeName().equals("ol")
 	    			|| e.getNodeName().equals("ul") ) {
 	    		
-	    		popListStack();
+        		log.info(".. exiting list");
+	    		
+        		listHelper.popListStack();
 	    	}    
             
             if (this.contentContextStack.peek() instanceof Tc) {
@@ -1545,70 +1614,6 @@ public class XHTMLImporter {
 
 	}
 
-	private void addNumbering(Element e, Map<String, CSSValue> cssMap) {
-		if (ndp==null) {
-			log.debug("No NumberingDefinitions part - so adding");
-			try {
-				ndp = new NumberingDefinitionsPart();
-				wordMLPackage.getMainDocumentPart().addTargetPart(ndp);
-				ndp.setJaxbElement( Context.getWmlObjectFactory().createNumbering() );				
-			} catch (InvalidFormatException e1) {
-				// Won't happen
-				e1.printStackTrace();
-			}
-		}
-		Numbering.Num num = null;
-		try {
-			if ( cssMap.get("list-style-type" ).getCssText().equals("decimal")) {
-				num = listHelper.getOrderedList(ndp);
-			}
-			if (cssMap.get("list-style-type" ).getCssText().equals("disc")
-					|| cssMap.get("list-style-type" ).getCssText().equals("square")) {
-				num = listHelper.getUnorderedList(ndp);
-			}
-			
-			// TODO: support other list-style-type
-			
-			// TODO: generate list definitions based on CSS?
-			// (and multiple list definitions)
-			// .. and/or use Word list style?
-			
-		} catch (JAXBException je) {
-			// Shouldn't happen
-			je.printStackTrace();
-			log.error(je.getMessage(), je);
-		}
-
-		if (num==null) {
-			log.warn( "No support for list-style-type: " 
-					+ cssMap.get("list-style-type" ).getCssText()   );  // eg decimal, disc
-			
-		} else {
-
-		    paraStillEmpty = false;
-		    
-		    // Create and add <w:numPr>
-		    NumPr numPr =  Context.getWmlObjectFactory().createPPrBaseNumPr();
-		    this.getCurrentParagraph(true).getPPr().setNumPr(numPr);
-
-		    // The <w:numId> element
-		    NumId numIdElement = Context.getWmlObjectFactory().createPPrBaseNumPrNumId();
-		    numPr.setNumId(numIdElement);
-		    numIdElement.setVal( num.getNumId() ); // point to the correct list
-		    
-		    // TODO: restart logic.  Basically, if this is a top-level item, and
-		    // there has been a plain paragraph since it was last used, then
-		    // need to restart numbering
-		    
-		    // The <w:ilvl> element
-		    Ilvl ilvlElement = Context.getWmlObjectFactory().createPPrBaseNumPrIlvl();
-		    numPr.setIlvl(ilvlElement);
-		    ilvlElement.setVal(BigInteger.valueOf(this.listStack.size()));
-		    
-		    // TMP: don't let this override our numbering
-		    this.getCurrentParagraph(true).getPPr().setInd(null);
-		}
-	}
 
 	private CTMarkupRange markuprange;
 	private void storeBookmarkEnd() {
@@ -1976,8 +1981,13 @@ public class XHTMLImporter {
 	}
     private Map<String, RFonts> fontFamiliesToFont = new HashMap<String, RFonts>(); 
     
+    
+    private boolean isListItem(Element e) {
+    	
+    	return e.getNodeName().equals("li");
+    }
 	
-    private void addParagraphProperties(PPr pPr, Map cssMap) {
+    private void addParagraphProperties(PPr pPr, BlockBox box, Map cssMap) {
 
         
         for (Object o : cssMap.keySet()) {
@@ -2003,6 +2013,12 @@ public class XHTMLImporter {
         	}
         	
         }
+        
+        if (isListItem(box.getElement())) {
+        	listHelper.addNumbering(this.getCurrentParagraph(true), box.getElement(), cssMap);
+        	pPr.setInd(null); // use the numbering setting
+        }
+        
                 
 //        for (int i = 0; i < cStyle.getDerivedValues().length; i++) {
 //            CSSName name = CSSName.getByID(i);
@@ -2029,6 +2045,8 @@ public class XHTMLImporter {
     	// TODO: cleansing in table context
     	
     }
+    
+    
 
     private void addRunProperties(RPr rPr, Map cssMap) {
     	
