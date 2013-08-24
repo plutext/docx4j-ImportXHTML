@@ -1544,6 +1544,12 @@ public class XHTMLImporter {
 		tcPr.setTcW(tblW);    	
     }
 
+
+ /**
+		Currently flying saucer is initialized
+		with DEFAULT_DOTS_PER_POINT = DEFAULT_DOTS_PER_PIXEL = 20.
+		Keep this in mind that, it may affect the resulting image sizes.
+	*/
 	private void addImage(BlockBox box) {
 		
 		Element e = box.getElement(); 
@@ -1586,7 +1592,27 @@ public class XHTMLImporter {
 				isError = true;
 			} else {
 				BinaryPartAbstractImage imagePart = BinaryPartAbstractImage.createImagePart(wordMLPackage, imageBytes);
-				Inline inline = imagePart.createImageInline(null, null, 0, 1, false);
+
+				Inline inline;
+
+				Long cx = (box.getStyle().valueByName(CSSName.WIDTH) == IdentValue.AUTO) ? null :
+						UnitsOfMeasurement.twipToEMU(box.getWidth());
+				Long cy = (box.getStyle().valueByName(CSSName.HEIGHT) == IdentValue.AUTO) ? null :
+						UnitsOfMeasurement.twipToEMU(box.getHeight());
+				if (cx == null && cy == null) {
+					inline = imagePart.createImageInline(null, e.getAttribute("alt"), 0, 1, false);
+				}
+				else {
+					if (cx == null){
+						cx = imagePart.getImageInfo().getSize().getWidthPx() *
+								(cy / imagePart.getImageInfo().getSize().getHeightPx());
+					}
+					else if (cy == null){
+						cy = imagePart.getImageInfo().getSize().getHeightPx() *
+								(cx / imagePart.getImageInfo().getSize().getWidthPx());
+					}
+					inline = imagePart.createImageInline(null, e.getAttribute("alt"), 0, 1, cx, cy, false);
+				}
 
 				// Now add the inline in w:p/w:r/w:drawing
 				org.docx4j.wml.R run = Context.getWmlObjectFactory().createR();
