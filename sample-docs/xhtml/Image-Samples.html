@@ -1,0 +1,146 @@
+<html>
+<head>
+    <style>
+        .resized {
+            height: 20px;
+            width: 40px;
+        }
+
+        .resizedPercent {
+            height: 20%;
+            width: 40%;
+        }
+
+	table, td,th
+	{
+		border: 1px solid black;
+		border-collapse: collapse;
+		font-size: 15px;
+	}
+
+	th { width: 100px; height: 100px; }
+
+    </style>
+</head>
+<body>
+<table>
+    <tr>
+        <td>
+            plain
+        </td>
+        <th>
+            <img src="data:image/gif;base64,R0lGODdhAgACAKEEAAMA//8AAAD/Bv/8ACwAAAAAAgACAAACAww0BQA7"/>
+        </th>
+    </tr>
+    <tr>
+        <td>
+            height="12" width="16"
+        </td>
+        <th>
+            <img src="data:image/gif;base64,R0lGODdhAgACAKEEAAMA//8AAAD/Bv/8ACwAAAAAAgACAAACAww0BQA7" height="12" width="16"/>
+        </th>
+    </tr>
+   <tr>
+        <td>
+            height="50%" width="30%"
+        </td>
+        <th>
+            <img src="data:image/gif;base64,R0lGODdhAgACAKEEAAMA//8AAAD/Bv/8ACwAAAAAAgACAAACAww0BQA7" height="50%" width="30%"/>
+        </th>
+    </tr>
+     <tr>
+        <td>
+            class="resized"
+            .resized {
+            height: 20px;
+            width: 40px;
+        }
+        </td>
+        <th>
+            <img src="data:image/gif;base64,R0lGODdhAgACAKEEAAMA//8AAAD/Bv/8ACwAAAAAAgACAAACAww0BQA7" class="resized"/>
+        </th>
+    </tr>
+    <tr>
+        <td>
+            class="resizedPercent"
+            .resizedPercent {
+            height: 20%;
+            width: 40%;
+        }
+        </td>
+        <th>
+            <img src="data:image/gif;base64,R0lGODdhAgACAKEEAAMA//8AAAD/Bv/8ACwAAAAAAgACAAACAww0BQA7" class="resizedPercent"/>
+        </th>
+    </tr>
+    <tr>
+        <td>
+            inline style=" height: 90px; width: 80px;"
+        </td>
+        <th>
+            <img src="data:image/gif;base64,R0lGODdhAgACAKEEAAMA//8AAAD/Bv/8ACwAAAAAAgACAAACAww0BQA7" style=" height: 90px; width: 80px;"/>
+        </th>
+    </tr>
+    <tr>
+        <td>
+           inline style=" height: 100%; width: 20%;"
+        </td>
+        <th>
+            <img src="data:image/gif;base64,R0lGODdhAgACAKEEAAMA//8AAAD/Bv/8ACwAAAAAAgACAAACAww0BQA7" style=" height: 100%; width: 20%;"/>
+        </th>
+    </tr>
+    <tr>
+        <td>
+            inline style="width: 50px;"
+        </td>
+        <th>
+            <img src="data:image/gif;base64,R0lGODdhAgACAKEEAAMA//8AAAD/Bv/8ACwAAAAAAgACAAACAww0BQA7" style="width: 50px"/>
+        </th>
+    </tr>
+    <tr>
+        <td>
+            inline style="width: 50pt;"
+        </td>
+        <th>
+            <img src="data:image/gif;base64,R0lGODdhAgACAKEEAAMA//8AAAD/Bv/8ACwAAAAAAgACAAACAww0BQA7" style="width: 50pt"/>
+        </th>
+    </tr>
+    <tr>
+        <td>
+            inline style="width: 1.5cm;"
+        </td>
+        <th>
+            <img src="data:image/gif;base64,R0lGODdhAgACAKEEAAMA//8AAAD/Bv/8ACwAAAAAAgACAAACAww0BQA7" style="width: 1.5cm"/>
+        </th>
+    </tr>
+    <tr>
+        <td>
+            inline style="width: 3em;"
+        </td>
+        <th>
+            <img src="data:image/gif;base64,R0lGODdhAgACAKEEAAMA//8AAAD/Bv/8ACwAAAAAAgACAAACAww0BQA7" style="width: 3em"/>
+        </th>
+    </tr>
+    <tr>
+        <td>
+            inline style="width: 3em;" in font-size: 25px;
+        </td>
+        <th style="font-size: 25px;">
+            <img src="data:image/gif;base64,R0lGODdhAgACAKEEAAMA//8AAAD/Bv/8ACwAAAAAAgACAAACAww0BQA7" style="width: 3em"/>
+        </th>
+    </tr>
+</table>
+
+<br/><br/>
+
+<table width="100%">
+<tr>
+    <td>
+        50% in 50%
+    </td>
+    <th style="width: 50%;">
+        <img src="data:image/gif;base64,R0lGODdhAgACAKEEAAMA//8AAAD/Bv/8ACwAAAAAAgACAAACAww0BQA7" style="width: 50%;"/>
+    </th>
+</tr>
+</table>
+</body>
+</html>
