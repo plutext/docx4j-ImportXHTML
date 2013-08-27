@@ -102,6 +102,11 @@ public class ListHelper {
 	protected BlockBox peekListStack() {
 		return listStack.peek();
 	}	
+	
+	protected int getDepth() {
+		return listStack.size();
+	}
+	
 	/**
 	 * Creates a new empty abstract list.
 	 * 
@@ -221,7 +226,7 @@ public class ListHelper {
 		return rfonts;
 	}
 	
-	private Ind getInd(int twip) {
+	protected Ind getInd(int twip) {
 			
 		Ind ind = Context.getWmlObjectFactory().createPPrBaseInd();
 		
@@ -232,46 +237,29 @@ public class ListHelper {
 		ind.setHanging(BigInteger.valueOf(360) );
 		return ind;
 	}
+	
+	protected int getAncestorIndentation() {
 
-	final short ignored = 1;	
-	private int getTwip(LengthValue padding) {
-		
-		float fVal = padding.getCSSPrimitiveValue().getFloatValue(ignored);
-		if (fVal==0f) {
-			return 0;
+        // Indentation.  Sum of padding-left and margin-left on ancestor ol|ul
+        // Expectation is that one or other would generally be used.
+		int totalPadding = 0;
+		for(BlockBox bb : listStack) {
+            LengthValue padding = (LengthValue)bb.getStyle().valueByName(CSSName.PADDING_LEFT);
+            totalPadding +=Indent.getTwip(padding.getCSSPrimitiveValue());
+            
+            log.debug("+padding-left: " + totalPadding);
+            
+            LengthValue margin = (LengthValue)bb.getStyle().valueByName(CSSName.MARGIN_LEFT);
+            totalPadding +=Indent.getTwip(margin.getCSSPrimitiveValue());
+            
+            log.debug("+margin-left: " + totalPadding);
+            
 		}
-		
-		short type = padding.getCSSPrimitiveValue().getPrimitiveType();
-		int twip;
-		
-		if (CSSPrimitiveValue.CSS_IN == type) {
-			twip = UnitsOfMeasurement.inchToTwip(fVal);
-		} else if (CSSPrimitiveValue.CSS_MM == type) {
-			twip = UnitsOfMeasurement.mmToTwip(fVal);		
-		} else if (CSSPrimitiveValue.CSS_PT == type) {
-			twip = UnitsOfMeasurement.pointToTwip(fVal);	
-		} else if (CSSPrimitiveValue.CSS_PX == type) {
-			twip = UnitsOfMeasurement.pxToTwip(fVal);
-		} else if (CSSPrimitiveValue.CSS_NUMBER == type) {
-			log.error("Indent: No support for unspecified unit: CSS_NUMBER "); 
-			// http://stackoverflow.com/questions/11479985/what-is-the-default-unit-for-margin-left
-			/*
-			 * In quirks mode (without a doctype), most browsers will try to correct the code by 
-			 * using the unit px. In standards compliance mode (with a proper doctype), most browsers 
-			 * will ignore the style.			
-			 **/
-			twip = 0; // TODO: should throw UnsupportedUnitException?
-		} else {
-			log.error("Indent: No support for unit " + type);
-			twip = 0;
-		}
-		return twip;
+		return totalPadding;
 	}
+
 		
 	private Lvl createLevel(int level, Map<String, CSSValue> cssMap) {
-		
-		// TODO fixme
-		
 		
 		if (level>8) level=8; // Word can't open a document with Ilvl>8
 
@@ -288,17 +276,7 @@ public class ListHelper {
             PPr ppr = wmlObjectFactory.createPPr(); 
             lvl.setPPr(ppr); 
             
-            // Indentation.  Sum of padding-left and margin-left on ancestor ol|ul
-            // Expectation is that one or other would generally be used.
-    		int totalPadding = 0;
-    		for(BlockBox bb : listStack) {
-                LengthValue padding = (LengthValue)bb.getStyle().valueByName(CSSName.PADDING_LEFT);
-                totalPadding +=getTwip(padding);
-                
-                LengthValue margin = (LengthValue)bb.getStyle().valueByName(CSSName.MARGIN_LEFT);
-                totalPadding +=getTwip(margin);    			                
-    		}
-            ppr.setInd(getInd(totalPadding)); 
+            ppr.setInd(getInd(getAncestorIndentation())); 
                     
             // Create object for numFmt
             NumFmt numfmt = wmlObjectFactory.createNumFmt(); 

@@ -67,6 +67,7 @@ import org.docx4j.model.fields.FieldRef;
 import org.docx4j.model.properties.Property;
 import org.docx4j.model.properties.PropertyFactory;
 import org.docx4j.model.properties.paragraph.AbstractParagraphProperty;
+import org.docx4j.model.properties.paragraph.Indent;
 import org.docx4j.model.properties.run.AbstractRunProperty;
 import org.docx4j.model.properties.run.FontSize;
 import org.docx4j.model.styles.StyleTree;
@@ -272,6 +273,12 @@ public class XHTMLImporter {
 	}
 	private static FormattingOption tableFormatting = FormattingOption.CLASS_PLUS_OTHER;
 
+	private void displayFormattingOptionSettings() {
+		log.info("tableFormatting: " + tableFormatting);
+		log.info("paragraphFormatting: " + paragraphFormatting);
+		log.info("runFormatting: " + runFormatting);
+	}
+	
 	/**
 	 * If the CSS white list is non-null,
 	 * a CSS property will only be honoured if it is on the list.
@@ -292,6 +299,9 @@ public class XHTMLImporter {
 	private XHTMLImporter() {}
 	
 	private XHTMLImporter(WordprocessingMLPackage wordMLPackage) {
+		
+		displayFormattingOptionSettings();
+		
     	this.wordMLPackage= wordMLPackage;
     	rp = wordMLPackage.getMainDocumentPart().getRelationshipsPart();
     	ndp = wordMLPackage.getMainDocumentPart().getNumberingDefinitionsPart();
@@ -1071,7 +1081,10 @@ public class XHTMLImporter {
 	                currentP.setPPr(pPr);
 	            	
 	                if (paragraphFormatting.equals(FormattingOption.IGNORE_CLASS)) {
+	                	
+	            		listHelper.addNumbering(this.getCurrentParagraph(true), blockBox.getElement(), cssMap);	                	
 	            		addParagraphProperties(pPr, blockBox, cssMap );
+	            		
 	                } else {
 	                	// CLASS_TO_STYLE_ONLY or CLASS_PLUS_OTHER
 		            	if (listHelper.peekListStack().getElement()!=null
@@ -1082,7 +1095,18 @@ public class XHTMLImporter {
 		            		// with imperfect results...
 		            		
 		            		String cssClass = listHelper.peekListStack().getElement().getAttribute("class").trim();
-		            		if (!cssClass.equals("")) {
+		            		if (cssClass.equals("")) {
+		            			// What to do? same thing as if no @class specified
+		            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
+		    	            		listHelper.addNumbering(this.getCurrentParagraph(true), blockBox.getElement(), cssMap);
+		            				addParagraphProperties(pPr, blockBox, cssMap );
+		            			}
+		            			// else its CLASS_TO_STYLE_ONLY,
+		            			// but since we have no @class, do nothing
+		            			
+		            		} else {
+		            			// Usual case...
+		            			
 			            		// Our XHTML export gives a space separated list of class names,
 			            		// reflecting the style hierarchy.  Here, we just want the first one.
 			            		// TODO, replace this with a configurable stylenamehandler.
@@ -1095,6 +1119,13 @@ public class XHTMLImporter {
 			            		Style s = this.stylesByID.get(cssClass);
 			            		if (s==null) {
 			            			log.debug("No docx style for @class='" + cssClass + "'");
+			            			
+			            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
+			    	            		listHelper.addNumbering(this.getCurrentParagraph(true), blockBox.getElement(), cssMap);
+			            				addParagraphProperties(pPr, blockBox, cssMap );
+			            			}
+			            			// else, can't number
+			            			
 			            		} else if (s.getType()!=null && s.getType().equals("numbering")) {
 			            			log.debug("Using list style from @class='" + cssClass + "'");
 			            			
@@ -1111,14 +1142,38 @@ public class XHTMLImporter {
 			            			BigInteger numId = s.getPPr().getNumPr().getNumId().getVal();
 			            			listHelper.setNumbering(pPr, numId);
 			            			
+			            			// Note that we just use the numbering it points to;
+			            			// we don't follow it to its abstract num (which is in fact
+			            			// where the w:styleLink matching our @class should be found).
+			            			
+			            			// TODO: if this list is being used a second time, we should
+			            			// restart numbering??  Is it restarted in the HTML?
+
+				            		// OK, we've applied @class
+			            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
+			            				// now apply ad hoc formatting
+			            				addParagraphProperties(pPr, blockBox, cssMap );
+			            			}			            		
+			            			
 			            		} else {
 			            			log.debug("For docx style for @class='" + cssClass + "', but its not a paragraph style ");
+			            			
+			            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
+			    	            		listHelper.addNumbering(this.getCurrentParagraph(true), blockBox.getElement(), cssMap);
+			            				addParagraphProperties(pPr, blockBox, cssMap );
+			            			}			            			
+			            			
 			            		}
+			            		
 		            		}
+		            	} else {
+		            		// No @class
+	            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
+	            				addParagraphProperties(pPr, blockBox, cssMap );
+	            			}
+	            			// else its CLASS_TO_STYLE_ONLY,
+	            			// but since we have no @class, do nothing
 		            	}
-//            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
-//            				addParagraphProperties(pPr, blockBox, cssMap );
-//            			}
 		            	
 	            	} 
             		
@@ -2014,7 +2069,7 @@ public class XHTMLImporter {
     }
 	
     private void addParagraphProperties(PPr pPr, BlockBox box, Map cssMap) {
-
+    	// NB, not invoked in CLASS_TO_STYLE_ONLY case
         
         for (Object o : cssMap.keySet()) {
         	
@@ -2040,9 +2095,46 @@ public class XHTMLImporter {
         	
         }
         
-        if (isListItem(box.getElement())) {
-        	listHelper.addNumbering(this.getCurrentParagraph(true), box.getElement(), cssMap);
-        	pPr.setInd(null); // use the numbering setting
+        
+        if (isListItem(box.getElement()) ) {
+
+        	/* In Word, indentation is given effect in the following priority:
+        	 * 1. ad hoc setting (if present)
+        	 * 2. if specified in the numbering, then that
+        	 * 3. finally, the paragraph style 
+        	 * 
+        	 * so for IGNORE_CLASS or CLASS_PLUS_OTHER, the way to
+        	 * honour the CSS is to make an ad hoc setting
+        	 * (ie pPr.setInd ).
+        	 * 
+        	 *  But the practical problem is:
+        	 *  (i)  distinguishing a genuine CSS value from a default.
+        	 *       Since 0 is the default, we'll ignore that. (Which means
+        	 *       explicitly setting 0 will not be honoured!)
+        	 *  (ii) in the CLASS_PLUS_OTHER case, will removeRedundantProperties work
+        	 *       (using ppr from paragraph style, overridden by numbering)
+        	 */
+        	
+        	// Special handling for indent, since we need to sum values for ancestors
+    		int totalPadding = 0;
+            LengthValue padding = (LengthValue)box.getStyle().valueByName(CSSName.PADDING_LEFT);
+            totalPadding +=Indent.getTwip(padding.getCSSPrimitiveValue());
+            
+            LengthValue margin = (LengthValue)box.getStyle().valueByName(CSSName.MARGIN_LEFT);
+            totalPadding +=Indent.getTwip(margin.getCSSPrimitiveValue());    			                
+        	
+            totalPadding +=listHelper.getAncestorIndentation();
+            
+        	// FS default css is 40px padding per level = 600 twip
+            int defaultInd =  600 * listHelper.getDepth();
+            if (totalPadding==defaultInd) {
+            	// we can't tell whether this is just a default, so ignore it; use the numbering setting
+            	log.debug("explicitly unsetting pPr indent");
+            	pPr.setInd(null); 
+            } else {
+            	pPr.setInd(listHelper.getInd(totalPadding)); 
+            } 
+        	
         }
         
                 
@@ -2057,6 +2149,7 @@ public class XHTMLImporter {
     	// since such direct formatting is probably not the author's intent,
     	// and makes the document less maintainable
     	PPr stylePPr = null;
+    		// TODO: take numbering pPr into account here (see above)
     	PropertyResolver propertyResolver = this.wordMLPackage.getMainDocumentPart().getPropertyResolver();
     	if (this.getCurrentParagraph(false).getPPr()!=null
     			&& this.getCurrentParagraph(false).getPPr().getPStyle()!=null) {

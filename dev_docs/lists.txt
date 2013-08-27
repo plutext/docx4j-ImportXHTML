@@ -11,11 +11,17 @@ No need to define this separately to the paragraph setting .. the one setting co
 
 Does the class go on the ol|ul, or the li?
 
-    Must go on the ol|ul, consistent with 
+    Must go on the ol|ul.
 
 What about the interaction between list numbering, and paragraph styles?
 
     There is no interaction.  A list item becomes a p, styled according to usual rules..
+    
+	 In Word, indentation is given effect in the following priority:
+	 1. ad hoc setting (if present)
+	 2. if specified in the numbering, then that
+	 3. finally, the paragraph style 
+    
     
 -------------------------
 
@@ -77,12 +83,27 @@ The hanging behaviour doesn't seem to be given by any CSS though?
 
 TODO: some way to configure whether margin-left or padding-left is used? Currently we sum their values.
 
+Note also, that in CSS, margin-left property is not inherited.  So for example:
+
+    	String xhtml= "<div>" +
+				"<ul style=\"margin-left: 3cm;\">"
+				+"<li>List item one</li>"
+				+"</ul>"+
+    		  "</div>";
+    		  
+ul does not inherit that margin left setting.  
+
+
+
 -------------------------
 
 
 For the @class bit...
 
 Word has a concept of a list style
+
+This is how @class says which numbered list to use.  See XHTMLImporter at line ~1100
+
 
 If you define a list style in Word, you end up with:
   <w:abstractNum w:abstractNumId="0">
@@ -135,9 +156,8 @@ If you define a list style in Word, you end up with:
       </w:r>
     </w:p>
 
-Note that the paragraph is always give style ListParagraph (even if you define multiple list style)
+Note that the paragraph is always give style ListParagraph (even if you define multiple list style)?!
 
-Its potentially a way for @class to say which numbered list to use.
 
 ---------------
 cases:
@@ -145,7 +165,6 @@ cases:
 - a p or other block in a list item
 - a p with display:list-item
 
-TODO review interaction between p and numbering indent etc settings
     
 ---------------
 
