@@ -1556,12 +1556,19 @@ public class XHTMLImporter {
             tblStyle.setVal(fallbackStyle);
         } else {
         	// CLASS_TO_STYLE_ONLY or CLASS_PLUS_OTHER
-        	if (cssClass!=null) {
+        	if (cssClass==null) {
+        		// Word 2010 can't open a docx which contains <w:tblStyle/>
+        		// so we need to either remove the tblStyle element, 
+        		// or 
+                tblStyle.setVal(fallbackStyle);
+        	} else {
 //        	if (box.getElement()!=null
 //        			&& box.getElement().getAttribute("class")!=null) {
 //        		String cssClass = box.getElement().getAttribute("class").trim();
         		
-        		if (!cssClass.equals("")) {
+        		if (cssClass.equals("")) {
+                    tblStyle.setVal(fallbackStyle);
+        		} else {
             		// Our XHTML export gives a space separated list of class names,
             		// reflecting the style hierarchy.  Here, we just want the first one.
             		// TODO, replace this with a configurable stylenamehandler.
