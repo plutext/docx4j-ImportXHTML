@@ -859,6 +859,26 @@ public class XHTMLImporter {
                 				)));
                 		tblIW.setType(TblWidth.TYPE_DXA);
             			tblPr.setTblInd(tblIW);
+            		} else {
+            		
+	            		// Indent is zero.  In this case, if the table has borders,
+	            		// adjust the indent to align the left border with the left edge of text outside the table
+	            		// See http://superuser.com/questions/126451/changing-the-placement-of-the-left-border-of-tables-in-word
+            			CTBorder leftBorder = borders.getLeft();
+            			if (leftBorder!=null
+            					&& leftBorder.getVal()!=null
+            					&& leftBorder.getVal()!=STBorder.NONE
+            					&& leftBorder.getVal()!=STBorder.NIL) {
+            				// set table indent to .08", ie 115 twip
+            				// <w:tblInd w:w="115" w:type="dxa"/>
+            				// TODO For a wider line, or a line style which is eg double lines, you might need more indent
+            				log.debug("applying fix to align left edge of table with text");
+                    		TblWidth tblIW = Context.getWmlObjectFactory().createTblWidth();
+                    		tblIW.setW( BigInteger.valueOf( 115));
+                    		tblIW.setType(TblWidth.TYPE_DXA);
+                			tblPr.setTblInd(tblIW);
+            			}
+            			
             		}
             			
             		// <w:tblW w:w="0" w:type="auto"/>
@@ -1606,6 +1626,8 @@ public class XHTMLImporter {
 		tcPr.setTcW(tblW);    	
     }
 
+    
+    private HashMap<String, BinaryPartAbstractImage> imagePartCache = new HashMap<String, BinaryPartAbstractImage>(); 
 
  /**
 		Currently flying saucer is initialized
@@ -1615,6 +1637,7 @@ public class XHTMLImporter {
 	private void addImage(BlockBox box) {
 		
 		Element e = box.getElement(); 
+		BinaryPartAbstractImage imagePart = null;
 		
 		boolean isError = false;
 		try {
@@ -1644,32 +1667,51 @@ public class XHTMLImporter {
 				log.debug(base64String);
 				imageBytes = Base64.decodeBase64(base64String.getBytes("UTF8"));
 			} else {
-				Docx4jUserAgent docx4jUserAgent = renderer.getDocx4jUserAgent();
-				Docx4JFSImage docx4JFSImage = docx4jUserAgent.getDocx4JImageResource(e.getAttribute("src"));
-				if (docx4JFSImage != null) {// in case of wrong URL - docx4JFSImage will be null
-					imageBytes = docx4JFSImage.getBytes();
+				
+				imagePart = imagePartCache.get(e.getAttribute("src"));
+				
+				if (imagePart==null) {
+					Docx4jUserAgent docx4jUserAgent = renderer.getDocx4jUserAgent();
+					Docx4JFSImage docx4JFSImage = docx4jUserAgent.getDocx4JImageResource(e.getAttribute("src"));
+					if (docx4JFSImage != null) {// in case of wrong URL - docx4JFSImage will be null
+						imageBytes = docx4JFSImage.getBytes();
+					}
 				}
 			}
-			if (imageBytes == null) {
+			if (imageBytes == null
+					&& imagePart==null) {
 				isError = true;
 			} else {
-				BinaryPartAbstractImage imagePart = BinaryPartAbstractImage.createImagePart(wordMLPackage, imageBytes);
+				
+				if (imagePart==null) {
+					// Its not cached
+					imagePart = BinaryPartAbstractImage.createImagePart(wordMLPackage, imageBytes);
+					if (e.getAttribute("src").startsWith("data:image")) {
+						// don't bother caching
+					} else {
+						// cache it
+						imagePartCache.put(e.getAttribute("src"), imagePart);
+					}
+				}
 
-				Inline inline;
 
 				Long cx = (box.getStyle().valueByName(CSSName.WIDTH) == IdentValue.AUTO) ? null :
 						UnitsOfMeasurement.twipToEMU(box.getWidth());
 				Long cy = (box.getStyle().valueByName(CSSName.HEIGHT) == IdentValue.AUTO) ? null :
 						UnitsOfMeasurement.twipToEMU(box.getHeight());
+				
+				Inline inline;
 				if (cx == null && cy == null) {
 					inline = imagePart.createImageInline(null, e.getAttribute("alt"), 0, 1, false);
-				}
-				else {
-					if (cx == null){
+				} else {
+					
+					if (cx == null) {
+						
 						cx = imagePart.getImageInfo().getSize().getWidthPx() *
 								(cy / imagePart.getImageInfo().getSize().getHeightPx());
-					}
-					else if (cy == null){
+						
+					} else if (cy == null) {
+						
 						cy = imagePart.getImageInfo().getSize().getHeightPx() *
 								(cx / imagePart.getImageInfo().getSize().getWidthPx());
 					}
@@ -2169,6 +2211,8 @@ public class XHTMLImporter {
     	}
     	
     	// TODO: cleansing in table context
+    	
+    	log.debug(XmlUtils.marshaltoString(pPr, true, true));
     	
     }
     
