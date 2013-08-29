@@ -1735,7 +1735,7 @@ public class XHTMLImporter {
 			this.getCurrentParagraph(true).getContent().add(run);
 
 			org.docx4j.wml.Text text = Context.getWmlObjectFactory().createText();
-			text.setValue("[MISSING IMAGE: " + e.getAttribute("alt") + " ]");
+			text.setValue("[MISSING IMAGE: " + e.getAttribute("alt") + ", " + e.getAttribute("alt") + " ]");
 
 			run.getContent().add(text);
 		}
@@ -1838,6 +1838,16 @@ public class XHTMLImporter {
         
         Map<String, CSSValue> cssMap = getCascadedProperties(s.getStyle());
 //        Map cssMap = styleReference.getCascadedPropertiesMap(s.getElement());
+        
+        
+        // Make sure the current paragraph is formatted
+        P p = this.getCurrentParagraph(true);
+        if (p.getPPr()==null) {
+        	PPr pPr = Context.getWmlObjectFactory().createPPr();
+        	addParagraphProperties( pPr,  s,  cssMap);
+        	p.setPPr(pPr);
+        }
+        
                         
         String debug = "<UNKNOWN Styleable";
         if (s.getElement()==null) {
@@ -2117,7 +2127,7 @@ public class XHTMLImporter {
     	return e.getNodeName().equals("li");
     }
 	
-    private void addParagraphProperties(PPr pPr, BlockBox box, Map cssMap) {
+    private void addParagraphProperties(PPr pPr, Styleable styleable, Map cssMap) {
     	// NB, not invoked in CLASS_TO_STYLE_ONLY case
         
         for (Object o : cssMap.keySet()) {
@@ -2145,7 +2155,8 @@ public class XHTMLImporter {
         }
         
         
-        if (isListItem(box.getElement()) ) {
+        if (styleable.getElement()!=null
+        		&& isListItem(styleable.getElement()) ) {
 
         	/* In Word, indentation is given effect in the following priority:
         	 * 1. ad hoc setting (if present)
@@ -2166,10 +2177,10 @@ public class XHTMLImporter {
         	
         	// Special handling for indent, since we need to sum values for ancestors
     		int totalPadding = 0;
-            LengthValue padding = (LengthValue)box.getStyle().valueByName(CSSName.PADDING_LEFT);
+            LengthValue padding = (LengthValue)styleable.getStyle().valueByName(CSSName.PADDING_LEFT);
             totalPadding +=Indent.getTwip(padding.getCSSPrimitiveValue());
             
-            LengthValue margin = (LengthValue)box.getStyle().valueByName(CSSName.MARGIN_LEFT);
+            LengthValue margin = (LengthValue)styleable.getStyle().valueByName(CSSName.MARGIN_LEFT);
             totalPadding +=Indent.getTwip(margin.getCSSPrimitiveValue());    			                
         	
             totalPadding +=listHelper.getAncestorIndentation();
