@@ -821,8 +821,8 @@ public class XHTMLImporter {
                     String cssClass = null;
                 	if (e.getAttribute("class")!=null) {
                 	 	cssClass=e.getAttribute("class").trim();
+                        setTableStyle(tblPr, cssClass);
                 	}
-                    setTableStyle(tblPr, cssClass, "TableGrid");
             		
             		
 					// table borders
@@ -1549,7 +1549,8 @@ public class XHTMLImporter {
         	 	cssClass=parent.getElement().getAttribute("class").trim();
         	}
             
-            setTableStyle(tblPr, cssClass, "none");
+//            setTableStyle(tblPr, cssClass, "none");
+            setTableStyle(tblPr, cssClass);
 			
 			Tr tr = Context.getWmlObjectFactory().createTr();
 			contentContext.getContent().add(tr);
@@ -1567,28 +1568,27 @@ public class XHTMLImporter {
 //		return contentContext;
 	}
 	
-	private void setTableStyle(TblPr tblPr, String cssClass, String fallbackStyle) {
+	private void setTableStyle(TblPr tblPr, String cssClass) {
 
-        TblStyle tblStyle = Context.getWmlObjectFactory().createCTTblPrBaseTblStyle();
-        tblPr.setTblStyle(tblStyle);
 		
         if (tableFormatting.equals(FormattingOption.IGNORE_CLASS)) {
-            tblStyle.setVal(fallbackStyle);
+//            tblStyle.setVal(fallbackStyle);
         } else {
         	// CLASS_TO_STYLE_ONLY or CLASS_PLUS_OTHER
         	if (cssClass==null) {
         		// Word 2010 can't open a docx which contains <w:tblStyle/>
         		// so we need to either remove the tblStyle element, 
         		// or 
-                tblStyle.setVal(fallbackStyle);
+//                tblStyle.setVal(fallbackStyle);
         	} else {
 //        	if (box.getElement()!=null
 //        			&& box.getElement().getAttribute("class")!=null) {
 //        		String cssClass = box.getElement().getAttribute("class").trim();
         		
         		if (cssClass.equals("")) {
-                    tblStyle.setVal(fallbackStyle);
+//                    tblStyle.setVal(fallbackStyle);
         		} else {
+        			
             		// Our XHTML export gives a space separated list of class names,
             		// reflecting the style hierarchy.  Here, we just want the first one.
             		// TODO, replace this with a configurable stylenamehandler.
@@ -1601,12 +1601,14 @@ public class XHTMLImporter {
             		Style s = this.stylesByID.get(cssClass);
             		if (s==null) {
             			log.debug("No docx style for @class='" + cssClass + "'");
-                        tblStyle.setVal(fallbackStyle);
+//                        tblStyle.setVal(fallbackStyle);
             		} else if (s.getType()!=null && s.getType().equals("table")) {
+                        TblStyle tblStyle = Context.getWmlObjectFactory().createCTTblPrBaseTblStyle();
+                        tblPr.setTblStyle(tblStyle);
                         tblStyle.setVal(cssClass);
             		} else {
-            			log.debug("For docx style for @class='" + cssClass + "', but its not a character style ");
-                        tblStyle.setVal(fallbackStyle);
+            			log.debug("For docx style for @class='" + cssClass + "', but its not a table style ");
+//                        tblStyle.setVal(fallbackStyle);
             		}
         		}
         	}
