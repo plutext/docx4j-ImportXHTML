@@ -125,7 +125,7 @@ import org.xml.sax.InputSource;
  * 
  * For best results, be sure to include src/main/resources on your classpath. 
  * 
- * Includes rudimentary support for:
+ * Includes support for:
  * - paragraph and run formatting
  * - tables
  * - images
@@ -174,7 +174,19 @@ public class XHTMLImporter {
 	}
 	private static String hyperlinkStyleId = null;	
 	
-    private Body imports = null; 
+	private static Class XHTMLImageHandlerClass = XHTMLImageHandlerDefault.class;
+	
+    /**
+	 * If you have your own implementation of the XHTMLImageHandler interface
+	 * which you'd like to use.
+	 */
+	public static void setXHTMLImageHandlerClass(Class xHTMLImageHandlerClass) {
+		XHTMLImageHandlerClass = xHTMLImageHandlerClass;
+	}
+	
+	private XHTMLImageHandler xHTMLImageHandler;
+	
+	private Body imports = null; 
     
     
     private WordprocessingMLPackage wordMLPackage;
@@ -327,6 +339,13 @@ public class XHTMLImporter {
 		
 		imports = Context.getWmlObjectFactory().createBody();
 		contentContextStack.push(imports);
+		
+		try {
+			xHTMLImageHandler = (XHTMLImageHandler)XHTMLImageHandlerClass.newInstance();
+		} catch (Exception e) {
+			log.error(e.getMessage(),e);
+			throw new RuntimeException(e);
+		}
     }
 	
 	/**
@@ -1407,7 +1426,12 @@ public class XHTMLImporter {
 		// w:ST_EighthPointMeasure - Measurement in Eighths of a Point
 		width = UnitsOfMeasurement.twipToPoint( Math.round(width) ) * 8.0f;
 		
-		return createBorderStyle( stBorder, borderColor.asString(), BigInteger.valueOf( Math.round(width) ) );
+		String color = borderColor.asString();
+		//if (color.equals("transparent")) color = "FFFFFF";  // assume white page  
+		// should not be getting that as a value?
+		// http://stackoverflow.com/questions/7851830/what-is-the-color-code-for-transparency-in-css
+		
+		return createBorderStyle( stBorder, color, BigInteger.valueOf( Math.round(width) ) );
 	}
 
 	private CTBorder createBorderStyle(STBorder val, String color, BigInteger sz) {
@@ -1629,7 +1653,6 @@ public class XHTMLImporter {
     }
 
     
-    private HashMap<String, BinaryPartAbstractImage> imagePartCache = new HashMap<String, BinaryPartAbstractImage>(); 
 
  /**
 		Currently flying saucer is initialized
@@ -1638,112 +1661,15 @@ public class XHTMLImporter {
 	*/
 	private void addImage(BlockBox box) {
 		
-		Element e = box.getElement(); 
-		BinaryPartAbstractImage imagePart = null;
+		Long cx = (box.getStyle().valueByName(CSSName.WIDTH) == IdentValue.AUTO) ? null :
+			UnitsOfMeasurement.twipToEMU(box.getWidth());
+		Long cy = (box.getStyle().valueByName(CSSName.HEIGHT) == IdentValue.AUTO) ? null :
+				UnitsOfMeasurement.twipToEMU(box.getHeight());
 		
-		boolean isError = false;
-		try {
-			byte[] imageBytes = null;
-
-			if (e.getAttribute("src").startsWith("data:image")) {
-				// Supports 
-				//   data:[<MIME-type>][;charset=<encoding>][;base64],<data>
-				// eg data:image/png;base64,iVBORw0KGgo...
-				// http://www.greywyvern.com/code/php/binary2base64 is a convenient online encoder
-				String base64String = e.getAttribute("src");
-				int commaPos = base64String.indexOf(",");
-				if (commaPos < 6) { // or so ...
-					// .. its broken
-					org.docx4j.wml.R run = Context.getWmlObjectFactory().createR();
-					this.getCurrentParagraph(true).getContent().add(run);
-
-					org.docx4j.wml.Text text = Context.getWmlObjectFactory().createText();
-					text.setValue("[INVALID DATA URI: " + e.getAttribute("src"));
-
-					run.getContent().add(text);
-
-					paraStillEmpty = false;
-					return;
-				}
-				base64String = base64String.substring(commaPos + 1);
-				log.debug(base64String);
-				imageBytes = Base64.decodeBase64(base64String.getBytes("UTF8"));
-			} else {
-				
-				imagePart = imagePartCache.get(e.getAttribute("src"));
-				
-				if (imagePart==null) {
-					Docx4jUserAgent docx4jUserAgent = renderer.getDocx4jUserAgent();
-					Docx4JFSImage docx4JFSImage = docx4jUserAgent.getDocx4JImageResource(e.getAttribute("src"));
-					if (docx4JFSImage != null) {// in case of wrong URL - docx4JFSImage will be null
-						imageBytes = docx4JFSImage.getBytes();
-					}
-				}
-			}
-			if (imageBytes == null
-					&& imagePart==null) {
-				isError = true;
-			} else {
-				
-				if (imagePart==null) {
-					// Its not cached
-					imagePart = BinaryPartAbstractImage.createImagePart(wordMLPackage, imageBytes);
-					if (e.getAttribute("src").startsWith("data:image")) {
-						// don't bother caching
-					} else {
-						// cache it
-						imagePartCache.put(e.getAttribute("src"), imagePart);
-					}
-				}
-
-
-				Long cx = (box.getStyle().valueByName(CSSName.WIDTH) == IdentValue.AUTO) ? null :
-						UnitsOfMeasurement.twipToEMU(box.getWidth());
-				Long cy = (box.getStyle().valueByName(CSSName.HEIGHT) == IdentValue.AUTO) ? null :
-						UnitsOfMeasurement.twipToEMU(box.getHeight());
-				
-				Inline inline;
-				if (cx == null && cy == null) {
-					inline = imagePart.createImageInline(null, e.getAttribute("alt"), 0, 1, false);
-				} else {
-					
-					if (cx == null) {
-						
-						cx = imagePart.getImageInfo().getSize().getWidthPx() *
-								(cy / imagePart.getImageInfo().getSize().getHeightPx());
-						
-					} else if (cy == null) {
-						
-						cy = imagePart.getImageInfo().getSize().getHeightPx() *
-								(cx / imagePart.getImageInfo().getSize().getWidthPx());
-					}
-					inline = imagePart.createImageInline(null, e.getAttribute("alt"), 0, 1, cx, cy, false);
-				}
-
-				// Now add the inline in w:p/w:r/w:drawing
-				org.docx4j.wml.R run = Context.getWmlObjectFactory().createR();
-				this.getCurrentParagraph(true).getContent().add(run);
-				org.docx4j.wml.Drawing drawing = Context.getWmlObjectFactory().createDrawing();
-				run.getContent().add(drawing);
-				drawing.getAnchorOrInline().add(inline);
-			}
-		} catch (Exception e1) {
-			log.error(MessageFormat.format("Error during image processing: ''{0}'', insert default text.", new Object[] {e.getAttribute("alt")}), e1);
-			isError = true;
-		}
-
-		if (isError) {
-			org.docx4j.wml.R run = Context.getWmlObjectFactory().createR();
-			this.getCurrentParagraph(true).getContent().add(run);
-
-			org.docx4j.wml.Text text = Context.getWmlObjectFactory().createText();
-			text.setValue("[MISSING IMAGE: " + e.getAttribute("alt") + ", " + e.getAttribute("alt") + " ]");
-
-			run.getContent().add(text);
-		}
-
+		xHTMLImageHandler.addImage(renderer.getDocx4jUserAgent(), wordMLPackage, 
+				this.getCurrentParagraph(true), box.getElement(), cx, cy);
+		
 		paraStillEmpty = false;
-
 	}
 
 
