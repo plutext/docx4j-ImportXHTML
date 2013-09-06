@@ -162,29 +162,25 @@ public class XHTMLImporter {
 	 * It is currently your responsibility to define that style in your
 	 * styles definition part.
 	 * 
-	 * Due to the architecture of this class, this is a static flag changing the
-	 * behavior of all following calls.
-	 * 
 	 * @param hyperlinkStyleID
 	 *            The style to use for hyperlinks (eg Hyperlink)
 	 */
-	public static void setHyperlinkStyle (
+	public void setHyperlinkStyle (
 			String hyperlinkStyleID) {
 		hyperlinkStyleId = hyperlinkStyleID;
 	}
-	private static String hyperlinkStyleId = null;	
+	private String hyperlinkStyleId = null;	
 	
-	private static Class XHTMLImageHandlerClass = XHTMLImageHandlerDefault.class;
 	
     /**
 	 * If you have your own implementation of the XHTMLImageHandler interface
 	 * which you'd like to use.
 	 */
-	public static void setXHTMLImageHandlerClass(Class xHTMLImageHandlerClass) {
-		XHTMLImageHandlerClass = xHTMLImageHandlerClass;
+	public void setXHTMLImageHandler(XHTMLImageHandler xHTMLImageHandler) {
+		this.xHTMLImageHandler = xHTMLImageHandler;
 	}
 	
-	private XHTMLImageHandler xHTMLImageHandler;
+	private XHTMLImageHandler xHTMLImageHandler = new XHTMLImageHandlerDefault();
 	
 	private Body imports = null; 
     
@@ -197,7 +193,24 @@ public class XHTMLImporter {
     
     private DocxRenderer renderer;
     
-    private static FontFamilyMap fontFamilyToFont = new FontFamilyMap();
+    /**
+	 * @return the renderer
+	 */
+	public DocxRenderer getRenderer() {
+		if (renderer==null) {
+			renderer = new DocxRenderer();
+		}
+		return renderer;
+	}
+
+	/**
+	 * @param renderer the renderer to set
+	 */
+	public void setRenderer(DocxRenderer renderer) {
+		this.renderer = renderer;
+	}
+	
+	private static FontFamilyMap fontFamilyToFont = new FontFamilyMap();
     /**
 	 * Map a font family, for example "Century Gothic" in:
 	 * 
@@ -262,28 +275,28 @@ public class XHTMLImporter {
 	 * @param runFormatting
 	 *            the runFormatting to set
 	 */
-	public static void setRunFormatting(FormattingOption runFormatting) {
-		XHTMLImporter.runFormatting = runFormatting;
+	public void setRunFormatting(FormattingOption runFormatting) {
+		this.runFormatting = runFormatting;
 	}
-	private static FormattingOption runFormatting = FormattingOption.CLASS_PLUS_OTHER;
+	private FormattingOption runFormatting = FormattingOption.CLASS_PLUS_OTHER;
 
 	/**
 	 * @param paragraphFormatting
 	 *            the paragraphFormatting to set
 	 */
-	public static void setParagraphFormatting(
+	public void setParagraphFormatting(
 			FormattingOption paragraphFormatting) {
-		XHTMLImporter.paragraphFormatting = paragraphFormatting;
+		this.paragraphFormatting = paragraphFormatting;
 	}
-	private static FormattingOption paragraphFormatting = FormattingOption.CLASS_PLUS_OTHER;
+	private FormattingOption paragraphFormatting = FormattingOption.CLASS_PLUS_OTHER;
 
 	/**
 	 * @param tableFormatting the tableFormatting to set
 	 */
-	public static void setTableFormatting(FormattingOption tableFormatting) {
-		XHTMLImporter.tableFormatting = tableFormatting;
+	public void setTableFormatting(FormattingOption tableFormatting) {
+		this.tableFormatting = tableFormatting;
 	}
-	private static FormattingOption tableFormatting = FormattingOption.CLASS_PLUS_OTHER;
+	private FormattingOption tableFormatting = FormattingOption.CLASS_PLUS_OTHER;
 
 	private void displayFormattingOptionSettings() {
 		log.info("tableFormatting: " + tableFormatting);
@@ -302,15 +315,15 @@ public class XHTMLImporter {
 	 * 
 	 * @param cssWhiteList the cssWhiteList to set
 	 */
-	public static void setCssWhiteList(Set<String> cssWhiteList) {
-		XHTMLImporter.cssWhiteList = cssWhiteList;
+	public void setCssWhiteList(Set<String> cssWhiteList) {
+		this.cssWhiteList = cssWhiteList;
 	}
-	private static Set<String> cssWhiteList = null;
+	private Set<String> cssWhiteList = null;
 
 
 	private XHTMLImporter() {}
 	
-	private XHTMLImporter(WordprocessingMLPackage wordMLPackage) {
+	public XHTMLImporter(WordprocessingMLPackage wordMLPackage) {
 		
 		displayFormattingOptionSettings();
 		
@@ -340,12 +353,6 @@ public class XHTMLImporter {
 		imports = Context.getWmlObjectFactory().createBody();
 		contentContextStack.push(imports);
 		
-		try {
-			xHTMLImageHandler = (XHTMLImageHandler)XHTMLImageHandlerClass.newInstance();
-		} catch (Exception e) {
-			log.error(e.getMessage(),e);
-			throw new RuntimeException(e);
-		}
     }
 	
 	/**
@@ -400,28 +407,26 @@ public class XHTMLImporter {
      * @return
      * @throws IOException
      */
-    public static List<Object> convert(File file, String baseUrl, WordprocessingMLPackage wordMLPackage) throws Docx4JException {
+    public List<Object> convert(File file, String baseUrl) throws Docx4JException {
 
-        XHTMLImporter importer = new XHTMLImporter(wordMLPackage);
-
-        importer.renderer = new DocxRenderer();
+        renderer = getRenderer();
         
         File parent = file.getAbsoluteFile().getParentFile();
         
         try {
-			importer.renderer.setDocument(
-					importer.renderer.loadDocument(file.toURI().toURL().toExternalForm()),
+			renderer.setDocument(
+					renderer.loadDocument(file.toURI().toURL().toExternalForm()),
 			        (parent == null ? "" : parent.toURI().toURL().toExternalForm())
 			);
 		} catch (MalformedURLException e) {
 			throw new Docx4JException("Malformed URL", e);
 		}
 
-        importer.renderer.layout();
+        renderer.layout();
                     
-        importer.traverse(importer.renderer.getRootBox(), null);
+        traverse(renderer.getRootBox(), null);
         
-        return importer.imports.getContent();    	
+        return imports.getContent();    	
     }
 
     /**
@@ -433,20 +438,18 @@ public class XHTMLImporter {
      * @return
      * @throws IOException
      */
-    public static List<Object> convert(InputSource is,  String baseUrl, WordprocessingMLPackage wordMLPackage) throws Docx4JException {
+    public List<Object> convert(InputSource is,  String baseUrl) throws Docx4JException {
 
-        XHTMLImporter importer = new XHTMLImporter(wordMLPackage);
-
-        importer.renderer = new DocxRenderer();
+        renderer = getRenderer();
         
         Document dom = XMLResource.load(is).getDocument();        
-        importer.renderer.setDocument(dom, baseUrl);
+        renderer.setDocument(dom, baseUrl);
         
-        importer.renderer.layout();
+        renderer.layout();
                     
-        importer.traverse(importer.renderer.getRootBox(),  null);
+        traverse(renderer.getRootBox(),  null);
         
-        return importer.imports.getContent();    	
+        return imports.getContent();    	
     }
 
     /**
@@ -456,19 +459,18 @@ public class XHTMLImporter {
      * @return
      * @throws IOException
      */
-    public static List<Object> convert(InputStream is, String baseUrl, WordprocessingMLPackage wordMLPackage) throws Docx4JException {
-        XHTMLImporter importer = new XHTMLImporter(wordMLPackage);
+    public List<Object> convert(InputStream is, String baseUrl) throws Docx4JException {
     	
-        importer.renderer = new DocxRenderer();
+        renderer = getRenderer();
         
         Document dom = XMLResource.load(is).getDocument();        
-        importer.renderer.setDocument(dom, baseUrl);
+        renderer.setDocument(dom, baseUrl);
 
-        importer.renderer.layout();
+        renderer.layout();
                     
-        importer.traverse(importer.renderer.getRootBox(), null);
+        traverse(renderer.getRootBox(), null);
         
-        return importer.imports.getContent();    	
+        return imports.getContent();    	
     }
     
     /**
@@ -478,22 +480,21 @@ public class XHTMLImporter {
      * @return
      * @throws IOException
      */
-    public static List<Object> convert(Node node,  String baseUrl, WordprocessingMLPackage wordMLPackage) throws Docx4JException {
-        XHTMLImporter importer = new XHTMLImporter(wordMLPackage);
+    public List<Object> convert(Node node,  String baseUrl) throws Docx4JException {
     	
-        importer.renderer = new DocxRenderer();
+        renderer = getRenderer();
         if (node instanceof Document) {
-        	importer.renderer.setDocument( (Document)node, baseUrl );
+        	renderer.setDocument( (Document)node, baseUrl );
         } else {
         	Document doc = XmlUtils.neww3cDomDocument();
         	doc.importNode(node, true);
-        	importer.renderer.setDocument( doc, baseUrl );
+        	renderer.setDocument( doc, baseUrl );
         }
-        importer.renderer.layout();
+        renderer.layout();
                     
-        importer.traverse(importer.renderer.getRootBox(),  null);
+        traverse(renderer.getRootBox(),  null);
         
-        return importer.imports.getContent();    	
+        return imports.getContent();    	
     }
     
     /**
@@ -503,19 +504,18 @@ public class XHTMLImporter {
      * @return
      * @throws IOException
      */
-    public static List<Object> convert(Reader reader,  String baseUrl, WordprocessingMLPackage wordMLPackage) throws Docx4JException {
-        XHTMLImporter importer = new XHTMLImporter(wordMLPackage);
+    public List<Object> convert(Reader reader,  String baseUrl) throws Docx4JException {
     	
-        importer.renderer = new DocxRenderer();
+        renderer = getRenderer();
         
         Document dom = XMLResource.load(reader).getDocument();        
-        importer.renderer.setDocument(dom, baseUrl);
+        renderer.setDocument(dom, baseUrl);
         
-        importer.renderer.layout();
+        renderer.layout();
                     
-        importer.traverse(importer.renderer.getRootBox(),  null);
+        traverse(renderer.getRootBox(),  null);
         
-        return importer.imports.getContent();    	
+        return imports.getContent();    	
     }
     
     /**
@@ -525,24 +525,22 @@ public class XHTMLImporter {
      * @return
      * @throws IOException
      */
-    public static List<Object> convert(Source source,  String baseUrl, WordprocessingMLPackage wordMLPackage) throws Docx4JException {
-    	
-        XHTMLImporter importer = new XHTMLImporter(wordMLPackage);
-    	
-        importer.renderer = new DocxRenderer();
+    public List<Object> convert(Source source,  String baseUrl) throws Docx4JException {
+    	    	
+        renderer = getRenderer();
                 
         Document dom = XMLResource.load(source).getDocument();        
-        importer.renderer.setDocument(dom, baseUrl);
+        renderer.setDocument(dom, baseUrl);
 
-        importer.renderer.layout();
+        renderer.layout();
                     
-        importer.traverse(importer.renderer.getRootBox(),  null);
+        traverse(renderer.getRootBox(),  null);
         
-        return importer.imports.getContent();    	
+        return imports.getContent();    	
     }
     
-    //public static List<Object> convert(XMLEventReader reader, WordprocessingMLPackage wordMLPackage) throws IOException {
-    //public static List<Object> convert(XMLStreamReader reader, WordprocessingMLPackage wordMLPackage) throws IOException {
+    //public List<Object> convert(XMLEventReader reader) throws IOException {
+    //public List<Object> convert(XMLStreamReader reader) throws IOException {
     
     /**
      * Convert the well formed XHTML found at the specified URI to a list of WML objects.
@@ -551,20 +549,18 @@ public class XHTMLImporter {
      * @param wordMLPackage
      * @return
      */
-    public static List<Object> convert(URL url, WordprocessingMLPackage wordMLPackage) throws Docx4JException {
+    public List<Object> convert(URL url) throws Docx4JException {
 
-        XHTMLImporter importer = new XHTMLImporter(wordMLPackage);
-    	
-        importer.renderer = new DocxRenderer();
+        renderer = getRenderer();
         
         String urlString = url.toString();
-        Document dom =importer.renderer.loadDocument(urlString);
-        importer.renderer.setDocument(dom, urlString);
-        importer.renderer.layout();
+        Document dom =renderer.loadDocument(urlString);
+        renderer.setDocument(dom, urlString);
+        renderer.layout();
                     
-        importer.traverse(importer.renderer.getRootBox(),  null);
+        traverse(renderer.getRootBox(),  null);
         
-        return importer.imports.getContent();    	
+        return imports.getContent();    	
     }
 
     /**
@@ -576,11 +572,9 @@ public class XHTMLImporter {
      * @param wordMLPackage
      * @return
      */
-    public static List<Object> convert(String content,  String baseUrl, WordprocessingMLPackage wordMLPackage) throws Docx4JException {
+    public List<Object> convert(String content,  String baseUrl) throws Docx4JException {
     	
-        XHTMLImporter importer = new XHTMLImporter(wordMLPackage);
-
-        importer.renderer = new DocxRenderer();
+        renderer = getRenderer();
         
         InputSource is = new InputSource(new BufferedReader(new StringReader(content)));
         
@@ -611,12 +605,12 @@ public class XHTMLImporter {
         }
         
         
-        importer.renderer.setDocument(dom, baseUrl);
-        importer.renderer.layout();
+        renderer.setDocument(dom, baseUrl);
+        renderer.layout();
                     
-        importer.traverse(importer.renderer.getRootBox(),  null);
+        traverse(renderer.getRootBox(),  null);
         
-        return importer.imports.getContent();    	
+        return imports.getContent();    	
     }
     
     
@@ -1666,7 +1660,7 @@ public class XHTMLImporter {
 		Long cy = (box.getStyle().valueByName(CSSName.HEIGHT) == IdentValue.AUTO) ? null :
 				UnitsOfMeasurement.twipToEMU(box.getHeight());
 		
-		xHTMLImageHandler.addImage(renderer.getDocx4jUserAgent(), wordMLPackage, 
+		xHTMLImageHandler.addImage( renderer.getDocx4jUserAgent(), wordMLPackage, 
 				this.getCurrentParagraph(true), box.getElement(), cx, cy);
 		
 		paraStillEmpty = false;
