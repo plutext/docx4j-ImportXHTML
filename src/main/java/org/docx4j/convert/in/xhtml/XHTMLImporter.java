@@ -1210,6 +1210,8 @@ public class XHTMLImporter {
 		            	
 	            	} 
             		
+            	} else if  (e.getNodeName().equals("img")) {
+		            	addImage(blockBox);
 	            } else {
 	            	
 	            	// Paragraph processing
@@ -1260,30 +1262,13 @@ public class XHTMLImporter {
             			}
 		            	
 	            	} 
-		            
-//		            if (e.getNodeName().equals("li")) {
 //		            	addNumbering(e, cssMap);
-//		            } else 
-		            	if  (e.getNodeName().equals("img")) {
-		        		// TODO, should we be using ReplacedElementFactory approach instead?		
-		            	
-		            	addImage(blockBox);
-		            }
 		            
 	            }
         	}
             
             // the recursive bit:
             
-
-//        	if (contentContext instanceof Body) {
-//        		currentP = Context.getWmlObjectFactory().createP();                                        	
-//        		contentContext.getContent().add(currentP);            		
-//	            paraStillEmpty = true;	
-//	            contentContext = currentP;
-//	            contentContextStack.push(currentP);
-//        	}
-
         	
             	log.debug("Processing children of " + box.getElement().getNodeName() );
 	            switch (blockBox.getChildrenContentType()) {
@@ -1361,10 +1346,12 @@ public class XHTMLImporter {
             	}
             }
 
-            // new P
-            attachmentPointP = null; 
-            
-            if (mustPop) popBlockStack();
+            // new P, except following an image
+        	if  (!e.getNodeName().equals("img")) {
+        		attachmentPointP = null; 
+                if (mustPop) popBlockStack();
+        	}
+        	
             	
 //            // An empty tc shouldn't make the table disappear!
 //            // TODO - make more elegant
