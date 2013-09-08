@@ -56,7 +56,15 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 				imagePart = imagePartCache.get(e.getAttribute("src"));
 				
 				if (imagePart==null) {
-					Docx4JFSImage docx4JFSImage = docx4jUserAgent.getDocx4JImageResource(e.getAttribute("src"));
+					
+					String url = e.getAttribute("src");
+					// Workaround for cannot resolve the URL C:\... with base URL file:/C:/...
+					// where @src points to a raw file path
+					if (url.substring(1,2).equals(":")) {
+						url = "file:/" + url;
+					}
+					
+					Docx4JFSImage docx4JFSImage = docx4jUserAgent.getDocx4JImageResource(url);
 					if (docx4JFSImage != null) {// in case of wrong URL - docx4JFSImage will be null
 						imageBytes = docx4JFSImage.getBytes();
 					}
