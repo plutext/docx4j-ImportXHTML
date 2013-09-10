@@ -50,7 +50,8 @@ public class TableBordersTest {
 	}
 
 	private List<Object> convert(String xhtml) throws Docx4JException {
-		return XHTMLImporter.convert(xhtml, "", wordMLPackage);
+		XHTMLImporter XHTMLImporter = new XHTMLImporter(wordMLPackage);						
+		return XHTMLImporter.convert(xhtml, "");
 	}
 
 	private Tbl table(String tableContent) throws Docx4JException {

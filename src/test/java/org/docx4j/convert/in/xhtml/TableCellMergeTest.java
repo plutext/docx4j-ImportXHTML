@@ -122,7 +122,8 @@ public class TableCellMergeTest {
 	}
 
 	private List<Object> convert(String xhtml) throws Docx4JException {
-		return XHTMLImporter.convert(xhtml, "", wordMLPackage);
+		XHTMLImporter XHTMLImporter = new XHTMLImporter(wordMLPackage);						
+		return XHTMLImporter.convert(xhtml, "");
 	}
 
 	private List<Object> table(String tableContent) throws Docx4JException {
