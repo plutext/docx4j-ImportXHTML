@@ -802,10 +802,6 @@ public class XHTMLImporter {
             		 * 
             		 */
 
-            		org.docx4j.org.xhtmlrenderer.newtable.TableBox cssTable = (org.docx4j.org.xhtmlrenderer.newtable.TableBox)box;
-            		
-            		tableProperties = new TableProperties();
-            		tableProperties.setTableBox(cssTable);
 
             		// eg <table color: #000000; background-color: transparent; background-image: none; background-repeat: repeat; background-attachment: scroll; background-position: [0%, 0%]; background-size: [auto, auto]; 
             		//           border-collapse: collapse; -fs-border-spacing-horizontal: 2px; -fs-border-spacing-vertical: 2px; -fs-font-metric-src: none; -fs-keep-with-inline: auto; -fs-page-width: auto; -fs-page-height: auto; -fs-page-sequence: auto; -fs-pdf-font-embed: auto; -fs-pdf-font-encoding: Cp1252; -fs-page-orientation: auto; -fs-table-paginate: auto; -fs-text-decoration-extent: line; bottom: auto; caption-side: top; clear: none; ; content: normal; counter-increment: none; counter-reset: none; cursor: auto; ; display: table; empty-cells: show; float: none; font-style: normal; font-variant: normal; font-weight: normal; font-size: medium; line-height: normal; font-family: serif; -fs-table-cell-colspan: 1; -fs-table-cell-rowspan: 1; height: auto; left: auto; letter-spacing: normal; list-style-type: disc; list-style-position: outside; list-style-image: none; max-height: none; max-width: none; min-height: 0; min-width: 0; orphans: 2; ; ; ; overflow: visible; page: auto; page-break-after: auto; page-break-before: auto; page-break-inside: auto; position: relative; ; right: auto; src: none; 
@@ -828,124 +824,11 @@ public class XHTMLImporter {
 		            pushBlockStack(tbl);
 		            mustPop = true;
 		            
-            		TblPr tblPr = Context.getWmlObjectFactory().createTblPr();
-            		tbl.setTblPr(tblPr);    
-
-                    String cssClass = null;
-                	if (e.getAttribute("class")!=null) {
-                	 	cssClass=e.getAttribute("class").trim();
-                        setTableStyle(tblPr, cssClass);
-                	}
-            		
-            		
-					// table borders
-					TblBorders borders = Context.getWmlObjectFactory().createTblBorders();
-					borders.setTop( copyBorderStyle(cssTable, "top", true) );
-					borders.setBottom( copyBorderStyle(cssTable, "bottom", true) );
-					borders.setLeft( copyBorderStyle(cssTable, "left", true) );
-					borders.setRight( copyBorderStyle(cssTable, "right", true) );
-					borders.setInsideH( createBorderStyle(STBorder.NONE, null, null) );
-					borders.setInsideV( createBorderStyle(STBorder.NONE, null, null) );
-					tblPr.setTblBorders(borders);
-
-					TblWidth spacingWidth = Context.getWmlObjectFactory().createTblWidth();
-					if(cssTable.getStyle().isCollapseBorders()) {
-						spacingWidth.setW(BigInteger.ZERO);
-						spacingWidth.setType(TblWidth.TYPE_AUTO);
-					} else {
-						int cssSpacing = cssTable.getStyle().getBorderHSpacing(renderer.getLayoutContext());
-						spacingWidth.setW( BigInteger.valueOf(cssSpacing  / 2) );	// appears twice thicker, probably taken from both sides 
-						spacingWidth.setType(TblWidth.TYPE_DXA);
-					}
-					tblPr.setTblCellSpacing(spacingWidth); 
-            		
-            		// Table indent.  
-            		// cssTable.getLeftMBP() which is setLeftMBP((int) margin.left() + (int) border.left() + (int) padding.left());
-            		// cssTable.getTx(); which is (int) margin.left() + (int) border.left() + (int) padding.left();
-            		// But want just margin.left
-            		if (cssTable.getMargin() !=null
-            				&& cssTable.getMargin().left()>0) {
-            			log.debug("Calculating TblInd from margin.left: " + cssTable.getMargin().left() );
-                		TblWidth tblIW = Context.getWmlObjectFactory().createTblWidth();
-                		tblIW.setW( BigInteger.valueOf( Math.round(
-                				cssTable.getMargin().left()
-                				)));
-                		tblIW.setType(TblWidth.TYPE_DXA);
-            			tblPr.setTblInd(tblIW);
-            		} else {
-            		
-	            		// Indent is zero.  In this case, if the table has borders,
-	            		// adjust the indent to align the left border with the left edge of text outside the table
-	            		// See http://superuser.com/questions/126451/changing-the-placement-of-the-left-border-of-tables-in-word
-            			CTBorder leftBorder = borders.getLeft();
-            			if (leftBorder!=null
-            					&& leftBorder.getVal()!=null
-            					&& leftBorder.getVal()!=STBorder.NONE
-            					&& leftBorder.getVal()!=STBorder.NIL) {
-            				// set table indent to .08", ie 115 twip
-            				// <w:tblInd w:w="115" w:type="dxa"/>
-            				// TODO For a wider line, or a line style which is eg double lines, you might need more indent
-            				log.debug("applying fix to align left edge of table with text");
-                    		TblWidth tblIW = Context.getWmlObjectFactory().createTblWidth();
-                    		tblIW.setW( BigInteger.valueOf( 115));
-                    		tblIW.setType(TblWidth.TYPE_DXA);
-                			tblPr.setTblInd(tblIW);
-            			}
-            			
-            		}
-            			
-            		// <w:tblW w:w="0" w:type="auto"/>
-            		// for both fixed width and auto fit tables.
-            		// You'd only set it to something else
-            		// eg <w:tblW w:w="5670" w:type="dxa"/>
-            		// for what in Word corresponds to 
-            		// "Preferred width".  TODO: decide what CSS
-            		// requires that.
-            		TblWidth tblW = Context.getWmlObjectFactory().createTblWidth();
-            		tblW.setW(BigInteger.ZERO);
-            		tblW.setType(TblWidth.TYPE_AUTO);
-            		tblPr.setTblW(tblW);
-            		
-	            	if (cssTable.getStyle().isIdent(CSSName.TABLE_LAYOUT, IdentValue.AUTO) 
-	            			|| cssTable.getStyle().isAutoWidth()) {
-	            		// Conditions under which FS creates AutoTableLayout
-	            		
-	            		tableProperties.setFixedWidth(false);
-	            		
-	            		// This is the default, so no need to set 
-	            		// STTblLayoutType.AUTOFIT
-	            		
-	                } else {
-	            		// FS creates FixedTableLayout
-	            		tableProperties.setFixedWidth(true);
-	            		
-	            		// <w:tblLayout w:type="fixed"/>
-	            		CTTblLayoutType tblLayout = Context.getWmlObjectFactory().createCTTblLayoutType();
-	            		tblLayout.setType(STTblLayoutType.FIXED);
-	            		tblPr.setTblLayout(tblLayout);
-	                }		            	
+		    		tableProperties = new TableProperties();
 		            
-	            	// Word can generally open a table without tblGrid:
-	                // <w:tblGrid>
-	                //  <w:gridCol w:w="4621"/>
-	                //  <w:gridCol w:w="4621"/>
-	                // </w:tblGrid>
-	            	// but for an AutoFit table (most common), it 
-	            	// is the w:gridCol val which prob specifies the actual width
-	            	TblGrid tblGrid = Context.getWmlObjectFactory().createTblGrid();
-	            	tbl.setTblGrid(tblGrid);
-	            	
-	            	int[] colPos = tableProperties.getColumnPos();
-	            	
-	            	for (int i=1; i<=cssTable.numEffCols(); i++) {
-	            		
-	            		TblGridCol tblGridCol = Context.getWmlObjectFactory().createTblGridCol();
-	            		tblGrid.getGridCol().add(tblGridCol);
-	            		
-	            		log.debug("colpos=" + colPos[i]);
-	            		tblGridCol.setW( BigInteger.valueOf(colPos[i]-colPos[i-1]) );
-	            		
-	            	}
+		            setupTblPr( (org.docx4j.org.xhtmlrenderer.newtable.TableBox)box,  tbl,  tableProperties);
+		            setupTblGrid( (org.docx4j.org.xhtmlrenderer.newtable.TableBox)box,  tbl,  tableProperties);
+		            
 	            	
             	} else if (e.getNodeName().equals("table") ) {
             		// but not instanceof org.docx4j.org.xhtmlrenderer.newtable.TableBox
@@ -990,6 +873,7 @@ public class XHTMLImporter {
 		            pushBlockStack(tr);
 		            mustPop = true;
             		
+		            setupTrPr((org.docx4j.org.xhtmlrenderer.newtable.TableRowBox)box, tr); // does nothing at present
             		
             	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableCellBox) {
             		            		
@@ -997,110 +881,26 @@ public class XHTMLImporter {
             		// eg <td color: #000000; background-color: transparent; background-image: none; background-repeat: repeat; background-attachment: scroll; background-position: [0%, 0%]; background-size: [auto, auto]; border-collapse: collapse; -fs-border-spacing-horizontal: 0; -fs-border-spacing-vertical: 0; -fs-font-metric-src: none; -fs-keep-with-inline: auto; -fs-page-width: auto; -fs-page-height: auto; -fs-page-sequence: auto; -fs-pdf-font-embed: auto; -fs-pdf-font-encoding: Cp1252; -fs-page-orientation: auto; -fs-table-paginate: auto; -fs-text-decoration-extent: line; bottom: auto; caption-side: top; clear: none; ; content: normal; counter-increment: none; counter-reset: none; cursor: auto; ; display: table-row; empty-cells: show; float: none; font-style: normal; font-variant: normal; font-weight: normal; font-size: medium; line-height: normal; font-family: serif; -fs-table-cell-colspan: 1; -fs-table-cell-rowspan: 1; height: auto; left: auto; letter-spacing: normal; list-style-type: disc; list-style-position: outside; list-style-image: none; max-height: none; max-width: none; min-height: 0; min-width: 0; orphans: 2; ; ; ; overflow: visible; page: auto; page-break-after: auto; page-break-before: auto; page-break-inside: auto; position: static; ; right: auto; src: none; table-layout: auto; text-align: left; text-decoration: none; text-indent: 0; text-transform: none; top: auto; ; vertical-align: top; visibility: visible; white-space: normal; word-wrap: normal; widows: 2; width: auto; word-spacing: normal; z-index: auto; border-top-color: #000000; border-right-color: #000000; border-bottom-color: #000000; border-left-color: #000000; border-top-style: none; border-right-style: none; border-bottom-style: none; border-left-style: none; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;
 
             		ContentAccessor trContext = contentContextStack.peek();
+
             		org.docx4j.org.xhtmlrenderer.newtable.TableCellBox tcb = (org.docx4j.org.xhtmlrenderer.newtable.TableCellBox)box;
-            		// tcb.getVerticalAlign()
-            		
-            		
-            		
+		            
             		// rowspan support: vertically merged cells are
             		// represented as a top cell containing the actual content with a vMerge tag with "restart" attribute 
             		// and a series of dummy cells having a vMerge tag with no (or "continue") attribute.            		
             		            		
-					// if current cell is the first real cell in the row, but is not in the leftmost position, then
-					// search for vertically spanned cells to the left and insert dummy cells before current
-					if (tcb.getParent().getChild(0) == tcb && tcb.getCol() > 0) {
-						insertDummyVMergedCells(trContext, tcb, true);
-					}
-
-					int effCol = tcb.getTable().colToEffCol(tcb.getCol());
+            		// if current cell is the first real cell in the row, but is not in the leftmost position, then
+            		// search for vertically spanned cells to the left and insert dummy cells before current
+            		if (tcb.getParent().getChild(0) == tcb && tcb.getCol() > 0) {
+            			insertDummyVMergedCells(contentContextStack.peek(), tcb, true);
+            		}
             		
-                    // The cell proper
-//					if (this.contentContextStack.peek() instanceof Tc) {
-//            			popStack();
-//					}
 					Tc tc = Context.getWmlObjectFactory().createTc();
             		contentContextStack.peek().getContent().add(tc);
             		pushBlockStack(tc);//.getContent();
 		            mustPop = true;
 
-            		// if the td contains bare text (eg <td>apple</td>)
-            		// we need a p for it
-//            		currentP = Context.getWmlObjectFactory().createP();                                        	
-//    	            contentContext.getContent().add(currentP);            		
-//		            paraStillEmpty = true;
             		
-            		// Do we need a vMerge tag with "restart" attribute?
-            		// get cell below (only 1 section supported at present)
-            		TcPr tcPr = Context.getWmlObjectFactory().createTcPr();
-        			tc.setTcPr(tcPr);
-                    if (tcb.getStyle().getRowSpan()> 1) {
-            			
-            			VMerge vm = Context.getWmlObjectFactory().createTcPrInnerVMerge();
-            			vm.setVal("restart");
-            			tcPr.setVMerge(vm);            
-                    }
-                    // eg <w:tcW w:w="2268" w:type="dxa"/>
-                    try {
-	            		TblWidth tblW = Context.getWmlObjectFactory().createTblWidth();
-	            		tblW.setW(BigInteger.valueOf(tableProperties.getColumnWidth(effCol+1) ));
-	            		tblW.setType(TblWidth.TYPE_DXA);
-	            		tcPr.setTcW(tblW);    	                    
-                    } catch (java.lang.ArrayIndexOutOfBoundsException aioob) {
-                    	// happens with http://en.wikipedia.org/wiki/Office_Open_XML
-                    	log.error("Problem with getColumnWidth for col" + (effCol+1) );
-                    }
-/*                  The below works, but the above formulation is simpler
- * 
- * 					int r = tcb.getRow() + tcb.getStyle().getRowSpan() - 1;
-                    if (r < tcb.getSection().numRows() - 1) {
-                        // The cell is not in the last row, so use the next row in the
-                        // section.
-                        TableCellBox belowCell = section.cellAt( r + 1, effCol);
-	                    log.debug("Got belowCell for " + tcb.getRow() + ", " + tcb.getCol() );
-	                    log.debug("it is  " + belowCell.getRow() + ", " + belowCell.getCol() );
-                        if (belowCell.getRow() > tcb.getRow() + 1 ) {
-	                		TcPr tcPr = Context.getWmlObjectFactory().createTcPr();
-	            			tc.setTcPr(tcPr);
-	            			
-	            			VMerge vm = Context.getWmlObjectFactory().createTcPrInnerVMerge();
-	            			vm.setVal("restart");
-	            			tcPr.setVMerge(vm);                        	
-                        }
-                    } 
- */            		
-            		// colspan support: horizontally merged cells are represented by one cell
-            		// with a gridSpan attribute; 
-            		int colspan = tcb.getStyle().getColSpan(); 
-            		if (colspan>1) {
-            			
-						TcPr tcPr2 = tc.getTcPr();
-						if (tcPr2 == null) {
-							tcPr2 = Context.getWmlObjectFactory().createTcPr();
-							tc.setTcPr(tcPr2);
-						}
-
-            			GridSpan gs = Context.getWmlObjectFactory().createTcPrInnerGridSpan();
-            			gs.setVal( BigInteger.valueOf(colspan));
-            			tcPr2.setGridSpan(gs);
-            			
-            			this.setCellWidthAuto(tcPr2);            			
-            		}
-            		
-            		// BackgroundColor
-            		FSColor fsColor = tcb.getStyle().getBackgroundColor();
-            		if (fsColor != null
-            				&& fsColor instanceof FSRGBColor) {
-           				
-            				FSRGBColor rgbResult = (FSRGBColor)fsColor;
-            				CTShd shd = Context.getWmlObjectFactory().createCTShd();
-            				shd.setFill(
-            						UnitsOfMeasurement.rgbTripleToHex(rgbResult.getRed(), rgbResult.getGreen(), rgbResult.getBlue())  );
-            				tcPr.setShd(shd);
-            		}
-					
-					// cell borders
-					tcPr.setTcBorders( copyCellBorderStyles(tcb) );
-					
+            		setupTcPr(tcb, tc, tableProperties);
             		
 					// search for vertically spanned cells to the right from current, and insert dummy cells after it
 					insertDummyVMergedCells(trContext, tcb, false);
@@ -1366,7 +1166,224 @@ public class XHTMLImporter {
         }
     
     }
+    
+    protected void setupTblPr(TableBox cssTable, Tbl tbl, TableProperties tableProperties) {
+    	
+        Element e = cssTable.getElement();     	
+    			
+		tableProperties.setTableBox(cssTable);
+    	
 
+		TblPr tblPr = Context.getWmlObjectFactory().createTblPr();
+		tbl.setTblPr(tblPr);    
+
+        String cssClass = null;
+    	if (e.getAttribute("class")!=null) {
+    	 	cssClass=e.getAttribute("class").trim();
+            setTableStyle(tblPr, cssClass);
+    	}
+		
+		
+		// table borders
+		TblBorders borders = Context.getWmlObjectFactory().createTblBorders();
+		borders.setTop( copyBorderStyle(cssTable, "top", true) );
+		borders.setBottom( copyBorderStyle(cssTable, "bottom", true) );
+		borders.setLeft( copyBorderStyle(cssTable, "left", true) );
+		borders.setRight( copyBorderStyle(cssTable, "right", true) );
+		borders.setInsideH( createBorderStyle(STBorder.NONE, null, null) );
+		borders.setInsideV( createBorderStyle(STBorder.NONE, null, null) );
+		tblPr.setTblBorders(borders);
+
+		TblWidth spacingWidth = Context.getWmlObjectFactory().createTblWidth();
+		if(cssTable.getStyle().isCollapseBorders()) {
+			spacingWidth.setW(BigInteger.ZERO);
+			spacingWidth.setType(TblWidth.TYPE_AUTO);
+		} else {
+			int cssSpacing = cssTable.getStyle().getBorderHSpacing(renderer.getLayoutContext());
+			spacingWidth.setW( BigInteger.valueOf(cssSpacing  / 2) );	// appears twice thicker, probably taken from both sides 
+			spacingWidth.setType(TblWidth.TYPE_DXA);
+		}
+		tblPr.setTblCellSpacing(spacingWidth); 
+		
+		// Table indent.  
+		// cssTable.getLeftMBP() which is setLeftMBP((int) margin.left() + (int) border.left() + (int) padding.left());
+		// cssTable.getTx(); which is (int) margin.left() + (int) border.left() + (int) padding.left();
+		// But want just margin.left
+		if (cssTable.getMargin() !=null
+				&& cssTable.getMargin().left()>0) {
+			log.debug("Calculating TblInd from margin.left: " + cssTable.getMargin().left() );
+    		TblWidth tblIW = Context.getWmlObjectFactory().createTblWidth();
+    		tblIW.setW( BigInteger.valueOf( Math.round(
+    				cssTable.getMargin().left()
+    				)));
+    		tblIW.setType(TblWidth.TYPE_DXA);
+			tblPr.setTblInd(tblIW);
+		} else {
+		
+    		// Indent is zero.  In this case, if the table has borders,
+    		// adjust the indent to align the left border with the left edge of text outside the table
+    		// See http://superuser.com/questions/126451/changing-the-placement-of-the-left-border-of-tables-in-word
+			CTBorder leftBorder = borders.getLeft();
+			if (leftBorder!=null
+					&& leftBorder.getVal()!=null
+					&& leftBorder.getVal()!=STBorder.NONE
+					&& leftBorder.getVal()!=STBorder.NIL) {
+				// set table indent to .08", ie 115 twip
+				// <w:tblInd w:w="115" w:type="dxa"/>
+				// TODO For a wider line, or a line style which is eg double lines, you might need more indent
+				log.debug("applying fix to align left edge of table with text");
+        		TblWidth tblIW = Context.getWmlObjectFactory().createTblWidth();
+        		tblIW.setW( BigInteger.valueOf( 115));
+        		tblIW.setType(TblWidth.TYPE_DXA);
+    			tblPr.setTblInd(tblIW);
+			}
+			
+		}
+			
+		// <w:tblW w:w="0" w:type="auto"/>
+		// for both fixed width and auto fit tables.
+		// You'd only set it to something else
+		// eg <w:tblW w:w="5670" w:type="dxa"/>
+		// for what in Word corresponds to 
+		// "Preferred width".  TODO: decide what CSS
+		// requires that.
+		TblWidth tblW = Context.getWmlObjectFactory().createTblWidth();
+		tblW.setW(BigInteger.ZERO);
+		tblW.setType(TblWidth.TYPE_AUTO);
+		tblPr.setTblW(tblW);
+		
+    	if (cssTable.getStyle().isIdent(CSSName.TABLE_LAYOUT, IdentValue.AUTO) 
+    			|| cssTable.getStyle().isAutoWidth()) {
+    		// Conditions under which FS creates AutoTableLayout
+    		
+    		tableProperties.setFixedWidth(false);
+    		
+    		// This is the default, so no need to set 
+    		// STTblLayoutType.AUTOFIT
+    		
+        } else {
+    		// FS creates FixedTableLayout
+    		tableProperties.setFixedWidth(true);
+    		
+    		// <w:tblLayout w:type="fixed"/>
+    		CTTblLayoutType tblLayout = Context.getWmlObjectFactory().createCTTblLayoutType();
+    		tblLayout.setType(STTblLayoutType.FIXED);
+    		tblPr.setTblLayout(tblLayout);
+        }		            	
+    }
+    
+    protected void setupTblGrid(TableBox cssTable, Tbl tbl, TableProperties tableProperties) {
+    	
+    	// Word can generally open a table without tblGrid:
+        // <w:tblGrid>
+        //  <w:gridCol w:w="4621"/>
+        //  <w:gridCol w:w="4621"/>
+        // </w:tblGrid>
+    	// but for an AutoFit table (most common), it 
+    	// is the w:gridCol val which prob specifies the actual width
+    	TblGrid tblGrid = Context.getWmlObjectFactory().createTblGrid();
+    	tbl.setTblGrid(tblGrid);
+    	
+    	int[] colPos = tableProperties.getColumnPos();
+    	
+    	for (int i=1; i<=cssTable.numEffCols(); i++) {
+    		
+    		TblGridCol tblGridCol = Context.getWmlObjectFactory().createTblGridCol();
+    		tblGrid.getGridCol().add(tblGridCol);
+    		
+    		log.debug("colpos=" + colPos[i]);
+    		tblGridCol.setW( BigInteger.valueOf(colPos[i]-colPos[i-1]) );
+    		
+    	}
+    	
+    }
+
+    protected void setupTrPr(org.docx4j.org.xhtmlrenderer.newtable.TableRowBox trBox, Tr tr) {
+    }
+    
+    protected void setupTcPr(TableCellBox tcb, Tc tc, TableProperties tableProperties) {
+    	
+		
+
+		int effCol = tcb.getTable().colToEffCol(tcb.getCol());
+		
+
+		
+		// Do we need a vMerge tag with "restart" attribute?
+		// get cell below (only 1 section supported at present)
+		TcPr tcPr = Context.getWmlObjectFactory().createTcPr();
+		tc.setTcPr(tcPr);
+        if (tcb.getStyle().getRowSpan()> 1) {
+			
+			VMerge vm = Context.getWmlObjectFactory().createTcPrInnerVMerge();
+			vm.setVal("restart");
+			tcPr.setVMerge(vm);            
+        }
+        // eg <w:tcW w:w="2268" w:type="dxa"/>
+        try {
+    		TblWidth tblW = Context.getWmlObjectFactory().createTblWidth();
+    		tblW.setW(BigInteger.valueOf(tableProperties.getColumnWidth(effCol+1) ));
+    		tblW.setType(TblWidth.TYPE_DXA);
+    		tcPr.setTcW(tblW);    	                    
+        } catch (java.lang.ArrayIndexOutOfBoundsException aioob) {
+        	// happens with http://en.wikipedia.org/wiki/Office_Open_XML
+        	log.error("Problem with getColumnWidth for col" + (effCol+1) );
+        }
+/*                  The below works, but the above formulation is simpler
+* 
+* 					int r = tcb.getRow() + tcb.getStyle().getRowSpan() - 1;
+        if (r < tcb.getSection().numRows() - 1) {
+            // The cell is not in the last row, so use the next row in the
+            // section.
+            TableCellBox belowCell = section.cellAt( r + 1, effCol);
+            log.debug("Got belowCell for " + tcb.getRow() + ", " + tcb.getCol() );
+            log.debug("it is  " + belowCell.getRow() + ", " + belowCell.getCol() );
+            if (belowCell.getRow() > tcb.getRow() + 1 ) {
+        		TcPr tcPr = Context.getWmlObjectFactory().createTcPr();
+    			tc.setTcPr(tcPr);
+    			
+    			VMerge vm = Context.getWmlObjectFactory().createTcPrInnerVMerge();
+    			vm.setVal("restart");
+    			tcPr.setVMerge(vm);                        	
+            }
+        } 
+*/            		
+		// colspan support: horizontally merged cells are represented by one cell
+		// with a gridSpan attribute; 
+		int colspan = tcb.getStyle().getColSpan(); 
+		if (colspan>1) {
+			
+			TcPr tcPr2 = tc.getTcPr();
+			if (tcPr2 == null) {
+				tcPr2 = Context.getWmlObjectFactory().createTcPr();
+				tc.setTcPr(tcPr2);
+			}
+
+			GridSpan gs = Context.getWmlObjectFactory().createTcPrInnerGridSpan();
+			gs.setVal( BigInteger.valueOf(colspan));
+			tcPr2.setGridSpan(gs);
+			
+			this.setCellWidthAuto(tcPr2);            			
+		}
+		
+		// BackgroundColor
+		FSColor fsColor = tcb.getStyle().getBackgroundColor();
+		if (fsColor != null
+				&& fsColor instanceof FSRGBColor) {
+				
+				FSRGBColor rgbResult = (FSRGBColor)fsColor;
+				CTShd shd = Context.getWmlObjectFactory().createCTShd();
+				shd.setFill(
+						UnitsOfMeasurement.rgbTripleToHex(rgbResult.getRed(), rgbResult.getGreen(), rgbResult.getBlue())  );
+				tcPr.setShd(shd);
+		}
+		
+		// cell borders
+		tcPr.setTcBorders( copyCellBorderStyles(tcb) );
+		
+    	
+    }
+    
 	/**
 	 * Table borders support
 	 * @param box table or cell to copy css border properties from
