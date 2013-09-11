@@ -127,6 +127,7 @@
 					<excludes>
 						<exclude>**/*.docx</exclude>
 						<exclude>src/test/resources/**</exclude>
+						<exclude>src/main/resources/log4j.xml</exclude>
 						<!-- TODO this still leaves some ugly directories in our jar. Anyone
 							know how to leave out all files and directories in src/test/resources? -->
 					</excludes>
@@ -240,6 +241,7 @@
 					<include>XhtmlNamespaceHandler.css</include>
 					<include>xhtmlrenderer.conf</include>
 				</includes>
+			
 			</resource>
 			<!-- <resource> <directory>src/test/resources</directory> <excludes> <exclude>*.docx</exclude>
 				</excludes> </resource> -->
@@ -283,7 +285,7 @@
 		<dependency>
 			<groupId>org.docx4j</groupId>
 			<artifactId>xhtmlrenderer</artifactId><!--  supports xhtml import -->
-			<version>1.0.1-SNAPSHOT</version>
+			<version>3.0.0-SNAPSHOT</version>
 			<!-- currently itext is required (fonts for width calculations)
 				<exclusions>
 					<exclusion>
