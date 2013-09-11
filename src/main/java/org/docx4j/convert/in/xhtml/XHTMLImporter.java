@@ -36,11 +36,9 @@ import java.io.StringReader;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -48,34 +46,22 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.Source;
 
-import org.apache.commons.codec.binary.Base64;
-import org.docx4j.wml.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.XmlUtils;
-import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.jaxb.Context;
 import org.docx4j.model.PropertyResolver;
-import org.docx4j.model.fields.FieldRef;
 import org.docx4j.model.properties.Property;
 import org.docx4j.model.properties.PropertyFactory;
 import org.docx4j.model.properties.paragraph.AbstractParagraphProperty;
 import org.docx4j.model.properties.paragraph.Indent;
 import org.docx4j.model.properties.run.AbstractRunProperty;
 import org.docx4j.model.properties.run.FontSize;
-import org.docx4j.model.styles.StyleTree;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.exceptions.InvalidFormatException;
-import org.docx4j.openpackaging.exceptions.InvalidOperationException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
 import org.docx4j.openpackaging.parts.WordprocessingML.NumberingDefinitionsPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.StyleDefinitionsPart;
 import org.docx4j.openpackaging.parts.relationships.Namespaces;
@@ -88,8 +74,6 @@ import org.docx4j.org.xhtmlrenderer.css.style.CalculatedStyle;
 import org.docx4j.org.xhtmlrenderer.css.style.DerivedValue;
 import org.docx4j.org.xhtmlrenderer.css.style.FSDerivedValue;
 import org.docx4j.org.xhtmlrenderer.css.style.derived.LengthValue;
-import org.docx4j.org.xhtmlrenderer.docx.Docx4JFSImage;
-import org.docx4j.org.xhtmlrenderer.docx.Docx4jUserAgent;
 import org.docx4j.org.xhtmlrenderer.docx.DocxRenderer;
 import org.docx4j.org.xhtmlrenderer.layout.Styleable;
 import org.docx4j.org.xhtmlrenderer.newtable.TableBox;
@@ -99,15 +83,42 @@ import org.docx4j.org.xhtmlrenderer.render.BlockBox;
 import org.docx4j.org.xhtmlrenderer.render.Box;
 import org.docx4j.org.xhtmlrenderer.render.InlineBox;
 import org.docx4j.org.xhtmlrenderer.resource.XMLResource;
+import org.docx4j.wml.Body;
+import org.docx4j.wml.CTBookmark;
+import org.docx4j.wml.CTBorder;
+import org.docx4j.wml.CTMarkupRange;
+import org.docx4j.wml.CTShd;
+import org.docx4j.wml.CTTblLayoutType;
 import org.docx4j.wml.CTTblPrBase.TblStyle;
+import org.docx4j.wml.ContentAccessor;
 import org.docx4j.wml.DocDefaults.RPrDefault;
+import org.docx4j.wml.HpsMeasure;
+import org.docx4j.wml.P;
 import org.docx4j.wml.P.Hyperlink;
-import org.docx4j.wml.PPrBase.NumPr;
-import org.docx4j.wml.PPrBase.NumPr.Ilvl;
-import org.docx4j.wml.PPrBase.NumPr.NumId;
+import org.docx4j.wml.PPr;
 import org.docx4j.wml.PPrBase.PStyle;
+import org.docx4j.wml.R;
+import org.docx4j.wml.RFonts;
+import org.docx4j.wml.RPr;
+import org.docx4j.wml.RStyle;
+import org.docx4j.wml.STBorder;
+import org.docx4j.wml.STTblLayoutType;
+import org.docx4j.wml.Style;
+import org.docx4j.wml.Tbl;
+import org.docx4j.wml.TblBorders;
+import org.docx4j.wml.TblGrid;
+import org.docx4j.wml.TblGridCol;
+import org.docx4j.wml.TblPr;
+import org.docx4j.wml.TblWidth;
+import org.docx4j.wml.Tc;
+import org.docx4j.wml.TcPr;
+import org.docx4j.wml.TcPrInner;
 import org.docx4j.wml.TcPrInner.GridSpan;
 import org.docx4j.wml.TcPrInner.VMerge;
+import org.docx4j.wml.Text;
+import org.docx4j.wml.Tr;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -185,7 +196,7 @@ public class XHTMLImporter {
 	private Body imports = null; 
     
     
-    private WordprocessingMLPackage wordMLPackage;
+    protected WordprocessingMLPackage wordMLPackage;
     private RelationshipsPart rp;
     private NumberingDefinitionsPart ndp;
     
@@ -824,10 +835,13 @@ public class XHTMLImporter {
 		            pushBlockStack(tbl);
 		            mustPop = true;
 		            
-		    		tableProperties = new TableProperties();
+		            TableBox tableBox = (org.docx4j.org.xhtmlrenderer.newtable.TableBox)box;
 		            
-		            setupTblPr( (org.docx4j.org.xhtmlrenderer.newtable.TableBox)box,  tbl,  tableProperties);
-		            setupTblGrid( (org.docx4j.org.xhtmlrenderer.newtable.TableBox)box,  tbl,  tableProperties);
+		    		tableProperties = new TableProperties();
+		    		tableProperties.setTableBox(tableBox);
+		            
+		            setupTblPr( tableBox,  tbl,  tableProperties);
+		            setupTblGrid( tableBox,  tbl,  tableProperties);
 		            
 	            	
             	} else if (e.getNodeName().equals("table") ) {
@@ -1015,55 +1029,9 @@ public class XHTMLImporter {
 	            } else {
 	            	
 	            	// Paragraph processing
-	            	
-	            	// Avoid creating paragraphs for html, body
-//	            	if (contentContext.getContent().size()>0 && paraStillEmpty) {
-//			            contentContext.getContent().remove( contentContext.getContent().size()-1);                                        		
-//	            	} 
-	            	
-		            // Paragraph level styling
 	            	P currentP = this.getCurrentParagraph(true);
-	            	
-	                PPr pPr =  Context.getWmlObjectFactory().createPPr();
-	                currentP.setPPr(pPr);
-	            	
-	                if (paragraphFormatting.equals(FormattingOption.IGNORE_CLASS)) {
-	            		addParagraphProperties(pPr, blockBox, cssMap );
-	                } else {
-	                	// CLASS_TO_STYLE_ONLY or CLASS_PLUS_OTHER
-		            	if (box.getElement()!=null
-		            			&& box.getElement().getAttribute("class")!=null) {
-		            		
-		            		String cssClass = box.getElement().getAttribute("class").trim();
-		            		if (!cssClass.equals("")) {
-			            		// Our XHTML export gives a space separated list of class names,
-			            		// reflecting the style hierarchy.  Here, we just want the first one.
-			            		// TODO, replace this with a configurable stylenamehandler.
-			            		int pos = cssClass.indexOf(" ");
-			            		if (pos>-1) {
-			            			cssClass = cssClass.substring(0,  pos);
-			            		}
-			            		
-			            		// if the docx contains this stylename, set it
-			            		Style s = this.stylesByID.get(cssClass);
-			            		if (s==null) {
-			            			log.debug("No docx style for @class='" + cssClass + "'");
-			            		} else if (s.getType()!=null && s.getType().equals("paragraph")) {
-			            			PStyle pStyle = Context.getWmlObjectFactory().createPPrBasePStyle();
-			            			pPr.setPStyle(pStyle);
-			            			pStyle.setVal(cssClass);
-			            		} else {
-			            			log.debug("For docx style for @class='" + cssClass + "', but its not a paragraph style ");
-			            		}
-		            		}
-		            	}
-            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
-            				addParagraphProperties(pPr, blockBox, cssMap );
-            			}
-		            	
-	            	} 
-//		            	addNumbering(e, cssMap);
-		            
+	                currentP.setPPr(this.getPPr(blockBox, cssMap));
+	                
 	            }
         	}
             
@@ -1166,13 +1134,58 @@ public class XHTMLImporter {
         }
     
     }
+
+    protected PPr getPPr(BlockBox blockBox, Map<String, CSSValue> cssMap) {
+    	
+        PPr pPr =  Context.getWmlObjectFactory().createPPr();
+        populatePPr(pPr, blockBox, cssMap);
+    	return pPr;
+    }
+    
+    protected void populatePPr(PPr pPr, BlockBox blockBox, Map<String, CSSValue> cssMap) {
+    	
+    	
+        if (paragraphFormatting.equals(FormattingOption.IGNORE_CLASS)) {
+    		addParagraphProperties(pPr, blockBox, cssMap );
+        } else {
+        	// CLASS_TO_STYLE_ONLY or CLASS_PLUS_OTHER
+        	if (blockBox.getElement()!=null
+        			&& blockBox.getElement().getAttribute("class")!=null) {
+        		
+        		String cssClass = blockBox.getElement().getAttribute("class").trim();
+        		if (!cssClass.equals("")) {
+            		// Our XHTML export gives a space separated list of class names,
+            		// reflecting the style hierarchy.  Here, we just want the first one.
+            		// TODO, replace this with a configurable stylenamehandler.
+            		int pos = cssClass.indexOf(" ");
+            		if (pos>-1) {
+            			cssClass = cssClass.substring(0,  pos);
+            		}
+            		
+            		// if the docx contains this stylename, set it
+            		Style s = this.stylesByID.get(cssClass);
+            		if (s==null) {
+            			log.debug("No docx style for @class='" + cssClass + "'");
+            		} else if (s.getType()!=null && s.getType().equals("paragraph")) {
+            			PStyle pStyle = Context.getWmlObjectFactory().createPPrBasePStyle();
+            			pPr.setPStyle(pStyle);
+            			pStyle.setVal(cssClass);
+            		} else {
+            			log.debug("For docx style for @class='" + cssClass + "', but its not a paragraph style ");
+            		}
+        		}
+        	}
+			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
+				addParagraphProperties(pPr, blockBox, cssMap );
+			}
+        	
+    	} 
+    	
+    }
     
     protected void setupTblPr(TableBox cssTable, Tbl tbl, TableProperties tableProperties) {
     	
         Element e = cssTable.getElement();     	
-    			
-		tableProperties.setTableBox(cssTable);
-    	
 
 		TblPr tblPr = Context.getWmlObjectFactory().createTblPr();
 		tbl.setTblPr(tblPr);    
