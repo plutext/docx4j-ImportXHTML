@@ -51,6 +51,7 @@ import javax.xml.transform.Source;
 
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.XmlUtils;
+import org.docx4j.convert.out.html.HtmlCssHelper;
 import org.docx4j.jaxb.Context;
 import org.docx4j.model.PropertyResolver;
 import org.docx4j.model.properties.Property;
@@ -158,9 +159,9 @@ import org.xml.sax.InputSource;
  * @since 2.8
  *
  */
-public class XHTMLImporter {
+public class XHTMLImporterImpl implements XHTMLImporter {
 	
-	public static Logger log = LoggerFactory.getLogger(XHTMLImporter.class);		
+	public static Logger log = LoggerFactory.getLogger(XHTMLImporterImpl.class);		
 	    
 	/**
 	 * Configure, how the Importer styles hyperlinks
@@ -209,7 +210,16 @@ public class XHTMLImporter {
 	 */
 	public DocxRenderer getRenderer() {
 		if (renderer==null) {
-			renderer = new DocxRenderer();
+			
+			if (paragraphFormatting==FormattingOption.CLASS_PLUS_OTHER
+					|| paragraphFormatting==FormattingOption.CLASS_TO_STYLE_ONLY ) {
+					// Not strictly necessary in the CLASS_TO_STYLE_ONLY case
+				
+				renderer = new DocxRenderer(stylesToCSS());
+				
+			} else {			
+				renderer = new DocxRenderer();
+			}
 		}
 		return renderer;
 	}
@@ -267,20 +277,6 @@ public class XHTMLImporter {
 		}
 	}
 
-	/**
-	 * CLASS_TO_STYLE_ONLY: a Word style matching a class attribute will
-	 * be used, and nothing else
-	 * 
-	 * CLASS_PLUS_OTHER: a Word style matching a class attribute will
-	 * be used; other css will be translated to direct formatting
-	 * 
-	 * IGNORE_CLASS: css will be translated to direct formatting
-	 *
-	 */
-	public enum FormattingOption {
-
-		CLASS_TO_STYLE_ONLY, CLASS_PLUS_OTHER, IGNORE_CLASS;
-	}
 
 	/**
 	 * @param runFormatting
@@ -326,15 +322,17 @@ public class XHTMLImporter {
 	 * 
 	 * @param cssWhiteList the cssWhiteList to set
 	 */
-	public void setCssWhiteList(Set<String> cssWhiteList) {
-		this.cssWhiteList = cssWhiteList;
+	@Deprecated
+	public static void setCssWhiteList(Set<String> cssWhiteList) {
+		cssWhiteList = cssWhiteList;
 	}
-	private Set<String> cssWhiteList = null;
+	private static Set<String> cssWhiteList = null;
 
 
-	private XHTMLImporter() {}
+	private XHTMLImporterImpl() {}
+
 	
-	public XHTMLImporter(WordprocessingMLPackage wordMLPackage) {
+	public XHTMLImporterImpl(WordprocessingMLPackage wordMLPackage) {
 		
 		displayFormattingOptionSettings();
 		
@@ -408,6 +406,28 @@ public class XHTMLImporter {
 		}
     }
 	
+	/**
+	 * Where @class is to be used as a mapping to an existing Word style,
+	 * we also want FS to use that Word style in the CSS it is applying
+	 * (since if this does not happen, some of the CSS applied will be 
+	 * default CSS, and this will overwrite the intended style with direct
+	 * formatting assuming CLASS_PLUS_OTHER) 
+	 * @param pkg
+	 * @return
+	 */
+	private String stylesToCSS() {
+		
+		String css = wordMLPackage.getMainDocumentPart().getStyleDefinitionsPart().getCss();
+		
+		if (css==null) {
+			StringBuilder result = new StringBuilder();
+			HtmlCssHelper.createCssForStyles(wordMLPackage, wordMLPackage.getMainDocumentPart().getStyleTree(), result);
+			css = result.toString();
+			wordMLPackage.getMainDocumentPart().getStyleDefinitionsPart().setCss(css);
+		}
+		return css;
+	}
+    
 
     /**
      * Convert the well formed XHTML contained in file to a list of WML objects.
@@ -1794,10 +1814,11 @@ public class XHTMLImporter {
         } else {
             debug = "<" + s.getElement().getNodeName();
             
-            String cssClass = null;
-        	if (s.getElement().getAttribute("class")!=null) {
-        	 	cssClass=s.getElement().getAttribute("class").trim();
+            String cssClass = getClassAttribute(s.getElement());
+        	if (cssClass!=null) {
+        	 	cssClass=cssClass.trim();
         	}
+        	
             
             if (s.getElement().getNodeName().equals("a")) {
             	
@@ -1945,10 +1966,9 @@ public class XHTMLImporter {
             
             paraStillEmpty = false;   
             
-            String cssClass = null;
-        	if (s.getElement()!=null
-        			&& s.getElement().getAttribute("class")!=null) {
-        	 	cssClass=s.getElement().getAttribute("class").trim();
+            String cssClass = getClassAttribute(s.getElement());
+        	if (cssClass!=null) {
+        	 	cssClass=cssClass.trim();
         	}
             addRun(cssClass, cssMap, theText);
     	            
@@ -1959,6 +1979,21 @@ public class XHTMLImporter {
 //                        	            		addRunProperties( cssMap ));                                    	                                    	
 //                                    }
         }
+	}
+	
+	private String getClassAttribute(Element e) {
+		
+		if (e==null) {
+			return null;
+		} else if (e.getAttribute("class")!=null
+				&& !e.getAttribute("class").trim().equals("")) {
+			return e.getAttribute("class");
+		} else if (e.getParentNode() instanceof Element ){
+			return getClassAttribute((Element)e.getParentNode());
+		} else {
+			return null;
+		}
+		
 	}
 
 	/**

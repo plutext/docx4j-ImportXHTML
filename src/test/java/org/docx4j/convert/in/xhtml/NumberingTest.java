@@ -33,7 +33,6 @@ import java.math.BigInteger;
 import java.util.List;
 
 import org.docx4j.XmlUtils;
-import org.docx4j.convert.in.xhtml.XHTMLImporter.FormattingOption;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.exceptions.InvalidFormatException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
@@ -68,7 +67,7 @@ public class NumberingTest {
 	}
 
 	private List<Object> convert(String xhtml, FormattingOption paragraphFormattingOption) throws Docx4JException {
-		XHTMLImporter XHTMLImporter = new XHTMLImporter(wordMLPackage);				
+		XHTMLImporterImpl XHTMLImporter = new XHTMLImporterImpl(wordMLPackage);				
 		XHTMLImporter.setParagraphFormatting(paragraphFormattingOption);
 		return XHTMLImporter.convert(xhtml, "");
 	}

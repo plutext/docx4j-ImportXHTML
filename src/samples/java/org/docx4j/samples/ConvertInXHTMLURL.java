@@ -30,7 +30,7 @@ package org.docx4j.samples;
 import java.net.URL;
 
 import org.docx4j.XmlUtils;
-import org.docx4j.convert.in.xhtml.XHTMLImporter;
+import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.NumberingDefinitionsPart;
 
@@ -54,7 +54,6 @@ public class ConvertInXHTMLURL {
     	//URL url = new URL("http://en.wikipedia.org/w/index.php?title=Office_Open_XML&printable=yes");
     	URL url = new URL("http://en.wikipedia.org/w/index.php?title=Microsoft_Word&printable=yes");
                         
-        XHTMLImporter.setHyperlinkStyle("Hyperlink");
         
         // Create an empty docx package
 		WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.createPackage();
@@ -64,8 +63,10 @@ public class ConvertInXHTMLURL {
 		ndp.unmarshalDefaultNumbering();		
 					
 		// Convert the XHTML, and add it into the empty docx we made
+        XHTMLImporterImpl XHTMLImporter = new XHTMLImporterImpl(wordMLPackage);
+        XHTMLImporter.setHyperlinkStyle("Hyperlink");
 		wordMLPackage.getMainDocumentPart().getContent().addAll( 
-				XHTMLImporter.convert(url , wordMLPackage) );
+				XHTMLImporter.convert(url ) );
 		
 		System.out.println(
 				XmlUtils.marshaltoString(wordMLPackage.getMainDocumentPart().getJaxbElement(), true, true));

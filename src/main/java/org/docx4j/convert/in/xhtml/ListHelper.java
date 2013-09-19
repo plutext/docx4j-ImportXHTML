@@ -65,7 +65,7 @@ import org.w3c.dom.css.CSSValue;
 
 public class ListHelper {
 	
-	public static Logger log = LoggerFactory.getLogger(XHTMLImporter.class);		
+	public static Logger log = LoggerFactory.getLogger(XHTMLImporterImpl.class);		
 	
 	public ListHelper(NumberingDefinitionsPart ndp) {
 		this.ndp=ndp;

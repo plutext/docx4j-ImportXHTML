@@ -31,7 +31,7 @@ import java.io.File;
 import java.io.OutputStream;
 
 import org.docx4j.XmlUtils;
-import org.docx4j.convert.in.xhtml.XHTMLImporter;
+import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
 import org.docx4j.convert.out.html.AbstractHtmlExporter;
 import org.docx4j.convert.out.html.AbstractHtmlExporter.HtmlSettings;
 import org.docx4j.convert.out.html.HtmlExporterNG2;
@@ -53,7 +53,6 @@ public class ConvertInXHTMLDocument {
     	// docx to XHTML first (ie round trip).
         String inputfilepath = System.getProperty("user.dir") + "/sample-docs/word/sample-docx.docx";
 
-        XHTMLImporter.setHyperlinkStyle("Hyperlink");
         
         // Create an empty docx package
 		WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.createPackage();
@@ -61,12 +60,15 @@ public class ConvertInXHTMLDocument {
 		NumberingDefinitionsPart ndp = new NumberingDefinitionsPart();
 		wordMLPackage.getMainDocumentPart().addTargetPart(ndp);
 		ndp.unmarshalDefaultNumbering();		
+
+        XHTMLImporterImpl xHTMLImporter = new XHTMLImporterImpl(wordMLPackage);
+        xHTMLImporter.setHyperlinkStyle("Hyperlink");
 		
 		if (inputfilepath.endsWith("html")) {
 			
 			// Convert the XHTML, and add it into the empty docx we made
 			wordMLPackage.getMainDocumentPart().getContent().addAll( 
-					XHTMLImporter.convert(new File(inputfilepath), null, wordMLPackage) );
+					xHTMLImporter.convert(new File(inputfilepath), null) );
 			
 		} else if (inputfilepath.endsWith("docx")) {
 			//Round trip docx -> XHTML -> docx
@@ -86,7 +88,7 @@ public class ConvertInXHTMLDocument {
 			
 			// Now after all that, we have XHTML we can convert 
 			wordMLPackage.getMainDocumentPart().getContent().addAll( 
-					XHTMLImporter.convert( new File(inputfilepath + ".html"), null, wordMLPackage) );
+					xHTMLImporter.convert( new File(inputfilepath + ".html"), null) );
 		} else {
 			return;
 		}
