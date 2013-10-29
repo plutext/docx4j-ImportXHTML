@@ -41,8 +41,19 @@ import org.docx4j.wml.RFonts;
 /**
  * This sample converts XHTML to docx content.
  * 
- * If the XHTML is escaped (as required for OpenDoPE input), it
- * is unescaped first.
+ * Beware that a file created with a Microsoft text editor
+ * will start with a byte order mark (BOM):
+ * 
+ *    http://msdn.microsoft.com/en-us/library/windows/desktop/dd374101(v=vs.85).aspx
+ * 
+ * and if this is converted to a String, it can result in 
+ * "Content not allowed in prolog" error.
+ * 
+ * So it is preferable to use one of the XHTMLImporter.convert
+ * signatures which doesn't use a String (eg File or InputStream).
+ * 
+ * Here a string may be used for convenience where the XHTML is escaped 
+ * (as required for OpenDoPE input), so it can be unescaped first.
  *
  * For best results, be sure to include src/main/resources on your classpath.
  *  

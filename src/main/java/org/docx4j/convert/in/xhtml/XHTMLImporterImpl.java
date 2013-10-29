@@ -605,6 +605,18 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      */
     public List<Object> convert(String content,  String baseUrl) throws Docx4JException {
     	
+    	/* Test for and if present remove BOM, which causes "SAXParseException: Content is not allowed in prolog"
+    	 * See further:
+    	 *     http://stackoverflow.com/questions/4897876/reading-utf-8-bom-marker
+    	 *     http://www.unicode.org/faq/utf_bom.html#BOM
+    	 */
+    	
+    	int firstChar = content.codePointAt(0);
+    	if (firstChar==0xFEFF) {
+    		log.info("Removing BOM..");
+    		content = content.substring(1);
+    	}
+    	
         renderer = getRenderer();
         
         InputSource is = new InputSource(new BufferedReader(new StringReader(content)));
@@ -615,6 +627,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         } catch  ( org.docx4j.org.xhtmlrenderer.util.XRRuntimeException xre) {
         	// javax.xml.transform.TransformerException te
         	Throwable t = xre.getCause();
+        	log.error(t.getMessage(), t);
         	if (t instanceof javax.xml.transform.TransformerException) {
 	        	// eg content of elements must consist of well-formed character data or markup.
         		
