@@ -27,6 +27,8 @@
  */
 package org.docx4j.convert.in.xhtml;
 
+import org.docx4j.openpackaging.exceptions.Docx4JException;
+import org.docx4j.openpackaging.exceptions.InvalidFormatException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.*;
 import org.junit.Assert;
@@ -44,13 +46,18 @@ public class ContainerParseTest {
 	public void setup() throws Exception  {
 		wordMLPackage = WordprocessingMLPackage.createPackage();
 	}
+	
+	private List<Object> convert(String xhtml) throws Docx4JException {
+        XHTMLImporterImpl XHTMLImporter = new XHTMLImporterImpl(wordMLPackage);		
+		return XHTMLImporter.convert(xhtml, "");
+	}	
 
 	@Test
 	public void testParagraphInParagraphLayout() throws Exception {
         String html = "<p><img src='" + PNG_IMAGE_DATA + "' height='16' width='19'/><img src='" + PNG_IMAGE_DATA + "' height='16' width='19'/>" +
                       "<p><img src='" + PNG_IMAGE_DATA + "' height='16' width='19'/><img src='" + PNG_IMAGE_DATA + "' height='16' width='19'/></p>" +
                          "<img src='" + PNG_IMAGE_DATA + "' height='16' width='19'/><img src='" + PNG_IMAGE_DATA + "' height='16' width='19'/></p>";
-        List<Object> convert = XHTMLImporter.convert(html, null, wordMLPackage);
+        List<Object> convert = convert(html);
         Assert.assertTrue(convert.size() == 3);
         for (Object o : convert) {
             Assert.assertTrue(o instanceof P);
@@ -73,7 +80,7 @@ public class ContainerParseTest {
                       "<td><img src='" + PNG_IMAGE_DATA + "' height='16' width='19'/><img src='" + PNG_IMAGE_DATA + "' height='16' width='19'/>" +
                       "<p><img src='" + PNG_IMAGE_DATA + "' height='16' width='19'/><img src='" + PNG_IMAGE_DATA + "' height='16' width='19'/></p>" +
                          "<img src='" + PNG_IMAGE_DATA + "' height='16' width='19'/><img src='" + PNG_IMAGE_DATA + "' height='16' width='19'/></td></tr></tbody></table>";
-        List<Object> tConvert = XHTMLImporter.convert(html, null, wordMLPackage);
+        List<Object> tConvert = convert(html);
         Assert.assertTrue(tConvert.size() == 1);
         for (Object t : tConvert) {
             Assert.assertTrue(t instanceof Tbl);
