@@ -52,23 +52,20 @@ public class ConvertInXHTMLFragment {
 //		    			"<h1>Heading</h1>" +
 //		    			"<table style='border:solid 1px white;'><tr><th>1</th></tr></table>" +
 //		    		  "</div>";    	
-    	
-    	
-//    	String xhtml = "<div><p> vxcvcxvxcv <b>est</b> dfds gdfg dsg<br/>gfdg gfd gfdg<br/> gfdg hhhhhhh<br/><br/><br/><br/><table><br/>   <tr><th >fff</th><th>bbb</th></tr><br/>   <tr><td>fgffdgdsg</td><td>gfdgsdgdg</td></tr><br/></table><br/><br/></p></div>";
 
-    	String xhtml = "<div><p> vxcvcxvxcv <b>est</b> dfds gdfg dsg<br/>gfdg gfd gfdg<br/> gfdg hhhhhhh<br/><br/><br/><br/><table>   <tr><th >fff</th><th>bbb</th></tr>   <tr><td>fgffdgdsg</td><td>gfdgsdgdg</td></tr></table><br/><br/></p></div>";
-
-//    	String xhtml= "<div>" +
-//				"<ul class=\"LS1\">"
-//				+"<li>List item two with subitems:"
-//+"<ul  class=\"LS1\">"
-//    +"<li>Subitem 1</li>"
-//+"</ul>"
-//+"</li>"
-//				+"</ul>"+
-//    		  "</div>";    	
+//    	String xhtml = "<div><p>Hello here we <span style='background-color:red;'> were </span> and are now </p></div>";
     	
 //    	String xhtml = "<table><tr><td>1</td></tr></table>";
+    	
+    	String xhtml = "<ul>"+
+    	"  <li> Outer 1 </li>"+
+    	 " <li> Outer 2 </li>"+
+    	  "  <ul>"+
+    	   "   <li> Inner 1 </li>"+
+    	    "  <li> Inner 2 </li>"+
+    	    "</ul>"+
+    	 " <li> Outer 3 </li>"+
+    	"</ul>";
     	
 		WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.createPackage();
 //		WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new File(System.getProperty("user.dir") + "/Hello.docx"));

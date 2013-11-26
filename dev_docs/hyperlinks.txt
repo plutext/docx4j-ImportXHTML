@@ -1,0 +1,71 @@
+Requirements:
+
+- handle @href, @name
+
+In Word, a hyperlink can only contain run level content.
+
+In XHTML, it is the same.
+
+
+
+Tricky case:  "<div><p>" + "<a name='...' href='..' >Some <span>rich</span> <b>content</b></a>"
+
+XHTML Renderer flattens this.
+
+
+.traverse line 816 - Processing children of div
+.traverse line 819 - .. which are BlockBox.CONTENT_BLOCK
+.traverse line 462 - org.docx4j.org.xhtmlrenderer.render.BlockBox
+.traverse line 474 - BB<p color: #000000; 
+.traverse line 475 - block
+
+.traverse line 816 - Processing children of p
+
+.traverse line 830 - .. which are BlockBox.CONTENT_INLINE
+
+.processInlineBox line 1263 - InlineBox: <a> (S) (Some ) 
+.processInlineBox line 1268 - a
+.processInlineBox line 1336 - Processing <a>... 
+.processInlineBox line 1343 - NAMED ANCHOR anchor4
+.processInlineBox line 1371 - Some rich content
+.traverse line 855 - .. processed child org.docx4j.org.xhtmlrenderer.render.InlineBox
+
+.processInlineBox line 1263 - InlineBox: <span> (SE) (rich) 
+.processInlineBox line 1268 - span
+.processInlineBox line 1437 - <span 
+.processInlineBoxContent line 1464 - rich
+.processInlineBoxContent line 1467 - Processing rich
+.traverse line 855 - .. processed child org.docx4j.org.xhtmlrenderer.render.InlineBox
+
+.processInlineBox line 1263 - InlineBox: <a> ( ) 
+.processInlineBox line 1268 - a
+.processInlineBox line 1410 - Processing <a> content!
+.processInlineBox line 1437 - <a 
+.processInlineBoxContent line 1464 -  
+.processInlineBoxContent line 1467 - Processing  
+.traverse line 855 - .. processed child org.docx4j.org.xhtmlrenderer.render.InlineBox
+
+.processInlineBox line 1263 - InlineBox: <b> (SE) (content) 
+.processInlineBox line 1268 - b
+.processInlineBox line 1437 - <b 
+.processInlineBoxContent line 1464 - content
+.processInlineBoxContent line 1467 - Processing content
+.traverse line 855 - .. processed child org.docx4j.org.xhtmlrenderer.render.InlineBox
+
+.processInlineBox line 1263 - InlineBox: <a> (E) () 
+.processInlineBox line 1268 - a
+.processInlineBox line 1407 - Processing ..</a> 
+.processInlineBox line 1437 - <a 
+.processInlineBoxContent line 1456 - InlineBox has no TextNode, so skipping
+.traverse line 855 - .. processed child org.docx4j.org.xhtmlrenderer.render.InlineBox
+
+.processInlineBox line 1263 - InlineBox: <span> (SE) (SPAN) 
+.processInlineBox line 1268 - span
+.processInlineBox line 1437 - <span 
+.processInlineBoxContent line 1464 - SPAN
+.processInlineBoxContent line 1467 - Processing SPAN
+.traverse line 855 - .. processed child org.docx4j.org.xhtmlrenderer.render.InlineBox
+.traverse line 862 - Done processing children of org.docx4j.org.xhtmlrenderer.render.BlockBox
+.traverse line 825 - .. processed child org.docx4j.org.xhtmlrenderer.render.BlockBox
+.traverse line 462 - org.docx4j.org.xhtmlrenderer.render.BlockBox
+

@@ -34,10 +34,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
 import java.util.List;
 
 public class ImageResizeTest{
 
+	// 2x2 pixels
     private final String GIF_IMAGE_DATA = "data:image/gif;base64,R0lGODdhAgACAKEEAAMA//8AAAD/Bv/8ACwAAAAAAgACAAACAww0BQA7";
     private final String PNG_IMAGE_DATA = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAgMAAAAP2OW3AAAADFBMVEUDAP//AAAA/wb//AAD4Tw1AAAACXBIWXMAAAsTAAALEwEAmpwYAAAADElEQVQI12NwYNgAAAF0APHJnpmVAAAAAElFTkSuQmCC";
 
@@ -70,6 +72,20 @@ public class ImageResizeTest{
 		Assert.assertTrue(inline.getExtent().getCx() == inline.getExtent().getCy());
 	}
 
+	@Test
+	public void testHeightWidthInPx() throws Exception {
+		
+		String PNG_IMAGE_DATA = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAgMAAAAP2OW3AAAADFBMVEUDAP//AAAA/wb//AAD4Tw1AAAACXBIWXMAAAsTAAALEwEAmpwYAAAADElEQVQI12NwYNgAAAF0APHJnpmVAAAAAElFTkSuQmCC";		
+		String html= "<div>" +
+					"<p><img src='" + PNG_IMAGE_DATA + "' width='40px' height='20px' /></p>" +
+					"<p><img src='" + PNG_IMAGE_DATA + "' style='width:40px; height:20px' /></p>" +
+				"</div>";
+        XHTMLImporterImpl XHTMLImporter = new XHTMLImporterImpl(wordMLPackage);		
+		List<Object> convert = XHTMLImporter.convert(html, null);
+		wordMLPackage.getMainDocumentPart().getContent().addAll(convert);
+		wordMLPackage.save(new File(System.getProperty("user.dir") + "/px.docx") );
+	}
+	
 	private Inline getInline(String html) throws Exception{
         XHTMLImporterImpl XHTMLImporter = new XHTMLImporterImpl(wordMLPackage);		
 		List<Object> convert = XHTMLImporter.convert(html, null);

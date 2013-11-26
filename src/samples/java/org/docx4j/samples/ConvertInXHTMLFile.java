@@ -64,7 +64,8 @@ public class ConvertInXHTMLFile {
         
     	
         String inputfilepath = System.getProperty("user.dir") + "/somedir/some.html";    	
-        String baseURL = "file:///C:/Users/jharrop/git/docx4j-ImportXHTML/somedir/";
+//        String baseURL = "file:///C:/Users/jharrop/git/docx4j-ImportXHTML/somedir/";
+        String baseURL = "file:///C:/Users/jharrop/git/docx4j-ImportXHTML/";
 
         
         String stringFromFile = FileUtils.readFileToString(new File(inputfilepath), "UTF-8");
