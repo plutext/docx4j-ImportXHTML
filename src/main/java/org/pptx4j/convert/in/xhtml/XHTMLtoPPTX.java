@@ -127,8 +127,8 @@ public class XHTMLtoPPTX {
     private MainPresentationPart pp;
     private SlideLayoutPart layoutPart;
     
-    private XHTMLtoPPTX(PresentationMLPackage wordMLPackage, SlidePart slidePart, DocxRenderer renderer) throws Exception{
-        this.presentationMLPackage= wordMLPackage;
+    private XHTMLtoPPTX(PresentationMLPackage pmlPackage, SlidePart slidePart, DocxRenderer renderer) throws Exception{
+        this.presentationMLPackage= pmlPackage;
         this.renderer = renderer;
         
         pp = (MainPresentationPart)presentationMLPackage.getParts().getParts().get(new PartName("/ppt/presentation.xml"));     
@@ -138,7 +138,7 @@ public class XHTMLtoPPTX {
 
     /**
      * 
-     * Convert the well formed XHTML contained in the string to a list of WML objects.
+     * Convert the well formed XHTML contained in the string to a list of PML objects.
      * 
      * @param content
      * @param baseUrl
@@ -146,7 +146,8 @@ public class XHTMLtoPPTX {
      * @param slidePart 
      * @return
      */
-    public static List<Object> convertSingleSlide(String content,  String baseUrl, PresentationMLPackage presentationMLPackage, SlidePart slidePart) throws Exception {
+    public static List<Object> convertSingleSlide(String content,  String baseUrl, 
+    		PresentationMLPackage presentationMLPackage, SlidePart slidePart) throws Exception {
         DocxRenderer pptxRenderer = createRenderer(content, baseUrl);
         XHTMLtoPPTX importer = new XHTMLtoPPTX(presentationMLPackage, slidePart, pptxRenderer);
         return importer.traverse();
@@ -169,11 +170,16 @@ public class XHTMLtoPPTX {
     }
     
     private List<Object> traverseChildren(BlockBox blockBox, TraversalSettings settings) throws Docx4JException, JAXBException {
+    	
         List<Object> converted = new ArrayList<Object>();
+        
         for(Object o : blockBox.getChildren()) {
+        	
             converted.addAll(traversalResultToList(traverseChild((Box)o, settings)));
         }
+        
         if (blockBox.getInlineContent() != null) {
+        	// TODO review: looks like inline content will get added at end
             for (Object o : blockBox.getInlineContent()) {
                 converted.addAll(traversalResultToList(tranverseInlineContent(o, settings)));
             }
@@ -197,6 +203,7 @@ public class XHTMLtoPPTX {
     private Object traverseChild(Box box, TraversalSettings settings) throws Docx4JException, JAXBException {
         LOG.info(box.getClass().getName());
         if(box instanceof TableBox) {
+        	settings.setParagraphShape(null);
             return processTable((TableBox) box, settings);
         } else if (box instanceof TableSectionBox) {
             // no support for table section in pptx, skipping to children
@@ -204,12 +211,14 @@ public class XHTMLtoPPTX {
         } else if (box instanceof TableRowBox) {
             return traverseTableRow((TableRowBox)box, settings);
         } else if (box instanceof TableCellBox) {
+        	settings.setParagraphShape(null);
             return traverseTableCell((TableCellBox)box, settings);
         } else if (box instanceof AnonymousBlockBox) {
             return processAnonymousBlockBox((AnonymousBlockBox)box, settings);
         } else if (box instanceof BlockBox) {
             return traverseBlockBox((BlockBox)box, settings);
         } else {
+            LOG.warn("TODO: " + box.getClass().getName() );        	
             return new ArrayList<Object>();
         }
     }
@@ -335,10 +344,24 @@ public class XHTMLtoPPTX {
 
     private Object processAnonymousBlockBox(AnonymousBlockBox anonymousBlockBox, TraversalSettings settings) throws Docx4JException, JAXBException {
         List<Object> children = traverseChildren(anonymousBlockBox, settings);
+//        if(settings.isInTableCell()) {
+//            return children;
+//        } else {
+//            return createParagraphShape(createParagraph(children));
+//        }
+        CTTextParagraph paragraph = createParagraph(children);
         if(settings.isInTableCell()) {
-            return children;
+            return children; // or paragraph?
         } else {
-            return createParagraphShape(createParagraph(children));
+            Shape paragraphShape = settings.getParagraphShape();
+            if (paragraphShape==null) {
+            	paragraphShape = createParagraphShape(paragraph);
+            	settings.setParagraphShape(paragraphShape);
+            } else {
+            	// Add this a:p to existing p:txBody
+                paragraphShape.getTxBody().getP().add(paragraph);            	
+            }
+            return paragraphShape;
         }
     }
 
@@ -348,9 +371,15 @@ public class XHTMLtoPPTX {
             return new ArrayList<Object>();
         } else if(isHtmlOrBody(e)) {
             return traverseChildren(blockBox, settings);
-        } else if (isParagraph(e)) {
+        } else if (isParagraph(e) || isHeading(e) ) {
             return processParagraph(blockBox, settings);
+        } else if ( isListItem(e)) {
+            return processParagraph(blockBox, settings);
+            // TODO list numbering
+        } else if(isList(e)) {
+            return traverseChildren(blockBox, settings);
         } else {
+            LOG.warn("TODO: " + e.getLocalName() );        	        	
             return new ArrayList<Object>();
         }
     }
@@ -375,7 +404,15 @@ public class XHTMLtoPPTX {
         if(settings.isInTableCell()) {
             return paragraph;
         } else {
-            return createParagraphShape(paragraph);
+            Shape paragraphShape = settings.getParagraphShape();
+            if (paragraphShape==null) {
+            	paragraphShape = createParagraphShape(paragraph);
+            	settings.setParagraphShape(paragraphShape);
+            } else {
+            	// Add this a:p to existing p:txBody
+                paragraphShape.getTxBody().getP().add(paragraph);            	
+            }
+            return paragraphShape;
         }
     }
 
@@ -538,6 +575,22 @@ public class XHTMLtoPPTX {
 
     private boolean isParagraph(Element e) {
         return e.getNodeName().equals("p");
+    }
+    
+    private boolean isHeading(Element e) {
+        return e.getNodeName().equals("h1")
+        		|| e.getNodeName().equals("h2")
+        		|| e.getNodeName().equals("h3")
+        		// TODO etc
+        		;
+    }
+    
+    private boolean isList(Element e) {
+        return e.getNodeName().equals("ol") || e.getNodeName().equals("ul");
+    }
+    
+    private boolean isListItem(Element e) {
+        return e.getNodeName().equals("li");
     }
 
 }

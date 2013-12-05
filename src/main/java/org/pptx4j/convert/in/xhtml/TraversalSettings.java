@@ -29,6 +29,7 @@ package org.pptx4j.convert.in.xhtml;
 
 import java.util.Map;
 
+import org.pptx4j.pml.Shape;
 import org.w3c.dom.css.CSSValue;
 
 public class TraversalSettings implements Cloneable {
@@ -38,8 +39,18 @@ public class TraversalSettings implements Cloneable {
     private String hyperlink;
 
     private boolean inTableCell;
+    
+    private Shape paragraphShape;
 
-    public Map<String, CSSValue> getCssMap() {
+    public Shape getParagraphShape() {
+		return paragraphShape;
+	}
+
+    public void setParagraphShape(Shape paragraphShape) {
+		this.paragraphShape = paragraphShape;
+	}
+
+	public Map<String, CSSValue> getCssMap() {
         return cssMap;
     }
 
