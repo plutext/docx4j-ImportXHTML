@@ -39,12 +39,14 @@ public class PPrCleanser {
 			if ( StyleUtil.areEqual(stylePPrInd.getHanging(), directPr.getInd().getHanging())) {
 				directPr.getInd().setHanging(null);
 			}
-		}
-		if (directPr.getInd().getLeft()==null
-				&& directPr.getInd().getFirstLine()==null 
-				&& directPr.getInd().getHanging()==null 
-				&& directPr.getInd().getRight()==null ) {
-			directPr.setInd(null);
+			
+			if (directPr.getInd().getLeft()==null
+					&& directPr.getInd().getFirstLine()==null 
+					&& directPr.getInd().getHanging()==null 
+					&& directPr.getInd().getRight()==null ) {
+				directPr.setInd(null);
+			}
+			
 		}
 		
 		// Justification
