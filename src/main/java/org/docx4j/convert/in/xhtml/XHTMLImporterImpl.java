@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.xml.bind.JAXBElement;
 import javax.xml.transform.Source;
 
+import org.docx4j.Docx4jProperties;
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.XmlUtils;
 import org.docx4j.convert.out.html.HtmlCssHelper;
@@ -425,6 +426,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 			css = result.toString();
 			wordMLPackage.getMainDocumentPart().getStyleDefinitionsPart().setCss(css);
 		}
+		
+		log.info(css);
+		
 		return css;
 	}
     
@@ -975,6 +979,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		            		// with imperfect results...
 		            		
 		            		String cssClass = listHelper.peekListStack().getElement().getAttribute("class").trim();
+		            		log.debug(cssClass);
 		            		if (cssClass.equals("")) {
 		            			// What to do? same thing as if no @class specified
 		            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
@@ -1036,10 +1041,19 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 			            			}			            		
 			            			
 			            		} else {
-			            			log.debug("For docx style for @class='" + cssClass + "', but its not a paragraph style ");
+			            			log.debug("For docx style for @class='" + cssClass + "', but its not a numbering style ");
 			            			
 			            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
+			            				
 			    	            		listHelper.addNumbering(this.getCurrentParagraph(true), blockBox.getElement(), cssMap);
+			    	            		
+			    	            		// SPECIAL CASE
+			    	            		if (Docx4jProperties.getProperty("org.docx4j.model.datastorage.BindingTraverser.XHTML.Block.rStyle.Adopt", false)
+					            				&& s.getType()!=null && s.getType().equals("paragraph")) { 		
+			    	            			PStyle pStyle = Context.getWmlObjectFactory().createPPrBasePStyle();
+			    	            			pStyle.setVal(s.getStyleId());
+			    	            			this.getCurrentParagraph(false).getPPr().setPStyle(pStyle);			    	            			
+			    	            		}
 			            				addParagraphProperties(pPr, blockBox, cssMap );
 			            			}			            			
 			            			
