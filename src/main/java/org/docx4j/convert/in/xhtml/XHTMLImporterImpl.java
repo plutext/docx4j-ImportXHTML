@@ -142,7 +142,7 @@ import org.xml.sax.InputSource;
  * - paragraph and run formatting
  * - tables
  * - images
- * - lists (ordered, unordered)
+ * - lists (ordered, unordered)#
  * 
  * People complain flying-saucer is slow
  * (due to DTD related network lookups).
@@ -1485,6 +1485,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		width = UnitsOfMeasurement.twipToPoint( Math.round(width) ) * 8.0f;
 		
 		String color = borderColor.asString();
+		if (color.startsWith("#")) color=color.substring(1); // Fix for https://github.com/plutext/docx4j/issues/101
 		//if (color.equals("transparent")) color = "FFFFFF";  // assume white page  
 		// should not be getting that as a value?
 		// http://stackoverflow.com/questions/7851830/what-is-the-color-code-for-transparency-in-css
