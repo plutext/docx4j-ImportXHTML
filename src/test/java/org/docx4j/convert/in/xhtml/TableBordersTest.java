@@ -163,10 +163,10 @@ public class TableBordersTest {
 		Tbl tbl = table("<table style='border-style: solid; border-color:#111 #222 #333 #444;'><tr><th>1</th></tr></table>");
 		TblBorders borders = tbl.getTblPr().getTblBorders();
 
-		assertEquals("#111111", borders.getTop().getColor());
-		assertEquals("#222222", borders.getRight().getColor());
-		assertEquals("#333333", borders.getBottom().getColor());
-		assertEquals("#444444", borders.getLeft().getColor());
+		assertEquals("111111", borders.getTop().getColor());
+		assertEquals("222222", borders.getRight().getColor());
+		assertEquals("333333", borders.getBottom().getColor());
+		assertEquals("444444", borders.getLeft().getColor());
 	}
 
 	@Test public void testTableBorderWidths() throws Docx4JException {
