@@ -29,6 +29,7 @@ import javax.xml.bind.JAXBContext;
 import org.docx4j.XmlUtils;
 import org.docx4j.dml.CTBlip;
 import org.docx4j.model.datastorage.BindingHandler;
+import org.docx4j.model.datastorage.CustomXmlDataStoragePartSelector;
 import org.docx4j.model.datastorage.OpenDoPEHandler;
 import org.docx4j.model.datastorage.OpenDoPEIntegrity;
 import org.docx4j.model.datastorage.RemovalHandler;
@@ -41,6 +42,7 @@ import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import org.docx4j.utils.SingleTraversalUtilVisitorCallback;
 import org.docx4j.utils.TraversalUtilVisitor;
 import org.docx4j.wml.SdtElement;
+import org.opendope.xpaths.Xpaths.Xpath;
 
 
 /** 
@@ -76,15 +78,11 @@ public class ContentControlsMergeXML281 {
 		// Load input_template.docx
 		WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(
 				new java.io.File(input_DOCX));
-		
-		// Find custom xml item id
-		String itemId = getCustomXmlItemId(wordMLPackage).toLowerCase();
-		System.out.println("Looking for item id: " + itemId);
-		
+				
 		// Inject data_file.xml
 		// (this code assumes it is not a StandardisedAnswersPart)
 		CustomXmlDataStoragePart customXmlDataStoragePart 
-			= (CustomXmlDataStoragePart)wordMLPackage.getCustomXmlDataStorageParts().get(itemId);
+			= CustomXmlDataStoragePartSelector.getCustomXmlDataStoragePart(wordMLPackage);
 		if (customXmlDataStoragePart==null) {
 			System.out.println("Couldn't find CustomXmlDataStoragePart! exiting..");
 			return;			
@@ -141,48 +139,5 @@ public class ContentControlsMergeXML281 {
 		
 	}
 	
-	/**
-	 * We need the item id of the custom xml part.  
-	 * 
-	 * There are several strategies we could use to find it,
-	 * including searching the docx for a bind element, but
-	 * here, we simply look in the xpaths part. 
-	 * 
-	 * @param wordMLPackage
-	 * @return
-	 */
-	private static String getCustomXmlItemId(WordprocessingMLPackage wordMLPackage) throws Docx4JException {
-		
-		MainDocumentPart documentPart = wordMLPackage.getMainDocumentPart();			
-		if (wordMLPackage.getMainDocumentPart().getXPathsPart()==null) {
-			// Can't do it the easy way, so look up the binding on the first content control
-			TraversalUtilCCVisitor visitor = new TraversalUtilCCVisitor();
-			SingleTraversalUtilVisitorCallback ccFinder 
-			= new SingleTraversalUtilVisitorCallback(visitor);
-			ccFinder.walkJAXBElements(
-				wordMLPackage.getMainDocumentPart().getJaxbElement().getBody());
-			return visitor.storeItemID;
-			
-		} else {
-	
-			org.opendope.xpaths.Xpaths xPaths = wordMLPackage.getMainDocumentPart().getXPathsPart().getJaxbElement();
-			return xPaths.getXpath().get(0).getDataBinding().getStoreItemID();
-		}
-	}
-
-	public static class TraversalUtilCCVisitor extends TraversalUtilVisitor<SdtElement> {
-		
-		String storeItemID = null;
-		
-		@Override
-		public void apply(SdtElement element, Object parent, List<Object> siblings) {
-
-			if (element.getSdtPr()!=null
-					&& element.getSdtPr().getDataBinding()!=null) {
-				storeItemID = element.getSdtPr().getDataBinding().getStoreItemID();
-			}
-		}
-	
-	}
 	
 }

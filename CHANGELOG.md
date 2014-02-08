@@ -2,7 +2,37 @@ CHANGELOG
 =========
 
 
+Version 3.0.1
+=============
 
+
+Release date
+------------
+
+8 Feb 2014
+
+Contributors to this release
+----------------------------
+
+ai-github
+Jason Harrop
+leedavidr 
+
+
+Notable Changes in Version 3.0.1
+---------------------------------
+
+Nil
+
+Other Changes (non-exhaustive)
+------------------------------
+
+0d6c106 - if (color.startsWith("#")) .. Fix for plutext/docx4j#101
+a452b43 - BindingTraverser.XHTML.Block.rStyle.Adopt handling in list items
+6a7b6fc - NPE in indent handling fixed
+e902f20 - xhtml to pptx
+			Very rudimentary support for h1-3, ol|ul, li
+			Write all paragraphs <a:p> into a single <p:txBody>
 
 
 Version 3.0.0

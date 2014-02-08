@@ -60,7 +60,7 @@
 	<build>
 		<sourceDirectory>src/main/java</sourceDirectory>
 		<testSourceDirectory>src/test/java</testSourceDirectory>
-		<outputDirectory>bin-mvn</outputDirectory>
+		<outputDirectory>bin</outputDirectory> <!--  bin-mvn -->
 		<testOutputDirectory>bin</testOutputDirectory>
 		<plugins>
 		<!-- 
@@ -305,7 +305,7 @@
 		<dependency>
 		  <groupId>org.docx4j</groupId>
 		  <artifactId>docx4j</artifactId>
-			<version>3.0.0</version>
+			<version>3.0.1</version>
 		</dependency>
 		
 		<dependency>

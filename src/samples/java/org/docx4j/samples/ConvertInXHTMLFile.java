@@ -88,7 +88,8 @@ public class ConvertInXHTMLFile {
         XHTMLImporterImpl.addFontMapping("Century Gothic", rfonts);
         
         // Create an empty docx package
-		WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.createPackage();
+//		WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.createPackage();
+		WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new File(System.getProperty("user.dir") + "/styled.docx"));
 
 		
 		NumberingDefinitionsPart ndp = new NumberingDefinitionsPart();
