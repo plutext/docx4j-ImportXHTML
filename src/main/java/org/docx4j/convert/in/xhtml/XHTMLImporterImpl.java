@@ -1971,8 +1971,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 				
 		
 		if (inlineBox.getTextNode()==null) {
-                
-            if (s.getElement().getNodeName().equals("br") ) {
+			
+			if (s == null) {
+        		log.debug("Null Styleable" ); 
+			} else if (s.getElement() == null) {
+        		log.debug("Null element " ); 
+			} else if (s.getElement().getNodeName() == null) {
+        		log.debug("Null element nodename " ); 
+			} else if (s.getElement().getNodeName().equals("br") ) {
                 
                 R run = Context.getWmlObjectFactory().createR();
                 getListForRun().getContent().add(run);                
