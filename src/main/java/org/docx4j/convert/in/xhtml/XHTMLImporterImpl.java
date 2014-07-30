@@ -232,7 +232,6 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		this.renderer = renderer;
 	}
 	
-	private static FontFamilyMap fontFamilyToFont = new FontFamilyMap();
     /**
 	 * Map a font family, for example "Century Gothic" in:
 	 * 
@@ -254,30 +253,20 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	 * for you (at least for font formats we can convert to something
 	 * embeddable).
 	 * 
+	 * You should set these up once, for all your subsequent 
+	 * imports, since some stuff is cached and currently won't get updated
+	 * if you add fonts later.
+	 * 
 	 * @since 3.0
 	 */
 	public static void addFontMapping(String cssFontFamily, RFonts rFonts) {
-		fontFamilyToFont.put(cssFontFamily, rFonts);
-	}
-	
-	/**
-	 * Case insensitive key
-	 * (matching http://www.w3.org/TR/css3-fonts/#font-family-casing
-	 */
-	private static class FontFamilyMap extends HashMap<String, RFonts> {
-
-		@Override
-		public RFonts put(String key, RFonts value) {
-			return super.put(key.toLowerCase(), value);
-		}
-
-		// not @Override because that would require the key parameter to be of
-		// type Object
-		public RFonts get(String key) {
-			return super.get(key.toLowerCase());
-		}
+		FontHandler.addFontMapping(cssFontFamily, rFonts);
 	}
 
+	public static void addFontMapping(String cssFontFamily, String font) {
+		
+		FontHandler.addFontMapping(cssFontFamily, font);
+	}
 
 	/**
 	 * @param runFormatting
@@ -1023,6 +1012,10 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 										    </w:pPr>
 			            			 *
 			            			 * Use this... 
+			            			 * 
+			            			 * We don't actually set the numbering style on the 
+			            			 * paragraph, because numbering styles aren't used that way
+			            			 * in Word.
 			            			 */
 			            			BigInteger numId = s.getPPr().getNumPr().getNumId().getVal();
 			            			listHelper.setNumbering(pPr, numId);
@@ -2096,40 +2089,10 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 				
 		// Font is handled separately.  TODO: review this
 		CSSValue fontFamily = cssMap.get("font-family");
-		setRFont(fontFamily, rPr );
+		FontHandler.setRFont(fontFamily, rPr );
 
 	}
 	
-	private void setRFont(CSSValue fontFamily, RPr rpr) {
-		
-		if (fontFamily==null) return;
-//		log.debug(fontFamily.getCssText());
-		
-		// Short circuit
-		RFonts rfonts = fontFamiliesToFont.get(fontFamily.getCssText());
-		if (rfonts!=null) {
-			rpr.setRFonts(rfonts);
-			return;
-		}
-		
-		StringTokenizer st = new StringTokenizer(fontFamily.getCssText(), ",");
-		// font-family:"Century Gothic", Helvetica, Arial, sans-serif;
-		while (st.hasMoreTokens()) {
-			String thisFontFamily = st.nextToken().trim();
-			RFonts mappedTo = this.fontFamilyToFont.get(thisFontFamily);
-			// Assume the first font family for which we have a mapping will contain a glyph
-			// TODO should check. See fonts.txt
-			if (mappedTo!=null) {
-				rpr.setRFonts(mappedTo);
-				// Save for re-use
-				fontFamiliesToFont.put(fontFamily.getCssText(), mappedTo);
-				return;
-			}
-		}
-	}
-    private Map<String, RFonts> fontFamiliesToFont = new HashMap<String, RFonts>(); 
-    
-    
     private boolean isListItem(Element e) {
     	
     	return e.getNodeName().equals("li");
