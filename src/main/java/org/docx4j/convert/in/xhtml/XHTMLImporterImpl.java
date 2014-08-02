@@ -349,10 +349,16 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		
 		initStyleMap(wordMLPackage.getMainDocumentPart().getStyleDefinitionsPart());
 		
+		if (ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.Element.Heading.MapToStyle", false)) {
+			headingHandler = new HeadingHandler(wordMLPackage.getMainDocumentPart().getStyleDefinitionsPart().getJaxbElement());
+		}
+		
 		imports = Context.getWmlObjectFactory().createBody();
 		contentContextStack.push(imports);
 		
     }
+	
+	private HeadingHandler headingHandler = null;
 	
 	/**
 	 * Use the default font size in this docx, as equivalent of CSS font-size: medium
@@ -1184,16 +1190,20 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     
     protected void populatePPr(PPr pPr, BlockBox blockBox, Map<String, CSSValue> cssMap) {
     	
-    	
         if (paragraphFormatting.equals(FormattingOption.IGNORE_CLASS)) {
     		addParagraphProperties(pPr, blockBox, cssMap );
+    		handleHeadingElement( pPr,  blockBox); // (if its h1, h2 etc)
         } else {
         	// CLASS_TO_STYLE_ONLY or CLASS_PLUS_OTHER
         	if (blockBox.getElement()!=null
         			&& blockBox.getElement().getAttribute("class")!=null) {
         		
         		String cssClass = blockBox.getElement().getAttribute("class").trim();
-        		if (!cssClass.equals("")) {
+        		if (cssClass.equals("")) {
+        			// Since there is no @class value, we might use a heading style 
+            		handleHeadingElement( pPr,  blockBox); // (if its h1, h2 etc)
+        		} else {
+        			
             		// Our XHTML export gives a space separated list of class names,
             		// reflecting the style hierarchy.  Here, we just want the first one.
             		// TODO, replace this with a configurable stylenamehandler.
@@ -1206,21 +1216,52 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             		Style s = this.stylesByID.get(cssClass);
             		if (s==null) {
             			log.debug("No docx style for @class='" + cssClass + "'");
+            			// Since there is no style, we might use a heading style 
+                		handleHeadingElement( pPr,  blockBox); // (if its h1, h2 etc)
             		} else if (s.getType()!=null && s.getType().equals("paragraph")) {
             			PStyle pStyle = Context.getWmlObjectFactory().createPPrBasePStyle();
             			pPr.setPStyle(pStyle);
             			pStyle.setVal(cssClass);
             		} else {
             			log.debug("For docx style for @class='" + cssClass + "', but its not a paragraph style ");
+            			// Since that's not a p style, we might use a heading style 
+                		handleHeadingElement( pPr,  blockBox); // (if its h1, h2 etc)
             		}
         		}
         	}
 			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
 				addParagraphProperties(pPr, blockBox, cssMap );
-			}
-        	
-    	} 
+			}        	
+    	}     	
+    }
+    
+    private void handleHeadingElement(PPr pPr, BlockBox blockBox) {
     	
+    	if (headingHandler==null 
+    			|| !isHeading(blockBox)) return;
+    	
+    	// Its a heading; set the style
+    	String styleId = headingHandler.getStyle(blockBox.getElement().getLocalName());
+    	
+    	if (styleId!=null) {
+			PStyle pStyle = Context.getWmlObjectFactory().createPPrBasePStyle();
+			pPr.setPStyle(pStyle);
+			pStyle.setVal(styleId);
+    	}    	
+    }
+    
+    private boolean isHeading(BlockBox blockBox) {
+    	
+    	if (blockBox.getElement()==null) return false;
+    	
+    	String elName = blockBox.getElement().getLocalName();
+    	
+    	return (("h1").equals(elName)
+    			|| ("h2").equals(elName)
+    			|| ("h3").equals(elName)
+    			|| ("h4").equals(elName)
+    			|| ("h5").equals(elName)
+    			|| ("h6").equals(elName) );    	
     }
     
     protected void setupTblPr(TableBox cssTable, Tbl tbl, TableProperties tableProperties) {
