@@ -6,7 +6,7 @@
     <property name="source" value="1.5"/>
 	<property name="dist" value="./dist"/>
 	
-	<property name="version" value="3.0.1"/>
+	<property name="version" value="3.2.0"/>
 
     <property name="src.main.java.dir" value="src/main/java"/>
     
@@ -60,6 +60,12 @@
      -->
 	
 	<property name="m2Repository" value="../../.m2/repository"/>	
+	
+    <!--.NET properties -->
+    <property name="ikvm.dir" value="/Java/ikvm/ikvm-7.3.4830.0"/>
+    <property name="ikvmc" value="${ikvm.dir}/bin/ikvmc.exe"/>
+    <property name="docx4j.dll" value="dll/docx4j.dll"/>
+		
     
     <path id="Maven Dependencies.libraryclasspath">
         <pathelement location="${m2Repository}/org/docx4j/docx4j/3.0.1/docx4j-3.0.1.jar"/>
@@ -146,7 +152,8 @@
     
     <target depends="init" name="build-project">
         <echo message="${ant.project.name}: ${ant.file}"/>
-        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
+        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}" encoding="utf-8">
+        	<!--  that @encoding setting is critical to retain bullet chars in ListHelper, at least on Win 7 -->
             <src path="src/main/java"/>
             <classpath refid="docx4j-ImportXHTML.classpath"/>
         </javac>
@@ -176,6 +183,40 @@
 			</path>
 		</copy>		
     	 <delete file="${dist}/JAXBNamespacePrefixMapper-2.2.4.jar" />			
+    </target>  
+    
+   
+    
+    <target name="checkForIKVM">
+        <condition property="IKVMAvailable">
+            <and>
+                <os family="windows"/>
+                <available file="${ikvmc}" property="ignored" />
+                <available file="${docx4j.dll}" property="ignored" />
+            </and>
+        </condition>
+    </target>
+
+	<!--  first, create docx4j.dll -->
+    <target name="dist.NET" depends="checkForIKVM,dist" if="IKVMAvailable" description="Build docx4j ImportXHTML .NET DLL files">
+        <echo>Building DLL</echo>
+        
+		<path id="forIKVM">
+		    <pathelement location="${dist}/docx4j-ImportXHTML-${version}.jar" />
+	        <pathelement location="${m2Repository}/org/docx4j/xhtmlrenderer/3.0.0/xhtmlrenderer-3.0.0.jar"/>
+	        <pathelement location="${m2Repository}/com/lowagie/itext/2.1.7/itext-2.1.7.jar"/>		    		    
+		</path>
+        <pathconvert refid="forIKVM" property="jars" pathsep=" "/>        
+		<exec executable="${ikvmc}">
+            <arg value="-out:${dist}/docx4j-ImportXHTML.dll" />
+            <!-- <arg value="-keyfile:Plutext.snk" /> -->
+            <arg value="-version:3.0.1.1" />
+            <!-- <arg value="-resource:docx4j.properties=..." />  -->
+            <arg value="-reference:${docx4j.dll}" />
+            <arg value="-reference:dll/slf4j-api.dll" />            
+            <arg value="-target:library" />
+            <arg line="${jars}" />
+        </exec>    
     </target>    
 
 </project>
