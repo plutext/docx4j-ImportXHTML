@@ -1,3 +1,14 @@
+# XHTMLImporterImpl has
+# 
+# 	@Deprecated
+# 	public static void setCssWhiteList(Set<String> cssWhiteList) 
+# 	
+# If the CSS white list is non-null,
+# a CSS property will only be honoured if it is on the list.
+# Useful where suitable default values aren't being provided via
+# @class, or direct values are otherwise providing unwanted results.
+# Using this should be a last resort.
+
 # Rows starting with # are ignored.
 
 font-family
