@@ -2,6 +2,29 @@ CHANGELOG
 =========
 
 
+Version 3.2.0
+=============
+
+Release date
+------------
+
+__ August 2014
+
+
+Notable Changes in Version 3.3.0
+---------------------------------
+
+Support for applying Word heading styles to heading (h1, h2, h3..) elements
+
+FontHandler, which creates default font mappings
+
+
+Version 3.1.0
+=============
+
+No release, since no changes in 3.0.1
+
+
 Version 3.0.1
 =============
 

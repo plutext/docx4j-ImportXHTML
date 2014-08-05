@@ -16,7 +16,7 @@ public class HeadingHandler {
 	
 	private static final String HEADING_NAME_PREFIX = "heading ";
 	
-	public HeadingHandler(Styles styles) {
+	protected HeadingHandler(Styles styles) {
 		
 		/*  A style looks like:
 		 * 
