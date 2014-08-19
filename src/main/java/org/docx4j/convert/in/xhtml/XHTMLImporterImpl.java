@@ -99,6 +99,7 @@ import org.docx4j.wml.P;
 import org.docx4j.wml.P.Hyperlink;
 import org.docx4j.wml.PPr;
 import org.docx4j.wml.PPrBase.PStyle;
+import org.docx4j.wml.CTSimpleField;
 import org.docx4j.wml.R;
 import org.docx4j.wml.RFonts;
 import org.docx4j.wml.RPr;
@@ -1074,9 +1075,17 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		            	addImage(blockBox);
 	            } else {
 	            	
+//	            	if (e.getNodeName().equals("figcaption")) {
+//	            		// force new p?
+//	            	}
+	            	
 	            	// Paragraph processing
 	            	P currentP = this.getCurrentParagraph(true);
 	                currentP.setPPr(this.getPPr(blockBox, cssMap));
+
+	            	if (e.getNodeName().equals("figcaption")) {
+	            		prepareCaption(e, currentP);
+	            	}
 	                
 	            }
         	}
@@ -1179,6 +1188,87 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             log.debug("AnonymousBlockBox");            
         }
     
+    }
+    
+    private static final String FIGCAPTION_SEQUENCE_ATTRIBUTE_NAME="sequence";
+    private static final String FIGCAPTION_SEQUENCE_ATTRIBUTE_VALUE_DEFAULT="Figure"; 
+    
+    
+    
+    private Map<String, Integer> sequenceCounters = null;
+    
+	/**
+	 * Get the current numbers of SEQ fields, used in image captions.
+	 * Typically you'd use this if you are importing multiple
+	 * times into a single docx (as for example, OpenDoPE does).
+	 * 
+	 * @param sequenceCounters
+	 */
+    public Map<String, Integer> getSequenceCounters() {
+    	if (sequenceCounters==null) {
+    		sequenceCounters = new HashMap<String, Integer>();
+    	}
+		return sequenceCounters;
+	}
+
+	/**
+	 * Set the last used numbers of SEQ fields, used in image captions.
+	 * Key is sequence name.  The default is "Figure", but you can also use
+	 * others (matching value of @sequence).
+	 * @param sequenceCounters
+	 */
+	public void setSequenceCounters(Map<String, Integer> sequenceCounters) {
+		this.sequenceCounters = sequenceCounters;
+	}
+
+	private void prepareCaption(Element figcaption, P currentP) {
+    	
+    	// set <w:pStyle w:val="Caption"/>
+    	PPr pPr = currentP.getPPr();
+    	if (pPr == null) {
+    		pPr = Context.getWmlObjectFactory().createPPr();
+    		currentP.setPPr(pPr);    	
+    	}
+    	PStyle pStyle = pPr.getPStyle();
+    	if (pStyle == null) {
+    		pStyle = Context.getWmlObjectFactory().createPPrBasePStyle();
+    		pPr.setPStyle(pStyle); 	
+    	}
+    	pStyle.setVal("Caption");
+    	
+    	String sequenceName = FIGCAPTION_SEQUENCE_ATTRIBUTE_VALUE_DEFAULT;
+    	if (figcaption.getAttribute(FIGCAPTION_SEQUENCE_ATTRIBUTE_NAME)!=null 
+    			&& figcaption.getAttribute(FIGCAPTION_SEQUENCE_ATTRIBUTE_NAME).trim().length()>0) {
+    		sequenceName = figcaption.getAttribute(FIGCAPTION_SEQUENCE_ATTRIBUTE_NAME);
+    	}
+    	
+    	Integer i = this.getSequenceCounters().get(sequenceName);
+    	int count = (i == null ? 0 : i);
+    	this.getSequenceCounters().put(sequenceName, ++count);    	
+    	
+    	
+    	if (!sequenceName.endsWith(" ")) sequenceName +=" "; // adds trailing space
+    	
+    	// The run, "Figure"
+    	R figureRun = new R();
+    	Text text = Context.getWmlObjectFactory().createText();
+    	figureRun.getContent().add(text);
+    	text.setValue(sequenceName);
+    	text.setSpace("preserve");
+    	currentP.getContent().add(figureRun);
+    	
+    	CTSimpleField simpleField = new CTSimpleField();
+    	simpleField.setInstr(" SEQ " + sequenceName + " \\* ARABIC ");
+    	JAXBElement<CTSimpleField> wrapper = Context.getWmlObjectFactory().createPFldSimple(simpleField); 
+    	currentP.getContent().add(wrapper);
+    	
+    	// add w:t containing value
+    	R resultRun = new R();
+    	Text result = Context.getWmlObjectFactory().createText();
+    	result.setValue("" + count);
+    	resultRun.getContent().add(result);
+    	
+    	simpleField.getContent().add(resultRun);
     }
 
     protected PPr getPPr(BlockBox blockBox, Map<String, CSSValue> cssMap) {
@@ -1753,7 +1843,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		Keep this in mind that, it may affect the resulting image sizes.
 	*/
 	private void addImage(BlockBox box) {
-		
+				
 		Long cx = (box.getStyle().valueByName(CSSName.WIDTH) == IdentValue.AUTO) ? null :
 			UnitsOfMeasurement.twipToEMU(box.getWidth());
 		Long cy = (box.getStyle().valueByName(CSSName.HEIGHT) == IdentValue.AUTO) ? null :
@@ -2243,6 +2333,16 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 
     private void addRunProperties(RPr rPr, Map cssMap) {
     	
+    	String pStyleId = null;
+    	if (this.getCurrentParagraph(false).getPPr()!=null
+    			&& this.getCurrentParagraph(false).getPPr().getPStyle()!=null) {
+    		
+    		pStyleId = this.getCurrentParagraph(false).getPPr().getPStyle().getVal();
+
+    		// Special case: suppress run styling in image caption
+    		if ("Caption".equals(pStyleId)) return;
+    	}
+    	
         for (Object o : cssMap.keySet()) {
         	
         	String cssName = (String)o;
@@ -2265,12 +2365,12 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	// and makes the document less maintainable
     	RPr styleRPr = null;
     	PropertyResolver propertyResolver = this.wordMLPackage.getMainDocumentPart().getPropertyResolver();
-    	if (this.getCurrentParagraph(false).getPPr()!=null
-    			&& this.getCurrentParagraph(false).getPPr().getPStyle()!=null) {
+    	if (pStyleId!=null) {
     		
-    		String styleId = this.getCurrentParagraph(false).getPPr().getPStyle().getVal();
-    		styleRPr = propertyResolver.getEffectiveRPr(styleId);
-    		RPrCleanser.removeRedundantProperties(styleRPr, rPr);
+    		styleRPr = propertyResolver.getEffectiveRPr(pStyleId);
+    		if (styleRPr!=null) {
+    			RPrCleanser.removeRedundantProperties(styleRPr, rPr);
+    		}
     		// Works nicely, except for color.  TODO: look into that
     	}
     	// Repeat the process for overlap with run level styles,

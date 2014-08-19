@@ -71,6 +71,12 @@ a:link, a:visited { text-decoration: underline }
     ul ul { list-style-type: circle; }
     ul ul ul { list-style-type: square; }
     
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
+    display: block;
+}    
+    
 /* Flying Saucer overrides, usually compensate for unimplemented stuff */
 
 /* don't handle all replaced things yet, besides xml should do this via entities!*/

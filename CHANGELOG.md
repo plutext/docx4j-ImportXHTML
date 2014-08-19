@@ -14,6 +14,8 @@ __ August 2014
 Notable Changes in Version 3.3.0
 ---------------------------------
 
+HTML 5 figure/figcaption converted to Figure SEQ field 
+
 Support for applying Word heading styles to heading (h1, h2, h3..) elements
 
 FontHandler, which creates default font mappings
@@ -104,7 +106,7 @@ Image resizing
 Other Changes (non-exhaustive)
 ------------------------------
 
-35fae5e- Handle inline images (avoid forcing new paragraph afterwards)
+35fae5e - Handle inline images (avoid forcing new paragraph afterwards)
 008604c - Ability to require a CSS property to be on a white list 
 5b69f1d - addFontMapping(String cssFontFamily, RFonts rFonts) 
 3b11904 - tables: import cell border styles (bsl-zcs) 
