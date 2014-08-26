@@ -8,10 +8,9 @@ Version 3.2.0
 Release date
 ------------
 
-__ August 2014
+26 August 2014
 
-
-Notable Changes in Version 3.3.0
+Notable Changes in Version 3.2.0
 ---------------------------------
 
 HTML 5 figure/figcaption converted to Figure SEQ field 
@@ -19,6 +18,7 @@ HTML 5 figure/figcaption converted to Figure SEQ field
 Support for applying Word heading styles to heading (h1, h2, h3..) elements
 
 FontHandler, which creates default font mappings
+
 
 
 Version 3.1.0

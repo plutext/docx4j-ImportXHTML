@@ -68,7 +68,7 @@
 		
     
     <path id="Maven Dependencies.libraryclasspath">
-        <pathelement location="${m2Repository}/org/docx4j/docx4j/3.0.1/docx4j-3.0.1.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/docx4j/3.2.0/docx4j-3.2.0.jar"/>
         <pathelement location="${m2Repository}/org/docx4j/xhtmlrenderer/3.0.0/xhtmlrenderer-3.0.0.jar"/>
         <pathelement location="${m2Repository}/com/lowagie/itext/2.1.7/itext-2.1.7.jar"/>
         <pathelement location="${m2Repository}/org/slf4j/slf4j-api/1.7.5/slf4j-api-1.7.5.jar"/>
@@ -210,7 +210,7 @@
 		<exec executable="${ikvmc}">
             <arg value="-out:${dist}/docx4j-ImportXHTML.dll" />
             <!-- <arg value="-keyfile:Plutext.snk" /> -->
-            <arg value="-version:3.0.1.1" />
+            <arg value="-version:3.2.0.0" />
             <!-- <arg value="-resource:docx4j.properties=..." />  -->
             <arg value="-reference:${docx4j.dll}" />
             <arg value="-reference:dll/slf4j-api.dll" />            
