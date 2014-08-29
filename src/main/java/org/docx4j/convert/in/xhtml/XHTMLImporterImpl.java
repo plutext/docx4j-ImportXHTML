@@ -361,6 +361,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	
 	private HeadingHandler headingHandler = null;
 	
+	private BookmarkHelper bookmarkHelper = new BookmarkHelper(); 
+	
+	private CTMarkupRange markuprange;
+	
+	
 	/**
 	 * Use the default font size in this docx, as equivalent of CSS font-size: medium
 	 * @since 3.0
@@ -763,6 +768,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	unsetDefaultFontSize();
     }    
     
+    
     private void traverse(Box box,  Box parent, TableProperties tableProperties) throws Docx4JException {
         
     	boolean mustPop = false;
@@ -773,7 +779,27 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             BlockBox blockBox = ((BlockBox)box);
 
             Element e = box.getElement(); 
+            
+            // bookmark start?
+            CTMarkupRange markupRangeForID = null;
+            if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableSectionBox) {
+            	// ignore, since <table id = ..
+            	// generates TableBox<table and TableSectionBox<table
+            	// but we only want a single bookmark
+            } else if(box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableBox) {
 
+            	// null P, so it bookmark is a P sibling
+            	markupRangeForID = bookmarkHelper.anchorToBookmark(e, bookmarkNamePrefix, 
+                		null, this.contentContextStack.peek());
+            	
+            } else {
+            	markupRangeForID = bookmarkHelper.anchorToBookmark(e, bookmarkNamePrefix, 
+            		getCurrentParagraph(false), this.contentContextStack.peek());
+            }
+            if (markupRangeForID!=null) {
+                System.out.println("Added bookmark for "+ box.getClass().getName()  + "<" + e.getNodeName() + " " + box.getStyle().toStringMine() );
+            }
+            
             // Don't add a new paragraph if this BlockBox is display: inline
             if (e==null) {
             	// Shouldn't happen
@@ -840,12 +866,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             		 * div/table[count(caption)=1] ... table becomes TableBox, children are CONTENT_BLOCK
             		 * 
             		 * div/table[count(caption)=0] ... table becomes TableBox, children are CONTENT_BLOCK
-            		 * 
-            		 * 
-
-            		 * 
             		 */
-
 
             		// eg <table color: #000000; background-color: transparent; background-image: none; background-repeat: repeat; background-attachment: scroll; background-position: [0%, 0%]; background-size: [auto, auto]; 
             		//           border-collapse: collapse; -fs-border-spacing-horizontal: 2px; -fs-border-spacing-vertical: 2px; -fs-font-metric-src: none; -fs-keep-with-inline: auto; -fs-page-width: auto; -fs-page-height: auto; -fs-page-sequence: auto; -fs-pdf-font-embed: auto; -fs-pdf-font-encoding: Cp1252; -fs-page-orientation: auto; -fs-table-paginate: auto; -fs-text-decoration-extent: line; bottom: auto; caption-side: top; clear: none; ; content: normal; counter-increment: none; counter-reset: none; cursor: auto; ; display: table; empty-cells: show; float: none; font-style: normal; font-variant: normal; font-weight: normal; font-size: medium; line-height: normal; font-family: serif; -fs-table-cell-colspan: 1; -fs-table-cell-rowspan: 1; height: auto; left: auto; letter-spacing: normal; list-style-type: disc; list-style-position: outside; list-style-image: none; max-height: none; max-width: none; min-height: 0; min-width: 0; orphans: 2; ; ; ; overflow: visible; page: auto; page-break-after: auto; page-break-before: auto; page-break-inside: auto; position: relative; ; right: auto; src: none; 
@@ -1183,6 +1204,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 //            }
 //
 //            
+        	
+        	// bookmark end
+        	if (markupRangeForID!=null) {
+        		bookmarkHelper.attachBookmarkEnd(markupRangeForID, getCurrentParagraph(false), this.contentContextStack.peek());
+        	}
             
         } else if (box instanceof AnonymousBlockBox) {
             log.debug("AnonymousBlockBox");            
@@ -1856,15 +1882,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	}
 
 
-	private CTMarkupRange markuprange;
-	private void storeBookmarkEnd() {
-		
-	    markuprange = Context.getWmlObjectFactory().createCTMarkupRange(); 
-	    JAXBElement<org.docx4j.wml.CTMarkupRange> markuprangeWrapped = Context.getWmlObjectFactory().createPBookmarkEnd(markuprange); 
-	        markuprange.setId( BigInteger.valueOf(bookmarkId.getAndIncrement() ) );          		        
-	}
 	
-	private AtomicInteger bookmarkId = new AtomicInteger();	
 	
 	
 //	private void addHyperlinkIfNec(String href, Map<String, CSSValue> cssMap) {
@@ -1918,28 +1936,15 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     		 *    <a href="#_summary" class="report_table_of_content">Summary</a>
     		 * 
     		 */
-        
-    		String name = s.getElement().getAttribute("name");
-    		String href = s.getElement().getAttribute("href"); 
-    		if (name!=null
-    				&& !name.trim().equals("")) {
-        		log.debug("[NAMED ANCHOR] " + name);
-    			
-    		    CTBookmark bookmark = Context.getWmlObjectFactory().createCTBookmark(); 
-    		    JAXBElement<org.docx4j.wml.CTBookmark> bookmarkWrapped = Context.getWmlObjectFactory().createPBookmarkStart(bookmark); 
-    		    this.getCurrentParagraph(true).getContent().add( bookmarkWrapped); 
-    		        bookmark.setName( name ); 
-    		        bookmark.setId( BigInteger.valueOf( bookmarkId.get()) ); 
-    		        
-//    		        addHyperlinkIfNec(href, getCascadedProperties(s.getStyle()));
-    		        
-    		        storeBookmarkEnd();    	
-    		        this.getCurrentParagraph(true).getContent().add( markuprange); 
-            		markuprange = null;
-            		
-            	paraStillEmpty = false;            		
-    		} 
     		
+    		CTMarkupRange inlineMarkupRange = bookmarkHelper.anchorToBookmark(s.getElement(), bookmarkNamePrefix, getCurrentParagraph(false), this.contentContextStack.peek());
+    		if (inlineMarkupRange!=null) {
+    			bookmarkHelper.attachBookmarkEnd( inlineMarkupRange, getCurrentParagraph(false), this.contentContextStack.peek() );
+        		markuprange = null;        		
+        		paraStillEmpty = false;            		
+    		}
+        
+    		String href = s.getElement().getAttribute("href"); 
     		if (href!=null && !href.trim().equals("")) {
     			log.warn("Ignoring @href on <a> without content.");
     		}
@@ -1982,17 +1987,12 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             		
             		if (name!=null
             				&& !name.trim().equals("")) {
-            			log.debug("NAMED ANCHOR " + name);
             			
-            		    CTBookmark bookmark = Context.getWmlObjectFactory().createCTBookmark(); 
-            		    JAXBElement<org.docx4j.wml.CTBookmark> bookmarkWrapped = Context.getWmlObjectFactory().createPBookmarkStart(bookmark); 
-            		    this.getCurrentParagraph(true).getContent().add( bookmarkWrapped); 
-                    	paraStillEmpty = false;            		
-            		    
-        		        bookmark.setName( name ); 
-        		        bookmark.setId( BigInteger.valueOf( bookmarkId.get()) );
-            		    
-        		        storeBookmarkEnd();    		                		        
+                		markuprange = bookmarkHelper.anchorToBookmark(s.getElement(), bookmarkNamePrefix, getCurrentParagraph(false), this.contentContextStack.peek());
+                		if (markuprange!=null) {
+                    		markuprange = null;        		
+                    		paraStillEmpty = false;            		
+                		}
         		        
         		        if (href==null
                 				|| href.trim().equals("")) {
@@ -2093,6 +2093,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	private void processInlineBoxContent(InlineBox inlineBox, Styleable s,
 			Map<String, CSSValue> cssMap) {
 				
+        
+        // bookmark start?
+        CTMarkupRange markupRangeForID = bookmarkHelper.anchorToBookmark(inlineBox.getElement(), bookmarkNamePrefix, 
+        		getCurrentParagraph(false), this.contentContextStack.peek());
+		
 		
 		if (inlineBox.getTextNode()==null) {
 			
@@ -2137,6 +2142,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 //                        	            		addRunProperties( cssMap ));                                    	                                    	
 //                                    }
         }
+		
+    	// bookmark end
+    	if (markupRangeForID!=null) {
+    		bookmarkHelper.attachBookmarkEnd(markupRangeForID, getCurrentParagraph(false), this.contentContextStack.peek());
+    	}            				
 	}
 	
 	private String getClassAttribute(Element e) {
@@ -2385,7 +2395,22 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	// TODO: cleansing in table context
     	
     }
+    
+    private String bookmarkNamePrefix = "";
+    
+    
+    /**
+     * The prefix (if any) to be added to bookmark names generated during this run.
+     * Useful for preventing name collisions, when importing multiple fragments into
+     * a single docx.
+     * 
+     * @param bookmarkNamePrefix
+     */
+    public void setBookmarkNamePrefix(String bookmarkNamePrefix) {
+		this.bookmarkNamePrefix = bookmarkNamePrefix;
+	}
 
+	
 	private Hyperlink createHyperlink(String url, RPr rPr, String linkText, RelationshipsPart rp) {
 		
 		if (linkText.contains("&")
@@ -2395,29 +2420,43 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		}
 		
 		try {
+			String hpl = null;
+			
+			if (url.startsWith("#")) { // Internal link --> w:anchor
+				
+				hpl = "<w:hyperlink w:anchor=\"" + bookmarkHelper.anchorToBookmarkName(bookmarkNamePrefix, url) + "\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" " +
+			            "xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" >" +
+			            "<w:r>" +
+			            "<w:t>" + linkText + "</w:t>" +
+			            "</w:r>" +
+			            "</w:hyperlink>";				
+				
+				
+			} else {                   // External link --> r:id
 
-			// We need to add a relationship to word/_rels/document.xml.rels
-			// but since its external, we don't use the 
-			// usual wordMLPackage.getMainDocumentPart().addTargetPart
-			// mechanism
-			org.docx4j.relationships.ObjectFactory factory =
-				new org.docx4j.relationships.ObjectFactory();
-			
-			org.docx4j.relationships.Relationship rel = factory.createRelationship();
-			rel.setType( Namespaces.HYPERLINK  );
-			rel.setTarget(url);
-			rel.setTargetMode("External");  
-									
-			rp.addRelationship(rel);
-			
-			// addRelationship sets the rel's @Id
-			
-			String hpl = "<w:hyperlink r:id=\"" + rel.getId() + "\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" " +
-            "xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" >" +
-            "<w:r>" +
-            "<w:t>" + linkText + "</w:t>" +
-            "</w:r>" +
-            "</w:hyperlink>";
+				// We need to add a relationship to word/_rels/document.xml.rels
+				// but since its external, we don't use the 
+				// usual wordMLPackage.getMainDocumentPart().addTargetPart
+				// mechanism
+				org.docx4j.relationships.ObjectFactory factory =
+					new org.docx4j.relationships.ObjectFactory();
+				
+				org.docx4j.relationships.Relationship rel = factory.createRelationship();
+				rel.setType( Namespaces.HYPERLINK  );
+				rel.setTarget(url);
+				rel.setTargetMode("External");  
+										
+				rp.addRelationship(rel);
+				
+				// addRelationship sets the rel's @Id
+				
+				hpl = "<w:hyperlink r:id=\"" + rel.getId() + "\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" " +
+	            "xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" >" +
+	            "<w:r>" +
+	            "<w:t>" + linkText + "</w:t>" +
+	            "</w:r>" +
+	            "</w:hyperlink>";
+			}
 
 			Hyperlink hyperlink = (Hyperlink)XmlUtils.unmarshalString(hpl);
 			R r = (R)hyperlink.getContent().get(0);
