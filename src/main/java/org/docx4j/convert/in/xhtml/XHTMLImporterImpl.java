@@ -196,6 +196,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	
 	private XHTMLImageHandler xHTMLImageHandler = new XHTMLImageHandlerDefault();
 	
+	private DivHandler divHandler;
+	
+	public void setDivHandler(DivHandler divHandler) {
+		this.divHandler = divHandler;
+	}
+	
+	
+	
 	private Body imports = null; 
     
     
@@ -797,7 +805,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             		getCurrentParagraph(false), this.contentContextStack.peek());
             }
             if (markupRangeForID!=null) {
-                System.out.println("Added bookmark for "+ box.getClass().getName()  + "<" + e.getNodeName() + " " + box.getStyle().toStringMine() );
+                log.debug("Added bookmark for "+ box.getClass().getName()  + "<" + e.getNodeName() + " " + box.getStyle().toStringMine() );
             }
             
             // Don't add a new paragraph if this BlockBox is display: inline
@@ -820,7 +828,18 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	            	}
 	            */
             	// So do it this way ...
-            	if (box.getStyle().getDisplayMine().equals("inline") ) {
+                if (e.getNodeName().equals("div")) {
+                	
+                	if (divHandler!=null) {
+                		
+                		ContentAccessor ca = divHandler.enter(blockBox, this.contentContextStack.peek());
+                		if (ca!=null) {
+                			pushBlockStack(ca);
+                			mustPop = true;
+                		}
+                	}
+                	
+                } else if (box.getStyle().getDisplayMine().equals("inline") ) {
             		
 //                	// Don't add a paragraph for this, unless ..
 //                	if (currentP==null) {
@@ -1195,6 +1214,12 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         		attachmentPointP = null; 
                 if (mustPop) popBlockStack();
         	}
+        	
+            if (e.getNodeName().equals("div")) {
+            	if (divHandler!=null) {
+            		divHandler.leave();
+            	}
+            }
         	
             	
 //            // An empty tc shouldn't make the table disappear!
