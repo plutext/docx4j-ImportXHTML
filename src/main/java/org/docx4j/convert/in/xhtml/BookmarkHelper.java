@@ -9,8 +9,12 @@ import org.docx4j.jaxb.Context;
 import org.docx4j.wml.Body;
 import org.docx4j.wml.CTBookmark;
 import org.docx4j.wml.CTMarkupRange;
+import org.docx4j.wml.CTSdtContentCell;
+import org.docx4j.wml.CTSdtContentRow;
 import org.docx4j.wml.ContentAccessor;
 import org.docx4j.wml.P;
+import org.docx4j.wml.SdtContentBlock;
+import org.docx4j.wml.SdtElement;
 import org.docx4j.wml.Tbl;
 import org.docx4j.wml.Tc;
 import org.docx4j.wml.Tr;
@@ -40,7 +44,7 @@ public class BookmarkHelper {
     protected CTMarkupRange anchorToBookmark(Element e, String bookmarkNamePrefix, P currentP, ContentAccessor contentContext) {
     	
     	if (e==null) {
-    		log.warn("passed null element", new Throwable());
+    		log.debug("passed null element", new Throwable());
     		return null;
     	}
     	
@@ -72,7 +76,22 @@ public class BookmarkHelper {
 
 				    bookmarkWrapped = Context.getWmlObjectFactory().createBodyBookmarkStart(bookmark);
 				    contentContext.getContent().add(bookmarkWrapped);
+
+		    	} else if (contentContext instanceof SdtContentBlock) {
+		    		
+		    		bookmarkWrapped = Context.getWmlObjectFactory().createSdtContentBlockBookmarkStart(bookmark);
+				    contentContext.getContent().add(bookmarkWrapped);
 				    
+		    	} else if (contentContext instanceof CTSdtContentRow) {
+		    		
+		    		bookmarkWrapped = Context.getWmlObjectFactory().createCTSdtContentRowBookmarkStart(bookmark);
+				    contentContext.getContent().add(bookmarkWrapped);
+		    		
+		    	} else if (contentContext instanceof CTSdtContentCell) {
+		    		
+		    		bookmarkWrapped = Context.getWmlObjectFactory().createCTSdtContentCellBookmarkStart(bookmark);
+				    contentContext.getContent().add(bookmarkWrapped);
+		    		
 		    	} else if (contentContext instanceof Tbl) {
 
 				    bookmarkWrapped = Context.getWmlObjectFactory().createTblBookmarkStart(bookmark);
@@ -129,6 +148,21 @@ public class BookmarkHelper {
 	    	if (contentContext instanceof Body) {
 
 	    		markuprangeWrapped = Context.getWmlObjectFactory().createBodyBookmarkEnd(markuprange);
+			    contentContext.getContent().add(markuprangeWrapped);
+
+	    	} else if (contentContext instanceof SdtContentBlock) {
+	    		
+	    		markuprangeWrapped = Context.getWmlObjectFactory().createSdtContentBlockBookmarkEnd(markuprange);
+			    contentContext.getContent().add(markuprangeWrapped);
+			    
+	    	} else if (contentContext instanceof CTSdtContentRow) {
+	    		
+	    		markuprangeWrapped = Context.getWmlObjectFactory().createCTSdtContentRowBookmarkEnd(markuprange);
+			    contentContext.getContent().add(markuprangeWrapped);
+	    		
+	    	} else if (contentContext instanceof CTSdtContentCell) {
+	    		
+	    		markuprangeWrapped = Context.getWmlObjectFactory().createCTSdtContentCellBookmarkEnd(markuprange);
 			    contentContext.getContent().add(markuprangeWrapped);
 			    
 	    	} else if (contentContext instanceof Tbl) {
