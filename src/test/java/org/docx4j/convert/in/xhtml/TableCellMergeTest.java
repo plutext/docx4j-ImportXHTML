@@ -128,7 +128,7 @@ public class TableCellMergeTest {
 
 	private List<Object> table(String tableContent) throws Docx4JException {
 		List<Object> converted = convert("<div><table>" +tableContent + "</table></div>");
-		return ((Tbl) converted.get(1)).getContent();
+		return ((Tbl) converted.get(0)).getContent();
 	}
 
 	private TcPrInner.VMerge vmerge(List<Object> row, int col) {
