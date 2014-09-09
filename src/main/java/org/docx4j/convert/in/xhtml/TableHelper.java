@@ -17,32 +17,15 @@ import org.docx4j.org.xhtmlrenderer.docx.DocxRenderer;
 import org.docx4j.org.xhtmlrenderer.newtable.TableBox;
 import org.docx4j.org.xhtmlrenderer.newtable.TableCellBox;
 import org.docx4j.org.xhtmlrenderer.render.Box;
-import org.docx4j.wml.CTBorder;
-import org.docx4j.wml.CTShd;
-import org.docx4j.wml.CTTblLayoutType;
-import org.docx4j.wml.CTVerticalJc;
-import org.docx4j.wml.ContentAccessor;
-import org.docx4j.wml.P;
-import org.docx4j.wml.STBorder;
-import org.docx4j.wml.STTblLayoutType;
-import org.docx4j.wml.STVerticalJc;
-import org.docx4j.wml.Style;
-import org.docx4j.wml.Tbl;
-import org.docx4j.wml.TblBorders;
-import org.docx4j.wml.TblGrid;
-import org.docx4j.wml.TblGridCol;
-import org.docx4j.wml.TblPr;
-import org.docx4j.wml.TblWidth;
-import org.docx4j.wml.Tc;
-import org.docx4j.wml.TcPr;
-import org.docx4j.wml.TcPrInner;
-import org.docx4j.wml.Tr;
+import org.docx4j.wml.*;
 import org.docx4j.wml.CTTblPrBase.TblStyle;
 import org.docx4j.wml.TcPrInner.GridSpan;
 import org.docx4j.wml.TcPrInner.VMerge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
+
+import javax.xml.bind.JAXBElement;
 
 public class TableHelper {
 	
@@ -205,6 +188,22 @@ public class TableHelper {
     }
 
     protected void setupTrPr(org.docx4j.org.xhtmlrenderer.newtable.TableRowBox trBox, Tr tr) {
+
+	    TrPr trPr = Context.getWmlObjectFactory().createTrPr();
+	    tr.setTrPr(trPr);
+
+	    int heightTwip = trBox.getHeight();
+	    CTHeight ctHeight = Context.getWmlObjectFactory().createCTHeight();
+	    JAXBElement<CTHeight> ctTrPrBaseTrHeight = Context.getWmlObjectFactory().createCTTrPrBaseTrHeight(ctHeight);
+	    trPr.getCnfStyleOrDivIdOrGridBefore().add(ctTrPrBaseTrHeight);
+
+	    if (heightTwip == 0) {
+		    ctHeight.setHRule(STHeightRule.AUTO);
+	    }
+	    else {
+		    ctHeight.setHRule(STHeightRule.EXACT);
+		    ctHeight.setVal(BigInteger.valueOf(heightTwip));
+	    }
     }
     
     protected void setupTcPr(TableCellBox tcb, Tc tc, TableProperties tableProperties) {
