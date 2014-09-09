@@ -20,10 +20,12 @@ import org.docx4j.org.xhtmlrenderer.render.Box;
 import org.docx4j.wml.CTBorder;
 import org.docx4j.wml.CTShd;
 import org.docx4j.wml.CTTblLayoutType;
+import org.docx4j.wml.CTVerticalJc;
 import org.docx4j.wml.ContentAccessor;
 import org.docx4j.wml.P;
 import org.docx4j.wml.STBorder;
 import org.docx4j.wml.STTblLayoutType;
+import org.docx4j.wml.STVerticalJc;
 import org.docx4j.wml.Style;
 import org.docx4j.wml.Tbl;
 import org.docx4j.wml.TblBorders;
@@ -206,12 +208,8 @@ public class TableHelper {
     }
     
     protected void setupTcPr(TableCellBox tcb, Tc tc, TableProperties tableProperties) {
-    	
-		
 
 		int effCol = tcb.getTable().colToEffCol(tcb.getCol());
-		
-
 		
 		// Do we need a vMerge tag with "restart" attribute?
 		// get cell below (only 1 section supported at present)
@@ -284,6 +282,32 @@ public class TableHelper {
 		
 		// cell borders
 		tcPr.setTcBorders( copyCellBorderStyles(tcb) );
+		
+		// Vertical alignment; eg vertical-align: bottom; to <w:vAlign w:val="bottom"/>
+		IdentValue valign = tcb.getVerticalAlign();
+		// eg baseline|length|sub|super|top|text-top|middle|bottom|text-bottom|initial|inherit
+		// we support top | middle | bottom
+		if (valign!=null) {
+			
+			if ("top".equals(valign.asString())) {
+				
+				CTVerticalJc vjc = new CTVerticalJc(); 
+				vjc.setVal(STVerticalJc.TOP);
+				tcPr.setVAlign(vjc);
+				
+			} else if ("middle".equals(valign.asString())) {
+
+				CTVerticalJc vjc = new CTVerticalJc(); 
+				vjc.setVal(STVerticalJc.CENTER);
+				tcPr.setVAlign(vjc);
+				
+			} else if ("bottom".equals(valign.asString())) {
+
+				CTVerticalJc vjc = new CTVerticalJc(); 
+				vjc.setVal(STVerticalJc.BOTTOM);
+				tcPr.setVAlign(vjc);
+			} 
+		}
 		
     	
     }
