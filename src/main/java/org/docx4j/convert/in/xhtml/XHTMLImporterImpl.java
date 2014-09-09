@@ -913,8 +913,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		            
 		    		tableProperties = new TableProperties();
 		    		tableProperties.setTableBox(tableBox);
+		    		
+		    		boolean isNested = (parent instanceof TableBox
+		    				|| parent.getElement().getNodeName().equals("table"));
 		            
-		            setupTblPr( tableBox,  tbl,  tableProperties);
+		            setupTblPr( tableBox,  tbl,  tableProperties, isNested);
 		            setupTblGrid( tableBox,  tbl,  tableProperties);
 		            
 	            	
@@ -1417,7 +1420,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     			|| ("h6").equals(elName) );    	
     }
     
-    protected void setupTblPr(TableBox cssTable, Tbl tbl, TableProperties tableProperties) {
+    protected void setupTblPr(TableBox cssTable, Tbl tbl, TableProperties tableProperties, boolean isNested) {
     	
         Element e = cssTable.getElement();     	
 
@@ -1456,15 +1459,38 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		// cssTable.getLeftMBP() which is setLeftMBP((int) margin.left() + (int) border.left() + (int) padding.left());
 		// cssTable.getTx(); which is (int) margin.left() + (int) border.left() + (int) padding.left();
 		// But want just margin.left
-		if (cssTable.getMargin() !=null
+		
+        log.debug("list depth:" + listHelper.getDepth());
+        if (listHelper.getDepth()>0
+        		&& !isNested) { // don't adjust indent for table in table
+        	
+        	// Special handling for indent, since we need to sum values for ancestors
+    		int totalPadding = getAbsoluteListItemIndent(cssTable);
+            
+    		TblWidth tblInd = tblPr.getTblInd();
+    		if (tblInd==null) {
+    			tblInd = new TblWidth();
+    			tblPr.setTblInd(tblInd);
+    		}
+        	// totalPadding gives indent to the bullet;
+        	// we want to align this subsequent p with the preceding text;
+        	// assume 360 twips
+    		tblInd.setW(BigInteger.valueOf(totalPadding + 360 + 115)); // TODO FIX 360, and take cssTable.getMargin() into account
+    		tblInd.setType(TblWidth.TYPE_DXA);
+            	        	
+            listHelper.peekListItemStateStack().isFirstChild=false;
+            
+        } else if (cssTable.getMargin() !=null
 				&& cssTable.getMargin().left()>0) {
+        	
 			log.debug("Calculating TblInd from margin.left: " + cssTable.getMargin().left() );
-    		TblWidth tblIW = Context.getWmlObjectFactory().createTblWidth();
-    		tblIW.setW( BigInteger.valueOf( Math.round(
+    		TblWidth tblInd = Context.getWmlObjectFactory().createTblWidth();
+    		tblInd.setW( BigInteger.valueOf( Math.round(
     				cssTable.getMargin().left()
     				)));
-    		tblIW.setType(TblWidth.TYPE_DXA);
-			tblPr.setTblInd(tblIW);
+    		tblInd.setType(TblWidth.TYPE_DXA);
+			tblPr.setTblInd(tblInd);
+			
 		} else {
 		
     		// Indent is zero.  In this case, if the table has borders,
@@ -1479,10 +1505,10 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 				// <w:tblInd w:w="115" w:type="dxa"/>
 				// TODO For a wider line, or a line style which is eg double lines, you might need more indent
 				log.debug("applying fix to align left edge of table with text");
-        		TblWidth tblIW = Context.getWmlObjectFactory().createTblWidth();
-        		tblIW.setW( BigInteger.valueOf( 115));
-        		tblIW.setType(TblWidth.TYPE_DXA);
-    			tblPr.setTblInd(tblIW);
+        		TblWidth tblInd = Context.getWmlObjectFactory().createTblWidth();
+        		tblInd.setW( BigInteger.valueOf( 115));
+        		tblInd.setType(TblWidth.TYPE_DXA);
+    			tblPr.setTblInd(tblInd);
 			}
 			
 		}
@@ -1887,6 +1913,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 //			}
         	
     	} 
+        
+    
 		
 	}
     
@@ -2275,6 +2303,20 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	
     	return e.getNodeName().equals("li");
     }
+    
+    private int getAbsoluteListItemIndent(Styleable styleable) {
+
+		int totalPadding = 0;
+        LengthValue padding = (LengthValue)styleable.getStyle().valueByName(CSSName.PADDING_LEFT);
+        totalPadding +=Indent.getTwip(padding.getCSSPrimitiveValue());
+        
+        LengthValue margin = (LengthValue)styleable.getStyle().valueByName(CSSName.MARGIN_LEFT);
+        totalPadding +=Indent.getTwip(margin.getCSSPrimitiveValue());    			                
+    	
+        totalPadding +=listHelper.getAncestorIndentation();
+        
+        return totalPadding;
+    }
 	
     private void addParagraphProperties(PPr pPr, Styleable styleable, Map cssMap) {
     	// NB, not invoked in CLASS_TO_STYLE_ONLY case
@@ -2328,14 +2370,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         	 */
         	
         	// Special handling for indent, since we need to sum values for ancestors
-    		int totalPadding = 0;
-            LengthValue padding = (LengthValue)styleable.getStyle().valueByName(CSSName.PADDING_LEFT);
-            totalPadding +=Indent.getTwip(padding.getCSSPrimitiveValue());
-            
-            LengthValue margin = (LengthValue)styleable.getStyle().valueByName(CSSName.MARGIN_LEFT);
-            totalPadding +=Indent.getTwip(margin.getCSSPrimitiveValue());    			                
-        	
-            totalPadding +=listHelper.getAncestorIndentation();
+    		int totalPadding = getAbsoluteListItemIndent(styleable);
             
         	// FS default css is 40px padding per level = 600 twip
             int defaultInd =  600 * listHelper.getDepth();
