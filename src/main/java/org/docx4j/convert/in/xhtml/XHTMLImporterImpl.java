@@ -903,7 +903,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		    		tableProperties.setTableBox(tableBox);
 		    		
 		    		boolean isNested = (parent instanceof TableBox
-		    				|| parent.getElement().getNodeName().equals("table"));
+		    				|| (parent!=null
+		    					&& parent.getElement()!=null
+		    					&& parent.getElement().getNodeName().equals("table")));
 		            
 		    		tableHelper.setupTblPr( tableBox,  tbl,  tableProperties, isNested);
 		    		tableHelper.setupTblGrid( tableBox,  tbl,  tableProperties);
@@ -1848,6 +1850,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             	// we can't tell whether this is just a default, so ignore it; use the numbering setting
             	log.debug("explicitly unsetting pPr indent");
             	pPr.setInd(null); 
+            } else if (listHelper.peekListItemStateStack().isFirstChild) {
+
+            	// totalPadding gives indent to the bullet;
+            	pPr.setInd(listHelper.getInd(totalPadding)); 
+            	
             } else {
             	
             	// totalPadding gives indent to the bullet;
