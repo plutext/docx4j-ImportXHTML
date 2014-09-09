@@ -90,6 +90,8 @@ public class ListHelper {
 
 	protected void pushListStack(BlockBox ca) {
 		listStack.push(ca);
+		pushListItemStateStack();
+		
 	}
 	protected BlockBox popListStack() {
 		BlockBox box = listStack.pop();
@@ -97,6 +99,7 @@ public class ListHelper {
 			// We're not in a list any more
 			concreteList=null;
 		}
+		listItemStateStack.pop();
 		return box;
 	}
 	protected BlockBox peekListStack() {
@@ -106,6 +109,41 @@ public class ListHelper {
 	protected int getDepth() {
 		return listStack.size();
 	}
+	
+	
+	
+    /**
+     *  The ListItemContentState helps us handle structures such as:
+     *  
+     *  <li>
+     *     <p>this item gets the bullet</p>
+     *     <p>this one needs to be indented</p>
+     *  </li>
+     *  
+     *  ListItemContentState needs to be re-inited as we enter 
+     *  each list item.   
+     */
+    private LinkedList<ListItemContentState> listItemStateStack = new LinkedList<ListItemContentState>();
+	
+	class ListItemContentState {
+	
+		protected boolean isFirstChild = true;
+		protected boolean haveMergedFirstP = false;
+		
+		void init() {
+			isFirstChild = true;
+			haveMergedFirstP = false;
+		}
+	
+	}
+	
+	protected ListItemContentState peekListItemStateStack() {
+		return listItemStateStack.peek();
+	}	
+	private void pushListItemStateStack() {
+		listItemStateStack.push(new ListItemContentState());
+	}	
+	
 	
 	/**
 	 * Creates a new empty abstract list.

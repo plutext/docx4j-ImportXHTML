@@ -852,6 +852,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             		
             		log.info("entering list");
             		listHelper.pushListStack(blockBox);
+            		
                 	
             	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableSectionBox) {
                 	// nb, both TableBox and TableSectionBox 
@@ -997,6 +998,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		            // Paragraph level styling
 	            	P currentP = this.getCurrentParagraph(true);
 	            	
+	            	listHelper.peekListItemStateStack().init(); 
+	            	
 	                PPr pPr =  Context.getWmlObjectFactory().createPPr();
 	                currentP.setPPr(pPr);
 	            	
@@ -1119,12 +1122,21 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 //	            		// force new p?
 //	            	}
 	            	
-	            	// Paragraph processing
-	            	P currentP = this.getCurrentParagraph(true);
-	                currentP.setPPr(this.getPPr(blockBox, cssMap));
-
-	            	if (e.getNodeName().equals("figcaption")) {
-	            		prepareCaption(e, currentP);
+	            	// Paragraph processing.  Generally, we'll create a new P.
+	            	// An exception to that is li/p[1], where we want to use 
+	            	// the p created for the li.
+	            	if (listHelper.getDepth()>0
+	            			&& !listHelper.peekListItemStateStack().haveMergedFirstP) {
+	            		// use existing attachmentPoint
+	            		listHelper.peekListItemStateStack().haveMergedFirstP = true;
+	            	} else {
+	            		
+		            	P currentP = this.getCurrentParagraph(true);
+		                currentP.setPPr(this.getPPr(blockBox, cssMap));
+	
+		            	if (e.getNodeName().equals("figcaption")) {
+		            		prepareCaption(e, currentP);
+		            	}
 	            	}
 	                
 	            }
@@ -2292,8 +2304,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         }
         
         
-        if (styleable.getElement()!=null
-        		&& isListItem(styleable.getElement()) ) {
+        log.debug("list depth:" + listHelper.getDepth());
+
+        if (listHelper.getDepth()>0) {
+//        if (styleable.getElement()!=null
+//        		&& isListItem(styleable.getElement()) ) {
 
         	/* In Word, indentation is given effect in the following priority:
         	 * 1. ad hoc setting (if present)
@@ -2324,14 +2339,21 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             
         	// FS default css is 40px padding per level = 600 twip
             int defaultInd =  600 * listHelper.getDepth();
-            if (totalPadding==defaultInd) {
+            if (totalPadding==defaultInd
+            		&& listHelper.peekListItemStateStack().isFirstChild) {
             	// we can't tell whether this is just a default, so ignore it; use the numbering setting
             	log.debug("explicitly unsetting pPr indent");
             	pPr.setInd(null); 
             } else {
-            	pPr.setInd(listHelper.getInd(totalPadding)); 
+            	
+            	// totalPadding gives indent to the bullet;
+            	// we want to align this subsequent p with the preceding text;
+            	// assume 360 twips
+            	
+            	pPr.setInd(listHelper.getInd(totalPadding + 360)); // TODO FIXME
             } 
         	
+            listHelper.peekListItemStateStack().isFirstChild=false;
         }
         
                 
