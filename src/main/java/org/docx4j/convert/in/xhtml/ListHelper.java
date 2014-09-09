@@ -40,6 +40,7 @@ import org.docx4j.model.properties.paragraph.Indent;
 import org.docx4j.openpackaging.parts.WordprocessingML.NumberingDefinitionsPart;
 import org.docx4j.org.xhtmlrenderer.css.constants.CSSName;
 import org.docx4j.org.xhtmlrenderer.css.style.derived.LengthValue;
+import org.docx4j.org.xhtmlrenderer.layout.Styleable;
 import org.docx4j.org.xhtmlrenderer.render.BlockBox;
 import org.docx4j.wml.CTLongHexNumber;
 import org.docx4j.wml.Jc;
@@ -295,6 +296,21 @@ public class ListHelper {
 		}
 		return totalPadding;
 	}
+	
+    protected int getAbsoluteListItemIndent(Styleable styleable) {
+
+		int totalPadding = 0;
+        LengthValue padding = (LengthValue)styleable.getStyle().valueByName(CSSName.PADDING_LEFT);
+        totalPadding +=Indent.getTwip(padding.getCSSPrimitiveValue());
+        
+        LengthValue margin = (LengthValue)styleable.getStyle().valueByName(CSSName.MARGIN_LEFT);
+        totalPadding +=Indent.getTwip(margin.getCSSPrimitiveValue());    			                
+    	
+        totalPadding +=getAncestorIndentation();
+        
+        return totalPadding;
+    }
+	
 
 		
 	private Lvl createLevel(int level, Map<String, CSSValue> cssMap) {
