@@ -364,9 +364,25 @@ public class ListHelper {
             // Create object for start
             Lvl.Start lvlstart = wmlObjectFactory.createLvlStart(); 
             lvl.setStart(lvlstart); 
-                lvlstart.setVal( BigInteger.valueOf( 1) ); 	
                 
-                return lvl;
+            BlockBox list = listStack.peek(); 
+            Element listEl = list.getElement();
+            BigInteger startVal = null;
+            if (listEl.hasAttribute("start") ) {
+            	try {
+            		startVal = BigInteger.valueOf(Long.parseLong(listEl.getAttribute("start")));
+            	} catch (NumberFormatException nfe) {
+            		log.warn("Can't parse number from @start=" + listEl.getAttribute("start"));
+            	}
+            }
+            if (startVal==null) {
+                lvlstart.setVal( BigInteger.valueOf( 1) );
+            } else {
+                lvlstart.setVal( startVal );
+            	
+            }
+                
+            return lvl;
                 
 	}
 	

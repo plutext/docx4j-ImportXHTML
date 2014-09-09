@@ -1059,7 +1059,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 			            			 * in Word.
 			            			 */
 			            			BigInteger numId = s.getPPr().getNumPr().getNumId().getVal();
-			            			listHelper.setNumbering(pPr, numId);
+			            			listHelper.setNumbering(pPr, numId);  
+			            				// TODO: @start is ignored in this case (it is handled in addNumbering) 
 			            			
 			            			// Note that we just use the numbering it points to;
 			            			// we don't follow it to its abstract num (which is in fact
