@@ -3,27 +3,50 @@ package org.docx4j.convert.in.xhtml;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
 
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.XmlUtils;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl.TableProperties;
 import org.docx4j.jaxb.Context;
+import org.docx4j.model.properties.table.tr.TrHeight;
 import org.docx4j.org.xhtmlrenderer.css.constants.CSSName;
 import org.docx4j.org.xhtmlrenderer.css.constants.IdentValue;
 import org.docx4j.org.xhtmlrenderer.css.parser.FSColor;
 import org.docx4j.org.xhtmlrenderer.css.parser.FSRGBColor;
 import org.docx4j.org.xhtmlrenderer.css.style.FSDerivedValue;
-import org.docx4j.org.xhtmlrenderer.docx.DocxRenderer;
 import org.docx4j.org.xhtmlrenderer.newtable.TableBox;
 import org.docx4j.org.xhtmlrenderer.newtable.TableCellBox;
 import org.docx4j.org.xhtmlrenderer.render.Box;
-import org.docx4j.wml.*;
+import org.docx4j.wml.CTBorder;
+import org.docx4j.wml.CTHeight;
+import org.docx4j.wml.CTShd;
+import org.docx4j.wml.CTTblLayoutType;
 import org.docx4j.wml.CTTblPrBase.TblStyle;
+import org.docx4j.wml.CTVerticalJc;
+import org.docx4j.wml.ContentAccessor;
+import org.docx4j.wml.P;
+import org.docx4j.wml.STBorder;
+import org.docx4j.wml.STTblLayoutType;
+import org.docx4j.wml.STVerticalJc;
+import org.docx4j.wml.Style;
+import org.docx4j.wml.Tbl;
+import org.docx4j.wml.TblBorders;
+import org.docx4j.wml.TblGrid;
+import org.docx4j.wml.TblGridCol;
+import org.docx4j.wml.TblPr;
+import org.docx4j.wml.TblWidth;
+import org.docx4j.wml.Tc;
+import org.docx4j.wml.TcPr;
+import org.docx4j.wml.TcPrInner;
 import org.docx4j.wml.TcPrInner.GridSpan;
 import org.docx4j.wml.TcPrInner.VMerge;
+import org.docx4j.wml.Tr;
+import org.docx4j.wml.TrPr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
+import org.w3c.dom.css.CSSValue;
 
 import javax.xml.bind.JAXBElement;
 
@@ -192,18 +215,37 @@ public class TableHelper {
 	    TrPr trPr = Context.getWmlObjectFactory().createTrPr();
 	    tr.setTrPr(trPr);
 
-	    int heightTwip = trBox.getHeight();
-	    CTHeight ctHeight = Context.getWmlObjectFactory().createCTHeight();
-	    JAXBElement<CTHeight> ctTrPrBaseTrHeight = Context.getWmlObjectFactory().createCTTrPrBaseTrHeight(ctHeight);
-	    trPr.getCnfStyleOrDivIdOrGridBefore().add(ctTrPrBaseTrHeight);
+	    /* Row height:- 
+	     * 
+	     * In HTML, you can only set height on a cell td, not tr, but Flying Saucer calculates this 
+	     * based on cell contents.
+	     * 
+	     * Since there is no height property on a tr in CSS, this.importer.getCascadedProperties 
+	     * does not contain that property.
+	     * 
+	     * But happily, Flying Saucer, sets trBox.getHeight()
+	     * 
+	     * A web browser ignores td height 0 (tested in Chrome), or any value less than height of contents.
+	     * 
+	     * But Flying Saucer, at least the version we modified, sets trBox.getHeight() based on
+	     * td CSS values, not the greater of the specified height and the actual height of the contents.
+	     * 
+	     * So in Word, we want to use STHeightRule.AT_LEAST (rather than EXACT) so contents don't
+	     * get cut off. 
+	     * 
+	     */	    
+	    int height = trBox.getHeight(); // 100px = 2000 so looks like 1/20 of a pixel! 
+	    if (height == 0) { 
+		    // do nothing; equivalent per spec to STHeightRule.AUTO
+	    } else {
+	    		    	
+	    	// Since we don't have a CSSValue we can use, do it manually
+	    	TrHeight thr = new TrHeight(); // uses STHeightRule.AT_LEAST
+	    	thr.set(trPr);
+			int twip = UnitsOfMeasurement.pxToTwip(height/20);
+			((CTHeight)thr.getObject()).setVal(BigInteger.valueOf(twip));	    	
+	    }	    
 
-	    if (heightTwip == 0) {
-		    ctHeight.setHRule(STHeightRule.AUTO);
-	    }
-	    else {
-		    ctHeight.setHRule(STHeightRule.EXACT);
-		    ctHeight.setVal(BigInteger.valueOf(heightTwip));
-	    }
     }
     
     protected void setupTcPr(TableCellBox tcb, Tc tc, TableProperties tableProperties) {
