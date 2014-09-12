@@ -41,6 +41,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.transform.Source;
@@ -140,7 +141,52 @@ import org.xml.sax.InputSource;
 public class XHTMLImporterImpl implements XHTMLImporter {
 	
 	public static Logger log = LoggerFactory.getLogger(XHTMLImporterImpl.class);		
-	    
+
+	private XHTMLImporterImpl() {}
+
+    protected WordprocessingMLPackage wordMLPackage;
+    private RelationshipsPart rp;
+    private NumberingDefinitionsPart ndp;
+	
+	public XHTMLImporterImpl(WordprocessingMLPackage wordMLPackage) {
+		
+		displayFormattingOptionSettings();
+		
+    	this.wordMLPackage= wordMLPackage;
+    	rp = wordMLPackage.getMainDocumentPart().getRelationshipsPart();
+    	ndp = wordMLPackage.getMainDocumentPart().getNumberingDefinitionsPart();
+		if (ndp==null) {
+			log.debug("No NumberingDefinitions part - so adding");
+			try {
+				ndp = new NumberingDefinitionsPart();
+				wordMLPackage.getMainDocumentPart().addTargetPart(ndp);
+				ndp.setJaxbElement( Context.getWmlObjectFactory().createNumbering() );				
+			} catch (InvalidFormatException e1) {
+				// Won't happen
+				e1.printStackTrace();
+			}
+		}
+
+    	listHelper = new ListHelper(ndp);
+    	tableHelper = new TableHelper(this);
+    	
+    	
+		if (hyperlinkStyleId !=null && wordMLPackage instanceof WordprocessingMLPackage) {
+			((WordprocessingMLPackage)wordMLPackage).getMainDocumentPart().getPropertyResolver().activateStyle(hyperlinkStyleId);
+		}
+		
+		initStyleMap(wordMLPackage.getMainDocumentPart().getStyleDefinitionsPart());
+		
+		if (ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.Element.Heading.MapToStyle", false)) {
+			headingHandler = new HeadingHandler(wordMLPackage.getMainDocumentPart().getStyleDefinitionsPart().getJaxbElement());
+		}
+		
+		imports = Context.getWmlObjectFactory().createBody();
+		contentContextStack.push(imports);
+		
+		bookmarkHelper = new BookmarkHelper(wordMLPackage);
+    }	
+	
 	/**
 	 * Configure, how the Importer styles hyperlinks
 	 * 
@@ -183,9 +229,6 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	private Body imports = null; 
     
     
-    protected WordprocessingMLPackage wordMLPackage;
-    private RelationshipsPart rp;
-    private NumberingDefinitionsPart ndp;
     
     private ListHelper listHelper;
     
@@ -314,50 +357,28 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	private static Set<String> cssWhiteList = null;
 
 
-	private XHTMLImporterImpl() {}
 
-	
-	public XHTMLImporterImpl(WordprocessingMLPackage wordMLPackage) {
-		
-		displayFormattingOptionSettings();
-		
-    	this.wordMLPackage= wordMLPackage;
-    	rp = wordMLPackage.getMainDocumentPart().getRelationshipsPart();
-    	ndp = wordMLPackage.getMainDocumentPart().getNumberingDefinitionsPart();
-		if (ndp==null) {
-			log.debug("No NumberingDefinitions part - so adding");
-			try {
-				ndp = new NumberingDefinitionsPart();
-				wordMLPackage.getMainDocumentPart().addTargetPart(ndp);
-				ndp.setJaxbElement( Context.getWmlObjectFactory().createNumbering() );				
-			} catch (InvalidFormatException e1) {
-				// Won't happen
-				e1.printStackTrace();
-			}
-		}
-
-    	listHelper = new ListHelper(ndp);
-    	tableHelper = new TableHelper(this);
-    	
-    	
-		if (hyperlinkStyleId !=null && wordMLPackage instanceof WordprocessingMLPackage) {
-			((WordprocessingMLPackage)wordMLPackage).getMainDocumentPart().getPropertyResolver().activateStyle(hyperlinkStyleId);
-		}
-		
-		initStyleMap(wordMLPackage.getMainDocumentPart().getStyleDefinitionsPart());
-		
-		if (ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.Element.Heading.MapToStyle", false)) {
-			headingHandler = new HeadingHandler(wordMLPackage.getMainDocumentPart().getStyleDefinitionsPart().getJaxbElement());
-		}
-		
-		imports = Context.getWmlObjectFactory().createBody();
-		contentContextStack.push(imports);
-		
-    }
 	
 	private HeadingHandler headingHandler = null;
 	
-	private BookmarkHelper bookmarkHelper = new BookmarkHelper(); 
+	private BookmarkHelper bookmarkHelper; 
+	
+	@Override
+	public AtomicInteger getBookmarkIdLast() {
+		return bookmarkHelper.getBookmarkId();
+	}
+
+	/* 
+	 * Support injecting a starting bookmark value, so bookmark numbers
+	 * can be managed across invocations.
+	 * 
+	 * @see org.docx4j.convert.in.xhtml.XHTMLImporter#setBookmarkIdNext(java.util.concurrent.atomic.AtomicInteger)
+	 */
+	@Override
+	public void setBookmarkIdNext(AtomicInteger val) {
+		bookmarkHelper.setBookmarkId(val);		
+	}
+	
 	
 	private CTMarkupRange markuprange;
 	
@@ -659,7 +680,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     }
     
     
-    private Map<String, CSSValue> getCascadedProperties(CalculatedStyle cs) {
+    protected Map<String, CSSValue> getCascadedProperties(CalculatedStyle cs) {
     	
     	Map<String, CSSValue> cssMap = new HashMap<String, CSSValue>();
     	
@@ -775,6 +796,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             BlockBox blockBox = ((BlockBox)box);
 
             Element e = box.getElement(); 
+            if (e==null) {
+            	// Shouldn't happen
+                log.debug("<NULL>");
+            } else {            
+                log.debug("BB"  + "<" + e.getNodeName() + " " + box.getStyle().toStringMine() );
+                log.debug(box.getStyle().getDisplayMine() );
+//                log.debug(box.getElement().getAttribute("class"));            	
+            }
             
             // bookmark start?
             CTMarkupRange markupRangeForID = null;
@@ -789,22 +818,17 @@ public class XHTMLImporterImpl implements XHTMLImporter {
                 		null, this.contentContextStack.peek());
             	
             } else {
+            	
             	markupRangeForID = bookmarkHelper.anchorToBookmark(e, bookmarkNamePrefix, 
             		getCurrentParagraph(false), this.contentContextStack.peek());
             }
+            
             if (markupRangeForID!=null) {
                 log.debug("Added bookmark for "+ box.getClass().getName()  + "<" + e.getNodeName() + " " + box.getStyle().toStringMine() );
             }
             
             // Don't add a new paragraph if this BlockBox is display: inline
-            if (e==null) {
-            	// Shouldn't happen
-                log.debug("<NULL>");
-            } else {            
-                log.debug("BB"  + "<" + e.getNodeName() + " " + box.getStyle().toStringMine() );
-                log.debug(box.getStyle().getDisplayMine() );
-//                log.debug(box.getElement().getAttribute("class"));
-                
+            if (e!=null) {
                 
             	//Map cssMap = styleReference.getCascadedPropertiesMap(e);
                 Map<String, CSSValue> cssMap = getCascadedProperties(box.getStyle());
@@ -1110,7 +1134,10 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             		
             	} else if  (e.getNodeName().equals("img")) {
 		            	addImage(blockBox);
+            		
 	            } else {
+	            	
+	            	log.debug("default handling for " + e.getNodeName());
 	            	
 //	            	if (e.getNodeName().equals("figcaption")) {
 //	            		// force new p?
@@ -1183,6 +1210,10 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	                        
 	                    }
 	                    break;
+	                    
+	               default:
+	                	log.warn(".. which are TODO " + blockBox.getChildrenContentType() );
+	                	break;
 	            } 
             
 		    
@@ -1239,10 +1270,13 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         	// bookmark end
         	if (markupRangeForID!=null) {
         		bookmarkHelper.attachBookmarkEnd(markupRangeForID, getCurrentParagraph(false), this.contentContextStack.peek());
+        		markupRangeForID = null;
         	}
             
         } else if (box instanceof AnonymousBlockBox) {
             log.debug("AnonymousBlockBox");            
+        } else {
+        	log.warn(box.getClass().getName());
         }
     
     }
@@ -1447,6 +1481,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 //		}
 //	}
 	
+	
+	
     private void  processInlineBox( InlineBox inlineBox) {
     	
         // Doesn't extend box
@@ -1539,7 +1575,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             			
                 		markuprange = bookmarkHelper.anchorToBookmark(s.getElement(), bookmarkNamePrefix, getCurrentParagraph(false), this.contentContextStack.peek());
                 		if (markuprange!=null) {
-                    		markuprange = null;        		
+//                    		markuprange = null;         		
                     		paraStillEmpty = false;            		
                 		}
         		        
@@ -1548,6 +1584,13 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         		        	
 		                	String theText = inlineBox.getElement().getTextContent();
 		                    addRun(cssClass, cssMap, theText);
+		                    
+		                	// bookmark end
+		                	if (markuprange!=null) {
+		                		bookmarkHelper.attachBookmarkEnd(markuprange, getCurrentParagraph(false), this.contentContextStack.peek());
+	                    		markuprange = null;        		
+		                	}            				
+		                    
 	
 		                	return;
         		        }
@@ -1572,6 +1615,13 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	                    			rPr,
 	                    			inlineBox.getText(), rp);                                    	            		
 	                    	this.getCurrentParagraph(true).getContent().add(h);
+	                    	
+	                    	// bookmark end
+	                    	if (markuprange!=null) {
+	                    		bookmarkHelper.attachBookmarkEnd(markuprange, getCurrentParagraph(false), this.contentContextStack.peek());
+	                    		markuprange = null;        			                    		
+	                    	}            				
+	                    	
 	                        
 		                	paraStillEmpty = false;  
 		                	
@@ -1593,7 +1643,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	                    			rPr,
 	                    			href, rp);                                    	            		
 	                    	this.getCurrentParagraph(true).getContent().add(h);
-		                	paraStillEmpty = false;            				                	
+		                	paraStillEmpty = false;
+		                	
+		                	// bookmark end
+		                	if (markuprange!=null) {
+		                		bookmarkHelper.attachBookmarkEnd(markuprange, getCurrentParagraph(false), this.contentContextStack.peek());
+	                    		markuprange = null;        				                		
+		                	}            				
+		                	
 		                	return;
 	                	}
             		}
@@ -2068,7 +2125,6 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 			this.isFixedWidth = isFixedWidth;
 		}
 	}
-    
     
     
 }

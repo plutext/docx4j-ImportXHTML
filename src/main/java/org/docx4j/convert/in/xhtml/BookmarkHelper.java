@@ -1,11 +1,16 @@
 package org.docx4j.convert.in.xhtml;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.xml.bind.JAXBElement;
 
+import org.docx4j.TraversalUtil;
+import org.docx4j.XmlUtils;
+import org.docx4j.finders.RangeFinder;
 import org.docx4j.jaxb.Context;
+import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.Body;
 import org.docx4j.wml.CTBookmark;
 import org.docx4j.wml.CTMarkupRange;
@@ -28,11 +33,73 @@ import org.w3c.dom.Element;
  */
 public class BookmarkHelper {
 	
+	/*
+	 * Nested bookmarks work as-is, without need
+	 * for a stack of CTMarkupRange.
+	 * 
+	 * Warning/known issue:  avoid block level anchor eg
+	 * 
+    	String xhtml= "<div id=\"top\">" +
+    			"<a name=\"AVOID\">" +
+					"<h1>Heading</h1>" +
+					"<div id=\"inner\">" +
+					"<p>p1</p>" +
+				  "</div>"+
+					"</a>" +
+		"</div>";	 * 
+	 * 
+	 * since this seems to confuse our Flying Saucer badly!  Suspect an upstream 
+	 * fix is required.
+	 * 
+	 */
+	
 	public static Logger log = LoggerFactory.getLogger(BookmarkHelper.class);		
 	
+	private BookmarkHelper() {}
 	
-	private AtomicInteger bookmarkId = new AtomicInteger();	
+	BookmarkHelper(WordprocessingMLPackage wordMLPackage) {
+		this.wordMLPackage=wordMLPackage;
+	}
 	
+	private WordprocessingMLPackage wordMLPackage; // so we can calculate bookmark starting ID on demand
+	
+	private AtomicInteger bookmarkId = null;
+	
+	
+	protected void setBookmarkId(AtomicInteger bookmarkId) {
+		
+		/* TODO: OpenDoPE needs a central mechanism to keep track of bookmark allocation,
+		 * replacing what is done inBookmarkRenumber.
+		 */
+		
+		this.bookmarkId = bookmarkId;
+	}
+
+	protected AtomicInteger getBookmarkId() {
+		
+		if (bookmarkId==null) {
+			// Work out starting ID
+			bookmarkId = new AtomicInteger(initBookmarkIdStart());
+		}
+		return bookmarkId;
+	}
+
+	private int initBookmarkIdStart() {
+
+		int highestId = 0;
+		
+		RangeFinder rt = new RangeFinder("CTBookmark", "CTMarkupRange");
+		new TraversalUtil(wordMLPackage.getMainDocumentPart().getContent(), rt);
+		
+		for (CTBookmark bm : rt.getStarts()) {
+			
+			BigInteger id = bm.getId();
+			if (id!=null && id.intValue()>highestId) {
+				highestId = id.intValue();
+			}
+		}
+		return highestId;
+	}	
 	
     /**
      * Convert a destination anchor given by @id or a/@name, to a bookmark start,
@@ -44,7 +111,7 @@ public class BookmarkHelper {
     protected CTMarkupRange anchorToBookmark(Element e, String bookmarkNamePrefix, P currentP, ContentAccessor contentContext) {
     	
     	if (e==null) {
-    		log.debug("passed null element", new Throwable());
+//    		log.debug("passed null element", new Throwable());
     		return null;
     	}
     	
@@ -55,78 +122,79 @@ public class BookmarkHelper {
         	name = e.getAttribute("id");
         }
         
-		if (name!=null
-				&& !name.trim().equals("")) {
-    		log.debug("[NAMED ANCHOR] " + name);
-			
-		    CTBookmark bookmark = Context.getWmlObjectFactory().createCTBookmark(); 
-		    JAXBElement<org.docx4j.wml.CTBookmark> bookmarkWrapped = null;
-		    
-		    // What to attach it to?
-//		    P currentP = getCurrentParagraph(false);
-		    if (currentP!=null) {
-		    	
-			    bookmarkWrapped = Context.getWmlObjectFactory().createPBookmarkStart(bookmark);
-			    currentP.getContent().add( bookmarkWrapped); 
-		    	
-		    } else {
-		    
-//		    	ContentAccessor contentContext = this.contentContextStack.peek();
-		    	if (contentContext instanceof Body) {
-
-				    bookmarkWrapped = Context.getWmlObjectFactory().createBodyBookmarkStart(bookmark);
-				    contentContext.getContent().add(bookmarkWrapped);
-
-		    	} else if (contentContext instanceof SdtContentBlock) {
-		    		
-		    		bookmarkWrapped = Context.getWmlObjectFactory().createSdtContentBlockBookmarkStart(bookmark);
-				    contentContext.getContent().add(bookmarkWrapped);
-				    
-		    	} else if (contentContext instanceof CTSdtContentRow) {
-		    		
-		    		bookmarkWrapped = Context.getWmlObjectFactory().createCTSdtContentRowBookmarkStart(bookmark);
-				    contentContext.getContent().add(bookmarkWrapped);
-		    		
-		    	} else if (contentContext instanceof CTSdtContentCell) {
-		    		
-		    		bookmarkWrapped = Context.getWmlObjectFactory().createCTSdtContentCellBookmarkStart(bookmark);
-				    contentContext.getContent().add(bookmarkWrapped);
-		    		
-		    	} else if (contentContext instanceof Tbl) {
-
-				    bookmarkWrapped = Context.getWmlObjectFactory().createTblBookmarkStart(bookmark);
-				    contentContext.getContent().add(bookmarkWrapped);
-				    
-		    	} else if (contentContext instanceof Tr) {
-
-				    bookmarkWrapped = Context.getWmlObjectFactory().createTrBookmarkStart(bookmark);
-				    contentContext.getContent().add(bookmarkWrapped);
-				    
-		    	} else if (contentContext instanceof Tc) {
-
-				    bookmarkWrapped = Context.getWmlObjectFactory().createTcBookmarkStart(bookmark);
-				    contentContext.getContent().add(bookmarkWrapped);
-		    	} else {
-		    		log.error("COuldn't attach bookmark " + name + " to " + contentContext.getClass().getName());
-		    	}
-		    }
-		    
-	        bookmark.setName( idToBookmarkName(bookmarkNamePrefix, name) ); 
-	        bookmark.setId( BigInteger.valueOf( bookmarkId.get()) ); 
-		        
-		        
-		     return generateBookmarkEnd();    	
+		if (name==null
+				|| name.trim().equals("")) {
+			return null;
 		}
-		return null;
-    	
+		
+		
+		log.debug("[NAMED ANCHOR] " + name);
+		//log.debug("trace", new Throwable());
+		
+	    CTBookmark bookmark = Context.getWmlObjectFactory().createCTBookmark(); 
+	    JAXBElement<org.docx4j.wml.CTBookmark> bookmarkWrapped = null;
+	    
+	    // What to attach it to?
+//		    P currentP = getCurrentParagraph(false);
+	    if (currentP!=null) {
+	    	
+		    bookmarkWrapped = Context.getWmlObjectFactory().createPBookmarkStart(bookmark);
+		    currentP.getContent().add( bookmarkWrapped); 
+	    	
+	    } else {
+	    
+//		    	ContentAccessor contentContext = this.contentContextStack.peek();
+	    	if (contentContext instanceof Body) {
+
+			    bookmarkWrapped = Context.getWmlObjectFactory().createBodyBookmarkStart(bookmark);
+			    contentContext.getContent().add(bookmarkWrapped);
+
+	    	} else if (contentContext instanceof SdtContentBlock) {
+	    		
+	    		bookmarkWrapped = Context.getWmlObjectFactory().createSdtContentBlockBookmarkStart(bookmark);
+			    contentContext.getContent().add(bookmarkWrapped);
+			    
+	    	} else if (contentContext instanceof CTSdtContentRow) {
+	    		
+	    		bookmarkWrapped = Context.getWmlObjectFactory().createCTSdtContentRowBookmarkStart(bookmark);
+			    contentContext.getContent().add(bookmarkWrapped);
+	    		
+	    	} else if (contentContext instanceof CTSdtContentCell) {
+	    		
+	    		bookmarkWrapped = Context.getWmlObjectFactory().createCTSdtContentCellBookmarkStart(bookmark);
+			    contentContext.getContent().add(bookmarkWrapped);
+	    		
+	    	} else if (contentContext instanceof Tbl) {
+
+			    bookmarkWrapped = Context.getWmlObjectFactory().createTblBookmarkStart(bookmark);
+			    contentContext.getContent().add(bookmarkWrapped);
+			    
+	    	} else if (contentContext instanceof Tr) {
+
+			    bookmarkWrapped = Context.getWmlObjectFactory().createTrBookmarkStart(bookmark);
+			    contentContext.getContent().add(bookmarkWrapped);
+			    
+	    	} else if (contentContext instanceof Tc) {
+
+			    bookmarkWrapped = Context.getWmlObjectFactory().createTcBookmarkStart(bookmark);
+			    contentContext.getContent().add(bookmarkWrapped);
+	    	} else {
+	    		log.error("COuldn't attach bookmark " + name + " to " + contentContext.getClass().getName());
+	    	}
+	    }
+	    
+        bookmark.setName( idToBookmarkName(bookmarkNamePrefix, name) ); 
+        bookmark.setId( BigInteger.valueOf( getBookmarkId().get()) ); 
+	        
+	        
+	     return generateBookmarkEnd();    	
     }
     
 	private CTMarkupRange generateBookmarkEnd() {
 		
 		CTMarkupRange markuprange = Context.getWmlObjectFactory().createCTMarkupRange(); 
-	    markuprange.setId( BigInteger.valueOf(bookmarkId.getAndIncrement() ) ); 
+	    markuprange.setId( BigInteger.valueOf(getBookmarkId().getAndIncrement() ) ); 
 	    
-        
         
         return markuprange;
 	}
