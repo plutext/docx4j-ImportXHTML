@@ -20,6 +20,8 @@
 
 package org.docx4j.samples;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import javax.xml.bind.JAXBContext;
 
 import org.docx4j.XmlUtils;
@@ -100,9 +102,15 @@ public class ContentControlBindingExtensions {
 		System.out.println("Saved: " + filepathprefix + "_2_integrity.docx");
 		
 		// Apply the bindings
+		
 		BindingHandler.setHyperlinkStyle("Hyperlink");						
 		startTime = System.currentTimeMillis();
-		BindingHandler.applyBindings(wordMLPackage.getMainDocumentPart());
+		
+		AtomicInteger bookmarkId = odh.getNextBookmarkId();
+		BindingHandler bh = new BindingHandler(wordMLPackage);
+		bh.setStartingIdForNewBookmarks(bookmarkId);
+		bh.applyBindings(wordMLPackage.getMainDocumentPart());
+		
 		endTime = System.currentTimeMillis();
 		timingSummary.append("\nBindingHandler.applyBindings: " + (endTime-startTime));
 		System.out.println(

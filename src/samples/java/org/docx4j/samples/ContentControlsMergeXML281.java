@@ -23,6 +23,7 @@ package org.docx4j.samples;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.xml.bind.JAXBContext;
 
@@ -92,9 +93,10 @@ public class ContentControlsMergeXML281 {
 		customXmlDataStoragePart.getData().setDocument(fis);
 		
 		SaveToZipFile saver = new SaveToZipFile(wordMLPackage);
+		OpenDoPEHandler odh = null;
 		try {
 			// Process conditionals and repeats
-			OpenDoPEHandler odh = new OpenDoPEHandler(wordMLPackage);
+			odh = new OpenDoPEHandler(wordMLPackage);
 			odh.preprocess();
 			
 			OpenDoPEIntegrity odi = new OpenDoPEIntegrity();
@@ -122,7 +124,12 @@ public class ContentControlsMergeXML281 {
 		
 		// Apply the bindings
 		//BindingHandler.setHyperlinkStyle("Hyperlink");
-		BindingHandler.applyBindings(wordMLPackage);
+		
+		AtomicInteger bookmarkId = odh.getNextBookmarkId();
+		BindingHandler bh = new BindingHandler(wordMLPackage);
+		bh.setStartingIdForNewBookmarks(bookmarkId);
+		bh.applyBindings();
+		
 		// If you inspect the output, you should see your data in 2 places:
 		// 1. the custom xml part 
 		// 2. (more importantly) the main document part
