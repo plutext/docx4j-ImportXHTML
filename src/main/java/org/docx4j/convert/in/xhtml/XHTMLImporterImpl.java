@@ -1606,6 +1606,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	                    formatRPr(rPr, cssClass, cssMap);
 	                    	                	
 	                	log.debug(linkText);
+	                	log.debug(XmlUtils.marshaltoString(rPr));
+	                	
 	                	if (linkText!=null
 	                			&& !linkText.trim().equals("")) {
 
@@ -1795,7 +1797,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		
 	private void formatRPr(RPr rPr, String cssClass, Map<String, CSSValue> cssMap) {
 
-		addRunProperties(rPr, cssMap );
+		//addRunProperties(rPr, cssMap );  // ?????
 		
         if (runFormatting.equals(FormattingOption.IGNORE_CLASS)) {
     		addRunProperties(rPr, cssMap );
@@ -1958,6 +1960,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 
     private void addRunProperties(RPr rPr, Map cssMap) {
     	
+    	log.debug("addRunProperties");
+    	
     	String pStyleId = null;
     	if (this.getCurrentParagraph(false).getPPr()!=null
     			&& this.getCurrentParagraph(false).getPPr().getPStyle()!=null) {
@@ -1978,6 +1982,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         	if (runProp!=null) {
 	        	if (runProp instanceof AbstractRunProperty) {  
 	        		((AbstractRunProperty)runProp).set(rPr);
+	            	log.debug("added " + runProp.getClass().getName() );
 	        	} else {
 	            	//log.debug(p.getClass().getName() );
 	        	}
