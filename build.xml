@@ -6,7 +6,7 @@
     <property name="source" value="1.5"/>
 	<property name="dist" value="./dist"/>
 	
-	<property name="version" value="3.2.0"/>
+	<property name="version" value="3.2.1"/>
 
     <property name="src.main.java.dir" value="src/main/java"/>
     
@@ -19,7 +19,7 @@
 		+- org.slf4j:slf4j-log4j12:jar:1.7.5:compile
 		|  \- log4j:log4j:jar:1.2.17:compile
 		
-		+- org.docx4j:docx4j:jar:3.0.0-SNAPSHOT:compile
+		+- org.docx4j:docx4j:jar:3.2.0:compile
 		|  +- javax.mail:mail:jar:1.4:compile
 		|  |  \- javax.activation:activation:jar:1.1:compile
 		|  +- org.plutext:jaxb-svg11:jar:1.0.2:compile
@@ -202,7 +202,9 @@
         <echo>Building DLL</echo>
         
 		<path id="forIKVM">
-		    <pathelement location="${dist}/docx4j-ImportXHTML-${version}.jar" />
+		    <!-- <pathelement location="${dist}/docx4j-ImportXHTML-${version}.jar" />  -->
+			<pathelement location="${m2Repository}/org/docx4j/docx4j-ImportXHTML/3.2.1/docx4j-ImportXHTML-3.2.1.jar" />        
+		    
 	        <pathelement location="${m2Repository}/org/docx4j/xhtmlrenderer/3.0.0/xhtmlrenderer-3.0.0.jar"/>
 	        <pathelement location="${m2Repository}/com/lowagie/itext/2.1.7/itext-2.1.7.jar"/>		    		    
 		</path>
@@ -210,7 +212,7 @@
 		<exec executable="${ikvmc}">
             <arg value="-out:${dist}/docx4j-ImportXHTML.dll" />
             <!-- <arg value="-keyfile:Plutext.snk" /> -->
-            <arg value="-version:3.2.0.0" />
+            <arg value="-version:3.2.1" />
             <!-- <arg value="-resource:docx4j.properties=..." />  -->
             <arg value="-reference:${docx4j.dll}" />
             <arg value="-reference:dll/slf4j-api.dll" />            

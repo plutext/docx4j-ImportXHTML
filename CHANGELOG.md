@@ -2,6 +2,72 @@ CHANGELOG
 =========
 
 
+Version 3.2.1
+===============
+
+Release date
+------------
+
+20 Sept 2014
+
+Contributors to this release
+----------------------------
+
+Jason Harrop
+Roded
+
+Notable Changes in Version 3.2.1
+---------------------------------
+
+TR height support.
+
+Support for @start, as in <ol start="5">
+
+table cell support @valign="bottom", @style="vertical-align:bottom;"
+
+Refactor: move table stuff into a helper class
+
+Support for p and table elements in list item
+
+interface DivHandler: Customisable div handling
+- DivToSdt implementation: allows roundtripping of divs by ID
+  See further: http://www.docx4java.org/blog/2014/09/xhtml-docx-roundtrip-content-tracking/
+  and samples/DivRoundtrip.java
+
+Convert a relative link (#) to w:hyperlink/@w:anchor (in createHyperlink method).
+- Convert @id (on most elements) to bookmark
+- Refactor code into new BookmarkHelper
+
+
+Compatibility notes
+-------------------
+
+We will try to ensure that any formal releases of 3.2.x of docx4j and 3.2.y of ImportXHTML 
+can be used together.
+
+- https://github.com/plutext/docx4j/commit/df5d726e3359b29893153433082c13ed6c4eb56d 
+  17 Sept 2014 introduces 
+  
+			BindingHandler bh = new BindingHandler(wordMLPackage);
+			bh.setStartingIdForNewBookmarks(bookmarkId);
+			
+  Use of that code is commented out in the relevant samples here; those samples assume docx4j 3.2.0.
+  
+- https://github.com/plutext/docx4j/commit/4474219c3c41a5b52490f3af41146716c5ef499b
+  12 Sept 2014 adds to XHTMLImporter interface:
+  
+     	public AtomicInteger getBookmarkIdLast();      	
+		public void setBookmarkIdNext(AtomicInteger val);
+
+  (which ImportXHTML 3.2.1 implements)
+  so docx4j compiled from that date will need ImportXHTML 3.2.1 or greater.
+
+Since the next release of docx4j will not work with ImportXHTML 3.2.0, the 
+next version of docx4j must therefore be 3.3.0, and ImportXHTML will be
+republished then as 3.3.0.
+  
+
+
 Version 3.2.0
 =============
 

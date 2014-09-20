@@ -363,8 +363,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	
 	private BookmarkHelper bookmarkHelper; 
 	
-	@Override
-	public AtomicInteger getBookmarkIdLast() {
+	//@Override
+	public AtomicInteger getBookmarkIdLast() // actually, this returns that incremented by 1.
+	{  
 		return bookmarkHelper.getBookmarkId();
 	}
 
@@ -374,7 +375,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	 * 
 	 * @see org.docx4j.convert.in.xhtml.XHTMLImporter#setBookmarkIdNext(java.util.concurrent.atomic.AtomicInteger)
 	 */
-	@Override
+	//@Override
 	public void setBookmarkIdNext(AtomicInteger val) {
 		bookmarkHelper.setBookmarkId(val);		
 	}
