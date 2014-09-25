@@ -1110,8 +1110,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 			    	            		listHelper.addNumbering(this.getCurrentParagraph(true), blockBox.getElement(), cssMap);
 			    	            		
 			    	            		// SPECIAL CASE
-			    	            		if (Docx4jProperties.getProperty("org.docx4j.model.datastorage.BindingTraverser.XHTML.Block.rStyle.Adopt", false)
-					            				&& s.getType()!=null && s.getType().equals("paragraph")) { 		
+			    	            		if (Docx4jProperties.getProperty("docx4j.model.datastorage.BindingTraverser.XHTML.Block.rStyle.Adopt", false)
+					            				&& s.getType()!=null && s.getType().equals("paragraph")) { 	
+			    	            			
+			    	            			log.debug(".. using " + s.getStyleId() );
+			    	            			
 			    	            			PStyle pStyle = Context.getWmlObjectFactory().createPPrBasePStyle();
 			    	            			pStyle.setVal(s.getStyleId());
 			    	            			this.getCurrentParagraph(false).getPPr().setPStyle(pStyle);			    	            			
@@ -1851,6 +1854,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	
     private void addParagraphProperties(PPr pPr, Styleable styleable, Map cssMap) {
     	// NB, not invoked in CLASS_TO_STYLE_ONLY case
+    	
+//    	log.debug("BEFORE " + XmlUtils.marshaltoString(pPr, true, true));
         
         for (Object o : cssMap.keySet()) {
         	
@@ -1875,7 +1880,6 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         	}
         	
         }
-        
         
         log.debug("list depth:" + listHelper.getDepth());
 
