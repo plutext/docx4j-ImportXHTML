@@ -758,6 +758,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     private P getCurrentParagraph(boolean create) {
     	if (attachmentPointP !=null) return attachmentPointP;  
     	if (create) {
+//    		log.debug("defining new p", new Throwable());
 			P newP = Context.getWmlObjectFactory().createP();
 			attachmentPointP = newP;
 			this.contentContextStack.peek().getContent().add(newP);
@@ -852,6 +853,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
                 		}
                 	}
                 	
+//                	attachmentPointP = this.getCurrentParagraph(true);
+//                	attachmentPointP.setPPr(this.getPPr(blockBox, cssMap));
+                	this.getCurrentParagraph(true).setPPr(this.getPPr(blockBox, cssMap));
+                	
+                	
                 } else if (box.getStyle().getDisplayMine().equals("inline") ) {
             		
 //                	// Don't add a paragraph for this, unless ..
@@ -915,6 +921,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             		ContentAccessor contentContext = this.contentContextStack.peek();
             		tableHelper.nestedTableHierarchyFix(contentContext,parent);
             		
+            		// If we added a p for a div, but its empty, then remove it 
+            		P currentP = getCurrentParagraph(false);
+            		if (currentP!=null
+            				&& currentP.getContent().size()==0) {
+            			// remove it
+            			contentContext.getContent().remove(currentP);
+            		}
+            		
             		Tbl tbl = Context.getWmlObjectFactory().createTbl();
             		contentContext.getContent().add(tbl);
 		            paraStillEmpty = true;
@@ -953,6 +967,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             		
             		ContentAccessor contentContext = this.contentContextStack.peek();
             		tableHelper.nestedTableHierarchyFix(contentContext,parent);
+            		
+            		// If we added a p for a div, but its empty, then remove it 
+            		P currentP = getCurrentParagraph(false);
+            		if (currentP!=null
+            				&& currentP.getContent().size()==0) {
+            			// remove it
+            			contentContext.getContent().remove(currentP);
+            		}            		
             		
             		Tbl tbl = Context.getWmlObjectFactory().createTbl();
             		contentContext.getContent().add(tbl);
@@ -1014,12 +1036,12 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             	} else if (isListItem(blockBox.getElement())) {
 
 		            // Paragraph level styling
-	            	P currentP = this.getCurrentParagraph(true);
+	            	//P currentP = this.getCurrentParagraph(true);
 	            	
 	            	listHelper.peekListItemStateStack().init(); 
 	            	
 	                PPr pPr =  Context.getWmlObjectFactory().createPPr();
-	                currentP.setPPr(pPr);
+	                this.getCurrentParagraph(true).setPPr(pPr);
 	            	
 	                if (paragraphFormatting.equals(FormattingOption.IGNORE_CLASS)) {
 	                	
@@ -1373,15 +1395,18 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	return pPr;
     }
     
-    protected void populatePPr(PPr pPr, BlockBox blockBox, Map<String, CSSValue> cssMap) {
+    protected void populatePPr(PPr pPr, Styleable blockBox, Map<String, CSSValue> cssMap) {
     	
         if (paragraphFormatting.equals(FormattingOption.IGNORE_CLASS)) {
     		addParagraphProperties(pPr, blockBox, cssMap );
     		handleHeadingElement( pPr,  blockBox); // (if its h1, h2 etc)
         } else {
         	// CLASS_TO_STYLE_ONLY or CLASS_PLUS_OTHER
-        	if (blockBox.getElement()!=null
-        			&& blockBox.getElement().getAttribute("class")!=null) {
+        	if (blockBox.getElement()==null) {
+        		log.debug("null blockBox element");        		
+        	} else if (blockBox.getElement().getAttribute("class")==null) {
+        		log.debug("no @class");        		        		
+        	} else  {
         		
         		String cssClass = blockBox.getElement().getAttribute("class").trim();
         		if (cssClass.equals("")) {
@@ -1420,7 +1445,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	}     	
     }
     
-    private void handleHeadingElement(PPr pPr, BlockBox blockBox) {
+    private void handleHeadingElement(PPr pPr, Styleable blockBox) {
     	
     	if (headingHandler==null 
     			|| !isHeading(blockBox)) return;
@@ -1435,7 +1460,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	}    	
     }
     
-    private boolean isHeading(BlockBox blockBox) {
+    private boolean isHeading(Styleable blockBox) {
     	
     	if (blockBox.getElement()==null) return false;
     	
@@ -1491,13 +1516,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	
         // Doesn't extend box
         Styleable s = inlineBox;
-    	
+        
     	if (log.isDebugEnabled() ) {
         	log.debug(inlineBox.toString());
 
-        	if (s.getElement() == null)
+        	if (s.getElement() == null) {
         		log.debug("Null element name" ); 
-        	else {
+        		// log.debug(inlineBox.getPseudoElementOrClass()); // empty
+    		} else {
         		log.debug(s.getElement().getNodeName());
 //                log.debug(s.getElement().getAttribute("class"));
         	}
@@ -1549,7 +1575,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         P p = this.getCurrentParagraph(true);
         if (p.getPPr()==null) {
         	PPr pPr = Context.getWmlObjectFactory().createPPr();
-        	addParagraphProperties( pPr,  s,  cssMap);
+        	
+        	populatePPr(pPr, s,  cssMap);  // nb, since the element is likely to be null, this is unlikely to give us a @class; that's why we need to make the p in the enclosing div (or p).       	
+        	//addParagraphProperties( pPr,  s,  cssMap);
         	p.setPPr(pPr);
         }
         
@@ -2086,7 +2114,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 			Hyperlink hyperlink = (Hyperlink)XmlUtils.unmarshalString(hpl);
 			R r = (R)hyperlink.getContent().get(0);
 			r.setRPr(rPr);
-			if (hyperlinkStyleId!=null) {
+			
+			if (rPr.getRStyle()!=null // don't set it if its set already
+					&& hyperlinkStyleId!=null) {
 				RStyle rStyle = Context.getWmlObjectFactory().createRStyle();
 				rStyle.setVal(hyperlinkStyleId);
 				rPr.setRStyle(rStyle );
