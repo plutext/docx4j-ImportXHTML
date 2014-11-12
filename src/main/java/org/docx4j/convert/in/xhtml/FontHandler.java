@@ -29,10 +29,16 @@ public class FontHandler {
 	static {
 		
 		// Add the defaults
-		ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.serif", "Times New Roman");
-		ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.sans-serif", "Arial");
-		ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.monospace", "Courier New");
-		
+		if(ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.serif")!=null){
+			addFontMapping("serif", ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.serif"));
+		}
+		if(ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.sans-serif")!=null){
+			addFontMapping("sans-serif", ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.sans-serif"));
+		}
+		if(ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.monospace")!=null){
+			addFontMapping("monospace", ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.monospace"));
+		}
+
 		// Add Microsoft ones
 		Map<String, MicrosoftFonts.Font> msFontsByName = MicrosoftFontsRegistry.getMsFonts();
 		for (String cssFontFamily : msFontsByName.keySet()){
@@ -40,6 +46,7 @@ public class FontHandler {
 		}
 	}
 
+	
 	/* Word 2010 Web Options lets you set:
 	 * 
 	 *  proportional font: defaults to TNR 12
