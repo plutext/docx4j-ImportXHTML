@@ -29,15 +29,12 @@ public class FontHandler {
 	static {
 		
 		// Add the defaults
-		if(ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.serif")!=null){
-			addFontMapping("serif", ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.serif"));
-		}
-		if(ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.sans-serif")!=null){
-			addFontMapping("sans-serif", ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.sans-serif"));
-		}
-		if(ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.monospace")!=null){
-			addFontMapping("monospace", ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.monospace"));
-		}
+		addFontMapping("serif", 
+				ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.serif", "Times New Roman"));
+		addFontMapping("sans-serif", 
+				ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.sans-serif", "Arial"));
+		addFontMapping("monospace", 
+				ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.fonts.default.monospace", "Courier New"));
 
 		// Add Microsoft ones
 		Map<String, MicrosoftFonts.Font> msFontsByName = MicrosoftFontsRegistry.getMsFonts();
