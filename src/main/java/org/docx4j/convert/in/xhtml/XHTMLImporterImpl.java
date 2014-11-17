@@ -1160,7 +1160,12 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             		
             	} else if  (e.getNodeName().equals("img")) {
 		            	addImage(blockBox);
-            		
+
+            	} else if  (e.getNodeName().equals("hr")) {
+	            	
+            		this.contentContextStack.peek().getContent().add(
+            				getPforHR());
+		            	
 	            } else {
 	            	
 	            	log.debug("default handling for " + e.getNodeName());
@@ -2131,6 +2136,26 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		
 		
 	}
+
+	
+    private static String HR_XML =  "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">"
+    		+"<w:r>"
+		    +"<w:pict>"
+		    +"<v:rect xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:o=\"urn:schemas-microsoft-com:office:office\" id=\"_x0000_i1025\" style=\"width:0;height:1.5pt\" o:hralign=\"center\" o:hrstd=\"t\" o:hr=\"t\" fillcolor=\"#a0a0a0\" stroked=\"f\"/>"
+		    +"</w:pict>"
+		+"</w:r>"
+		+"</w:p>";
+    private static P HR_P = null;
+    
+    private P getPforHR() {
+    	
+    	if (HR_P==null) {
+    		try {
+				HR_P = (P)XmlUtils.unmarshalString(HR_XML);
+			} catch (JAXBException e) {}
+    	}
+    	return HR_P;
+    }
 
 	
 	public final static class TableProperties {
