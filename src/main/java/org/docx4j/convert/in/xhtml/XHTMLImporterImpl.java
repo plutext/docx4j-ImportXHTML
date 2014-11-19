@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
 import javax.xml.transform.Source;
 
 import org.docx4j.Docx4jProperties;
@@ -256,6 +257,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 			}
 			
 		}
+		
 		return renderer;
 	}
 
@@ -680,8 +682,19 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         return imports.getContent();    	
     }
     
-    
-    protected Map<String, CSSValue> getCascadedProperties(CalculatedStyle cs) {
+    /**
+     * Property values (CSSPrimitiveValue) by name.
+     * 
+     * @param cs
+     * @param cssWhiteList
+     * @return
+     */
+    public Map<String, CSSValue> getCascadedProperties(CalculatedStyle cs) {
+    	
+    	// Similar to renderer.getLayoutContext().getSharedContext().getCss().getCascadedPropertiesMap(e)?
+    	
+    	// or use getStyle().valueByName directly; see TableHelper for example
+
     	
     	Map<String, CSSValue> cssMap = new HashMap<String, CSSValue>();
     	
@@ -725,6 +738,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         return cssMap;
     	
     }
+    
 
     
     
@@ -762,7 +776,6 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 			P newP = Context.getWmlObjectFactory().createP();
 			attachmentPointP = newP;
 			this.contentContextStack.peek().getContent().add(newP);
-            paraStillEmpty = true;
             return newP;
     	} else {
     		return null;
@@ -775,10 +788,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	return getCurrentParagraph(true);
     }
     
-    // A paragraph created for a div can be replaced by
-    // one created for a p within it, if it is still empty
-    // TODO revisit this
-    boolean paraStillEmpty;
+
 
     
     private void traverse(Box box, TableProperties tableProperties) throws Docx4JException {
@@ -931,8 +941,6 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             		
             		Tbl tbl = Context.getWmlObjectFactory().createTbl();
             		contentContext.getContent().add(tbl);
-		            paraStillEmpty = true;
-//		            contentContext = tbl;
 		            pushBlockStack(tbl);
 		            mustPop = true;
 		            
@@ -978,7 +986,6 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             		
             		Tbl tbl = Context.getWmlObjectFactory().createTbl();
             		contentContext.getContent().add(tbl);
-		            paraStillEmpty = true;
 		            pushBlockStack(tbl);
 		            mustPop = true;
 		            
@@ -997,7 +1004,6 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             		
             		Tr tr = Context.getWmlObjectFactory().createTr();
             		this.contentContextStack.peek().getContent().add(tr);
-		            paraStillEmpty = true;
 		            pushBlockStack(tr);
 		            mustPop = true;
             		
@@ -1185,6 +1191,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	            		
 		            	P currentP = this.getCurrentParagraph(true);
 		                currentP.setPPr(this.getPPr(blockBox, cssMap));
+		                
+		                log.debug(XmlUtils.marshaltoString(currentP));
+		                
 	
 		            	if (e.getNodeName().equals("figcaption")) {
 		            		prepareCaption(e, currentP);
@@ -1241,9 +1250,16 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	                        
 	                    }
 	                    break;
+
+	                case BlockBox.CONTENT_EMPTY:
+	                    break;
+	                    
+	                case BlockBox.CONTENT_UNKNOWN:
+	                	log.warn(".. which are UNKNOWN " );
+	                    break;
 	                    
 	               default:
-	                	log.warn(".. which are TODO " + blockBox.getChildrenContentType() );
+	                	log.warn(".. which are ??? " + blockBox.getChildrenContentType() );
 	                	break;
 	            } 
             
@@ -1495,7 +1511,6 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		xHTMLImageHandler.addImage( renderer.getDocx4jUserAgent(), wordMLPackage, 
 				this.getCurrentParagraph(true), box.getElement(), cx, cy);
 		
-		paraStillEmpty = false;
 	}
 
 
@@ -1561,7 +1576,6 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     		if (inlineMarkupRange!=null) {
     			bookmarkHelper.attachBookmarkEnd( inlineMarkupRange, getCurrentParagraph(false), this.contentContextStack.peek() );
         		markuprange = null;        		
-        		paraStillEmpty = false;            		
     		}
         
     		String href = s.getElement().getAttribute("href"); 
@@ -1602,7 +1616,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             if (s.getElement().getNodeName().equals("a")) {
             	
             	if (inlineBox.isStartsHere()) {
-                	log.debug("Processing <a>... ");
+                	log.debug("Processing <a>... with class " + cssClass);
             		
             		String name = s.getElement().getAttribute("name");
             		String href = s.getElement().getAttribute("href"); 
@@ -1613,7 +1627,6 @@ public class XHTMLImporterImpl implements XHTMLImporter {
                 		markuprange = bookmarkHelper.anchorToBookmark(s.getElement(), bookmarkNamePrefix, getCurrentParagraph(false), this.contentContextStack.peek());
                 		if (markuprange!=null) {
 //                    		markuprange = null;         		
-                    		paraStillEmpty = false;            		
                 		}
         		        
         		        if (href==null
@@ -1645,15 +1658,17 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	                	log.debug(linkText);
 	                	log.debug(XmlUtils.marshaltoString(rPr));
 	                	
+	                	// ensure we've got our current p set correctly; this is done above already 
+                		// this.getCurrentParagraph(true);
+	                	
 	                	if (linkText!=null
 	                			&& !linkText.trim().equals("")) {
-
 	                		
 	                    	h = createHyperlink(
 	                    			href, 
 	                    			rPr,
 	                    			inlineBox.getText(), rp);                                    	            		
-	                    	this.getCurrentParagraph(true).getContent().add(h);
+	                    	this.getCurrentParagraph(false).getContent().add(h);
 	                    	
 	                    	// bookmark end
 	                    	if (markuprange!=null) {
@@ -1661,9 +1676,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	                    		markuprange = null;        			                    		
 	                    	}            				
 	                    	
-	                        
-		                	paraStillEmpty = false;  
-		                	
+	                        		                	
 		                	if (inlineBox.isEndsHere()) {
 		                    	log.debug("Processing ..</a> (ends here as well) ");
 		                    	return; // don't change contentContext
@@ -1681,8 +1694,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	                    			href, 
 	                    			rPr,
 	                    			href, rp);                                    	            		
-	                    	this.getCurrentParagraph(true).getContent().add(h);
-		                	paraStillEmpty = false;
+	                    	this.getCurrentParagraph(false).getContent().add(h);
 		                	
 		                	// bookmark end
 		                	if (markuprange!=null) {
@@ -1771,8 +1783,6 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 
             String theText = inlineBox.getTextNode().getTextContent(); 
             log.debug("Processing " + theText);
-            
-            paraStillEmpty = false;   
             
             String cssClass = getClassAttribute(s.getElement());
         	if (cssClass!=null) {
@@ -1885,7 +1895,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     }
     
 	
-    private void addParagraphProperties(PPr pPr, Styleable styleable, Map cssMap) {
+    private void addParagraphProperties(PPr pPr, Styleable styleable, Map<String, CSSValue> cssMap) {
     	// NB, not invoked in CLASS_TO_STYLE_ONLY case
     	
 //    	log.debug("BEFORE " + XmlUtils.marshaltoString(pPr, true, true));
@@ -1913,6 +1923,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         	}
         	
         }
+        
+    	ParagraphBorderHelper pbh = new ParagraphBorderHelper(this);
+    	pbh.addBorderProperties(pPr, styleable, cssMap);        
         
         log.debug("list depth:" + listHelper.getDepth());
 
@@ -1989,7 +2002,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	}
     	
     	// TODO: cleansing in table context
-    	
+    	    	
     	log.debug(XmlUtils.marshaltoString(pPr, true, true));
     	
     }
@@ -2120,7 +2133,22 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 			R r = (R)hyperlink.getContent().get(0);
 			r.setRPr(rPr);
 			
-			if (rPr.getRStyle()!=null // don't set it if its set already
+			// Style the hyperlink with hyperlinkStyleId,
+			// unless another style is already in use
+			P currentP = getCurrentParagraph(false);
+			
+//			System.out.println("p/h:" + XmlUtils.marshaltoString(currentP));
+			
+			
+//			if (currentP.getPPr()!=null
+//					&& currentP.getPPr().getRPr()!=null
+//					&& currentP.getPPr().getRPr().getRStyle()!=null) {
+//				
+//				// Respect p/ppr/rpr
+//				
+//			} else 
+				
+			if (rPr.getRStyle()==null // don't set it if its set already
 					&& hyperlinkStyleId!=null) {
 				RStyle rStyle = Context.getWmlObjectFactory().createRStyle();
 				rStyle.setVal(hyperlinkStyleId);
