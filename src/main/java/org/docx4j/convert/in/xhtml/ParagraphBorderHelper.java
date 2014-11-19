@@ -116,7 +116,8 @@ public class ParagraphBorderHelper {
     	CTBorder border = null;
     	
     	CSSValue borderStyle = cssMap.get("border-"+side+"-style");
-    	if (borderStyle!=null && !borderStyle.equals("none")) {
+    	if (borderStyle!=null && !"none".equals(borderStyle.getCssText())) {
+    		
     		// paragraph has a border
     		border = createBorderStyle( styleable, side);
 
