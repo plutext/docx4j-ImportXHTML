@@ -14,7 +14,9 @@ import org.docx4j.org.xhtmlrenderer.css.constants.CSSName;
 import org.docx4j.org.xhtmlrenderer.css.constants.IdentValue;
 import org.docx4j.org.xhtmlrenderer.css.parser.FSColor;
 import org.docx4j.org.xhtmlrenderer.css.parser.FSRGBColor;
+import org.docx4j.org.xhtmlrenderer.css.style.CalculatedStyle;
 import org.docx4j.org.xhtmlrenderer.css.style.FSDerivedValue;
+import org.docx4j.org.xhtmlrenderer.css.style.derived.LengthValue;
 import org.docx4j.org.xhtmlrenderer.newtable.TableBox;
 import org.docx4j.org.xhtmlrenderer.newtable.TableCellBox;
 import org.docx4j.org.xhtmlrenderer.render.Box;
@@ -37,6 +39,7 @@ import org.docx4j.wml.TblGridCol;
 import org.docx4j.wml.TblPr;
 import org.docx4j.wml.TblWidth;
 import org.docx4j.wml.Tc;
+import org.docx4j.wml.TcMar;
 import org.docx4j.wml.TcPr;
 import org.docx4j.wml.TcPrInner;
 import org.docx4j.wml.TcPrInner.GridSpan;
@@ -350,8 +353,45 @@ public class TableHelper {
 			} 
 		}
 		
-    	
+		// padding becomes margin
+		TcMar tcMar = Context.getWmlObjectFactory().createTcMar();
+		tcPr.setTcMar(tcMar); 
+
+		// .. left
+		TblWidth width = getCellMargin(tcb.getStyle(), "left");
+		if (width!=null) tcMar.setLeft(width);
+		
+		// .. right
+		width = getCellMargin(tcb.getStyle(), "right");
+		if (width!=null) tcMar.setRight(width);
+
+		// .. top
+		width = getCellMargin(tcb.getStyle(), "top");
+		if (width!=null) tcMar.setTop(width);
+
+		// .. bottom
+		width = getCellMargin(tcb.getStyle(), "bottom");
+		if (width!=null) tcMar.setBottom(width);
+		
     }
+		
+	private TblWidth getCellMargin(CalculatedStyle tcStyle, String side)  {
+		
+		TblWidth tblWidth = null;
+
+		FSDerivedValue padding = tcStyle.valueByName( CSSName.getByPropertyName("padding-" + side));
+		if (padding != null && padding instanceof LengthValue) {
+						
+			int twip = UnitsOfMeasurement.pxToTwip(((LengthValue)padding).asFloat());
+			if (twip==0) twip = 15; // Default
+			
+			tblWidth = Context.getWmlObjectFactory().createTblWidth();
+			tblWidth.setW(BigInteger.valueOf(twip));
+			tblWidth.setType("dxa");
+		}
+		
+		return tblWidth;
+	}
     
 	/**
 	 * Table borders support
