@@ -123,18 +123,18 @@ public class ContentControlsMergeXML281 {
 		
 		
 		// Apply the bindings
-		//BindingHandler.setHyperlinkStyle("Hyperlink");
+		BindingHandler.setHyperlinkStyle("Hyperlink");
 		
 		// For docx4j <= 3.2.0
-		BindingHandler.applyBindings(wordMLPackage.getMainDocumentPart());
+		//BindingHandler.applyBindings(wordMLPackage.getMainDocumentPart());
 		
-		/* For docx4j > 3.2.0, replace that with:
+		// For docx4j > 3.2.0, replace that with:
 		
 			AtomicInteger bookmarkId = odh.getNextBookmarkId();
 			BindingHandler bh = new BindingHandler(wordMLPackage);
 			bh.setStartingIdForNewBookmarks(bookmarkId);
 			bh.applyBindings(wordMLPackage.getMainDocumentPart());
-		*/
+		
 		
 		// If you inspect the output, you should see your data in 2 places:
 		// 1. the custom xml part 
@@ -144,9 +144,9 @@ public class ContentControlsMergeXML281 {
 //				);
 		
 		// Strip content controls
-//		RemovalHandler rh = new RemovalHandler();
-//		rh.removeSDTs(wordMLPackage, Quantifier.ALL);
-		
+		RemovalHandler rh = new RemovalHandler();
+		rh.removeSDTs(wordMLPackage, Quantifier.ALL);
+
 		saver.save(OUTPUT_DOCX);
 		System.out.println("Saved: " + OUTPUT_DOCX);
 		

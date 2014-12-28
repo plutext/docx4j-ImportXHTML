@@ -57,15 +57,21 @@ public class ConvertInXHTMLFragment {
     	
 //    	String xhtml = "<table><tr><td>1</td></tr></table>";
     	
-    	String xhtml = "<ul>"+
-    	"  <li> Outer 1 </li>"+
-    	 " <li> Outer 2 </li>"+
-    	  "  <ul>"+
-    	   "   <li> Inner 1 </li>"+
-    	    "  <li> Inner 2 </li>"+
-    	    "</ul>"+
-    	 " <li> Outer 3 </li>"+
-    	"</ul>";
+//    	String xhtml = "<ul>"+
+//    	"  <li> Outer 1 </li>"+
+//    	 " <li> Outer 2 </li>"+
+//    	  "  <ul>"+
+//    	   "   <li> Inner 1 </li>"+
+//    	    "  <li> Inner 2 </li>"+
+//    	    "</ul>"+
+//    	 " <li> Outer 3 </li>"+
+//    	"</ul>";
+    	
+		String PNG_IMAGE_DATA = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAgMAAAAP2OW3AAAADFBMVEUDAP//AAAA/wb//AAD4Tw1AAAACXBIWXMAAAsTAAALEwEAmpwYAAAADElEQVQI12NwYNgAAAF0APHJnpmVAAAAAElFTkSuQmCC";		
+		String xhtml= "<div align=\"center\">" +
+//					"<p><img src='" + PNG_IMAGE_DATA + "'  /></p>" +
+					"<img src='" + PNG_IMAGE_DATA + "'  />" +
+				"</div>";    	
     	
 		WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.createPackage();
 //		WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new File(System.getProperty("user.dir") + "/Hello.docx"));

@@ -2,6 +2,30 @@ CHANGELOG
 =========
 
 
+Version 3.2.2
+===============
+
+Release date
+------------
+
+28 Dec 2014
+
+Contributors to this release
+----------------------------
+
+Haarli
+Jason Harrop
+
+Notable Changes in Version 3.2.2
+---------------------------------
+
+Paragraph borders
+Table cell padding (to margin) 
+Support for <hr/>
+Create/add p for div
+
+
+
 Version 3.2.1
 ===============
 
@@ -53,18 +77,18 @@ can be used together.
 			
   Use of that code is commented out in the relevant samples here; those samples assume docx4j 3.2.0.
   
-- https://github.com/plutext/docx4j/commit/4474219c3c41a5b52490f3af41146716c5ef499b
-  12 Sept 2014 adds to XHTMLImporter interface:
+At some point we might add to XHTMLImporter interface in docx4j:
   
      	public AtomicInteger getBookmarkIdLast();      	
 		public void setBookmarkIdNext(AtomicInteger val);
+		
+If we did that, a docx4j using that would need the implementation (in ImportXHTML 3.2.1 or greater).
 
-  (which ImportXHTML 3.2.1 implements)
-  so docx4j compiled from that date will need ImportXHTML 3.2.1 or greater.
+Because a docx4j using that would not work with ImportXHTML 3.2.0, it would have to be
+numbered 3.3.
 
-Since the next release of docx4j will not work with ImportXHTML 3.2.0, the 
-next version of docx4j must therefore be 3.3.0, and ImportXHTML will be
-republished then as 3.3.0.
+But we avoid all this by leaving the XHTMLImporter interface as-is, and using that
+method via reflection only.
   
 
 

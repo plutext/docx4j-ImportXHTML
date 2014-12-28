@@ -1923,10 +1923,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         	}
         	
         }
-        
+
+//    	log.debug(XmlUtils.marshaltoString(pPr, true, true));
+
     	ParagraphBorderHelper pbh = new ParagraphBorderHelper(this);
     	pbh.addBorderProperties(pPr, styleable, cssMap);        
-        
+
+//    	log.debug("after pbh:" + XmlUtils.marshaltoString(pPr, true, true));
+    	
         log.debug("list depth:" + listHelper.getDepth());
 
         if (listHelper.getDepth()>0) {
