@@ -37,7 +37,7 @@ import org.junit.Test;
 import java.io.File;
 import java.util.List;
 
-public class ImageResizeTest{
+public class ImageAddTest{
 
 	// 2x2 pixels
     private final String GIF_IMAGE_DATA = "data:image/gif;base64,R0lGODdhAgACAKEEAAMA//8AAAD/Bv/8ACwAAAAAAgACAAACAww0BQA7";
@@ -51,42 +51,62 @@ public class ImageResizeTest{
 	}
 
 	@Test
-	public void testFixedSizeImage() throws Exception {
+	public void testSizeUnspecified() throws Exception {
+		
 		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "'/></div>");
-		Inline inline2 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' width='40px' height='20px' /></div>");
-		Assert.assertTrue(inline2.getExtent().getCx() / inline1.getExtent().getCx() == 26);
-		Assert.assertTrue(inline2.getExtent().getCy() / inline1.getExtent().getCy() == 13);
+		Assert.assertTrue(inline1.getExtent().getCx() == 25400);
 	}
 
 	@Test
-	public void testCmAgainstPx() throws Exception {
-		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' height='20px' width='40px'/></div>");
-		Inline inline2 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' height='20cm' width='40cm'/></div>");
-		Assert.assertTrue(inline2.getExtent().getCx() / inline1.getExtent().getCx() > 10);
-		Assert.assertTrue(inline2.getExtent().getCx() / inline1.getExtent().getCy() > 10);
+	public void testSize20px() throws Exception {
+		
+		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' width='20px' height='20px' /></div>");
+		Assert.assertTrue(inline1.getExtent().getCx() == 338667);
 	}
 
 	@Test
-	public void testScaling() throws Exception {
-		Inline inline = getInline("<div><img src='" + PNG_IMAGE_DATA + "' style='width: 50px'/></div>");
+	public void testSize20NoUnits() throws Exception {
+//		// values in dots are 20x as expected		
+		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' width='20' height='20' /></div>");
+		Assert.assertTrue(inline1.getExtent().getCx() == 338667);
+	}
+	
+	@Test
+	public void testSize20pt() throws Exception {
+		
+		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' width='20pt' height='20pt' /></div>");
+		Assert.assertTrue(inline1.getExtent().getCx() == 451273);
+	}
+	
+	@Test
+	public void testSizeNoHeight() throws Exception {
+		
+		Inline inline = getInline("<div><img src='" + PNG_IMAGE_DATA + "' width='20pt'  /></div>");
 		Assert.assertTrue(  Math.round(inline.getExtent().getCx()/10) 
 				== Math.round(inline.getExtent().getCy()/10)); // +/- a few EMU
 	}
-
-	public void testHeightWidthInPx() throws Exception {
+	
+	@Test
+	public void testSizeNoWidth() throws Exception {
 		
-		String PNG_IMAGE_DATA = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAgMAAAAP2OW3AAAADFBMVEUDAP//AAAA/wb//AAD4Tw1AAAACXBIWXMAAAsTAAALEwEAmpwYAAAADElEQVQI12NwYNgAAAF0APHJnpmVAAAAAElFTkSuQmCC";		
-		String html= "<div>" +
-					"<p><img src='" + PNG_IMAGE_DATA + "' width='40px' height='20px' /></p>" +
-					"<p><img src='" + PNG_IMAGE_DATA + "' style='width:40px; height:20px' /></p>" +
-				"</div>";
-        XHTMLImporterImpl XHTMLImporter = new XHTMLImporterImpl(wordMLPackage);		
-		List<Object> convert = XHTMLImporter.convert(html, null);
-		wordMLPackage.getMainDocumentPart().getContent().addAll(convert);
-		wordMLPackage.save(new File(System.getProperty("user.dir") + "/px.docx") );
+		Inline inline = getInline("<div><img src='" + PNG_IMAGE_DATA + "' height='20pt'  /></div>");
+		Assert.assertTrue(  Math.round(inline.getExtent().getCx()/10) 
+				== Math.round(inline.getExtent().getCy()/10)); // +/- a few EMU
 	}
 	
-	private Inline getInline(String html) throws Exception{
+	
+	
+	@Test
+	public void testSizeSpecifiedPxPlusCSS() throws Exception {
+		
+		// box.getHeight() and  box.getWidth() include padding
+		
+		Inline inline2 = getInline("<div><img style='padding-top:10px;padding-left:10px;' src='" + PNG_IMAGE_DATA + "' width='20px' height='10px' /></div>");
+		Assert.assertTrue(inline2.getExtent().getCx() == 338667);		
+		//Assert.assertTrue(inline2.getExtent().getCx() / inline2.getExtent().getCy() == 2);
+	}
+	
+	private Inline getInline(String html) throws Exception {
         XHTMLImporterImpl XHTMLImporter = new XHTMLImporterImpl(wordMLPackage);		
 		List<Object> convert = XHTMLImporter.convert(html, null);
 		return ((Inline)((Drawing)((R)((P)convert.get(0)).getContent().get(0)).getContent().get(0)).getAnchorOrInline().get(0));

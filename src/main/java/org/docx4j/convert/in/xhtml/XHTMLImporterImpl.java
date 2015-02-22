@@ -27,6 +27,7 @@
  */
 package org.docx4j.convert.in.xhtml;
 
+import java.awt.Rectangle;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -1497,24 +1498,47 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     
 
  /**
-		Currently flying saucer is initialized
-		with DEFAULT_DOTS_PER_POINT = DEFAULT_DOTS_PER_PIXEL = 20.
-		Keep this in mind that, it may affect the resulting image sizes.
+		Currently flying saucer is initialized with DEFAULT_DOTS_PER_PIXEL = 20.
+		Keep in mind that the values returned from FS are in dots (as opposed to px)
 	*/
 	private void addImage(BlockBox box) {
-				
-		Long cx = (box.getStyle().valueByName(CSSName.WIDTH) == IdentValue.AUTO) ? null :
-			UnitsOfMeasurement.twipToEMU(box.getWidth());
-		Long cy = (box.getStyle().valueByName(CSSName.HEIGHT) == IdentValue.AUTO) ? null :
-				UnitsOfMeasurement.twipToEMU(box.getHeight());
+		
+		/*
+			DocxRenderer {
+			    
+			    // These two defaults combine to produce an effective resolution of 96 px to the inch
+			    private static final float DEFAULT_DOTS_PER_POINT = 20f * 4f / 3f;
+			    private static final int DEFAULT_DOTS_PER_PIXEL = 20;
+			    
+			    // DPI is then set = 72 * dotsPerPoint 
+			    // TODO reconcile that with org.docx4j.org.xhtmlrenderer.layout.SharedContext
+			
+			TODO: UnitsOfMeasurement defines DPI.  We should pass that to DocxRenderer!
+       	*/
+		
+		
+		// 20x as expected
+		Rectangle contentBounds = box.getContentAreaEdge(box.getAbsX(), box.getAbsY(), 
+				getRenderer().getLayoutContext()); // LayoutContext implements CssContext
+//		log.debug("contentBounds H: " + contentBounds.height);
+//		log.debug("contentBounds W: " + contentBounds.width);
+
+		// contentBounds.width = box.getContentWidth()
+		// System.out.println("content width: " + box.getContentWidth());
+		// box.getHeight() and  box.getWidth() impacted by style='padding-top:10px;' etc, so don't use here
+		
+		Long cy = contentBounds.height==0 ? null : 
+			UnitsOfMeasurement.twipToEMU( dotsToTwip(contentBounds.height) );
+		Long cx = contentBounds.width==0 ? null : 
+			UnitsOfMeasurement.twipToEMU( dotsToTwip(contentBounds.width) );
 		
 		xHTMLImageHandler.addImage( renderer.getDocx4jUserAgent(), wordMLPackage, 
 				this.getCurrentParagraph(true), box.getElement(), cx, cy);
-		
 	}
-
-
 	
+	private float dotsToTwip(float dots) {
+		return dots * 4f / 3f; // TODO: Use UnitsOfMeasurement defined DPI
+	}
 	
 	
 //	private void addHyperlinkIfNec(String href, Map<String, CSSValue> cssMap) {
