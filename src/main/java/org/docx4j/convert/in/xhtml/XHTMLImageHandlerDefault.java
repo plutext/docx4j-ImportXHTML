@@ -21,6 +21,14 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 	
     protected HashMap<String, BinaryPartAbstractImage> imagePartCache = new HashMap<String, BinaryPartAbstractImage>(); 
 	
+	/**
+	 * @param docx4jUserAgent
+	 * @param wordMLPackage
+	 * @param p
+	 * @param e
+	 * @param cx  width of image itself (ie excluding CSS margin, padding) in EMU 
+	 * @param cy
+	 */    
 	public void addImage(Docx4jUserAgent docx4jUserAgent, WordprocessingMLPackage wordMLPackage, P p, Element e, Long cx, Long cy) {
 
 		BinaryPartAbstractImage imagePart = null;
@@ -102,8 +110,18 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 						
 						cy = imagePart.getImageInfo().getSize().getHeightPx() *
 								(cx / imagePart.getImageInfo().getSize().getWidthPx());
+						
 					}
 					inline = imagePart.createImageInline(null, e.getAttribute("alt"), 0, 1, cx, cy, false);
+					
+					/*
+					 * That sets text wrapping distance from text to 0.
+					 * 
+					 *   <wp:anchor distT="457200" distB="118745" distL="457200"  distR="0"
+					 * 
+					 * would set distance from text top 0.5", bottom 0.13", left 0.5", right 0.
+					 * 
+					 */
 				}
 
 				// Now add the inline in w:p/w:r/w:drawing
