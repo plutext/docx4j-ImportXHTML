@@ -66,20 +66,21 @@ import org.docx4j.openpackaging.parts.WordprocessingML.NumberingDefinitionsPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.StyleDefinitionsPart;
 import org.docx4j.openpackaging.parts.relationships.Namespaces;
 import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
-import org.docx4j.org.xhtmlrenderer.css.constants.CSSName;
-import org.docx4j.org.xhtmlrenderer.css.constants.IdentValue;
-import org.docx4j.org.xhtmlrenderer.css.style.CalculatedStyle;
-import org.docx4j.org.xhtmlrenderer.css.style.DerivedValue;
-import org.docx4j.org.xhtmlrenderer.css.style.FSDerivedValue;
-import org.docx4j.org.xhtmlrenderer.css.style.derived.LengthValue;
-import org.docx4j.org.xhtmlrenderer.docx.DocxRenderer;
-import org.docx4j.org.xhtmlrenderer.layout.Styleable;
-import org.docx4j.org.xhtmlrenderer.newtable.TableBox;
-import org.docx4j.org.xhtmlrenderer.render.AnonymousBlockBox;
-import org.docx4j.org.xhtmlrenderer.render.BlockBox;
-import org.docx4j.org.xhtmlrenderer.render.Box;
-import org.docx4j.org.xhtmlrenderer.render.InlineBox;
-import org.docx4j.org.xhtmlrenderer.resource.XMLResource;
+import org.xhtmlrenderer.css.constants.CSSName;
+import org.xhtmlrenderer.css.constants.IdentValue;
+import org.xhtmlrenderer.css.style.CalculatedStyle;
+import org.xhtmlrenderer.css.style.DerivedValue;
+import org.xhtmlrenderer.css.style.FSDerivedValue;
+import org.xhtmlrenderer.css.style.derived.LengthValue;
+import org.xhtmlrenderer.docx.Docx4jUserAgent;
+import org.xhtmlrenderer.docx.DocxRenderer;
+import org.xhtmlrenderer.layout.Styleable;
+import org.xhtmlrenderer.newtable.TableBox;
+import org.xhtmlrenderer.render.AnonymousBlockBox;
+import org.xhtmlrenderer.render.BlockBox;
+import org.xhtmlrenderer.render.Box;
+import org.xhtmlrenderer.render.InlineBox;
+import org.xhtmlrenderer.resource.XMLResource;
 import org.docx4j.wml.Body;
 import org.docx4j.wml.CTMarkupRange;
 import org.docx4j.wml.CTSimpleField;
@@ -650,7 +651,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         Document dom;
         try {
         	dom = XMLResource.load(is).getDocument();
-        } catch  ( org.docx4j.org.xhtmlrenderer.util.XRRuntimeException xre) {
+        } catch  ( org.xhtmlrenderer.util.XRRuntimeException xre) {
         	// javax.xml.transform.TransformerException te
         	Throwable t = xre.getCause();
         	log.error(t.getMessage(), t);
@@ -820,11 +821,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             
             // bookmark start?
             CTMarkupRange markupRangeForID = null;
-            if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableSectionBox) {
+            if (box instanceof org.xhtmlrenderer.newtable.TableSectionBox) {
             	// ignore, since <table id = ..
             	// generates TableBox<table and TableSectionBox<table
             	// but we only want a single bookmark
-            } else if(box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableBox) {
+            } else if(box instanceof org.xhtmlrenderer.newtable.TableBox) {
 
             	// null P, so it bookmark is a P sibling
             	markupRangeForID = bookmarkHelper.anchorToBookmark(e, bookmarkNamePrefix, 
@@ -884,7 +885,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             		listHelper.pushListStack(blockBox);
             		
                 	
-            	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableSectionBox) {
+            	} else if (box instanceof org.xhtmlrenderer.newtable.TableSectionBox) {
                 	// nb, both TableBox and TableSectionBox 
                 	// have node name 'table' (or can have),
             		// so this else clause is before the TableBox one,
@@ -897,7 +898,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             		
             		// TODO: give effect to this CSS
 
-            	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableBox)  {
+            	} else if (box instanceof org.xhtmlrenderer.newtable.TableBox)  {
                 	
             		log.debug(".. processing table");  // what happened to <colgroup><col style="width: 2.47in;" /><col style="width: 2.47in;" /> 
             		
@@ -945,7 +946,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		            pushBlockStack(tbl);
 		            mustPop = true;
 		            
-		            TableBox tableBox = (org.docx4j.org.xhtmlrenderer.newtable.TableBox)box;
+		            TableBox tableBox = (org.xhtmlrenderer.newtable.TableBox)box;
 		            
 		    		tableProperties = new TableProperties();
 		    		tableProperties.setTableBox(tableBox);
@@ -960,7 +961,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		            
 	            	
             	} else if (e.getNodeName().equals("table") ) {
-            		// but not instanceof org.docx4j.org.xhtmlrenderer.newtable.TableBox
+            		// but not instanceof org.xhtmlrenderer.newtable.TableBox
             		// .. this does happen.  See test/resources/block-level-lots.xhtml
             		
             		// TODO: look at whether we can style the table in this case
@@ -991,7 +992,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		            mustPop = true;
 		            
             		
-            	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableRowBox) {
+            	} else if (box instanceof org.xhtmlrenderer.newtable.TableRowBox) {
             		
             		// eg <tr color: #000000; background-color: transparent; background-image: none; background-repeat: repeat; background-attachment: scroll; background-position: [0%, 0%]; background-size: [auto, auto]; border-collapse: collapse; -fs-border-spacing-horizontal: 0; -fs-border-spacing-vertical: 0; -fs-font-metric-src: none; -fs-keep-with-inline: auto; -fs-page-width: auto; -fs-page-height: auto; -fs-page-sequence: auto; -fs-pdf-font-embed: auto; -fs-pdf-font-encoding: Cp1252; -fs-page-orientation: auto; -fs-table-paginate: auto; -fs-text-decoration-extent: line; bottom: auto; caption-side: top; clear: none; ; content: normal; counter-increment: none; counter-reset: none; cursor: auto; ; display: table-row; empty-cells: show; float: none; font-style: normal; font-variant: normal; font-weight: normal; font-size: medium; line-height: normal; font-family: serif; -fs-table-cell-colspan: 1; -fs-table-cell-rowspan: 1; height: auto; left: auto; letter-spacing: normal; list-style-type: disc; list-style-position: outside; list-style-image: none; max-height: none; max-width: none; min-height: 0; min-width: 0; orphans: 2; ; ; ; overflow: visible; page: auto; page-break-after: auto; page-break-before: auto; page-break-inside: auto; position: static; ; right: auto; src: none; table-layout: auto; text-align: left; text-decoration: none; text-indent: 0; text-transform: none; top: auto; ; vertical-align: top; visibility: visible; white-space: normal; word-wrap: normal; widows: 2; width: auto; word-spacing: normal; z-index: auto; border-top-color: #000000; border-right-color: #000000; border-bottom-color: #000000; border-left-color: #000000; border-top-style: none; border-right-style: none; border-bottom-style: none; border-left-style: none; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;
             		
@@ -1008,16 +1009,16 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		            pushBlockStack(tr);
 		            mustPop = true;
             		
-		            tableHelper.setupTrPr((org.docx4j.org.xhtmlrenderer.newtable.TableRowBox)box, tr); // does nothing at present
+		            tableHelper.setupTrPr((org.xhtmlrenderer.newtable.TableRowBox)box, tr); // does nothing at present
             		
-            	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableCellBox) {
+            	} else if (box instanceof org.xhtmlrenderer.newtable.TableCellBox) {
             		            		
             		log.debug(".. processing <td");            		
             		// eg <td color: #000000; background-color: transparent; background-image: none; background-repeat: repeat; background-attachment: scroll; background-position: [0%, 0%]; background-size: [auto, auto]; border-collapse: collapse; -fs-border-spacing-horizontal: 0; -fs-border-spacing-vertical: 0; -fs-font-metric-src: none; -fs-keep-with-inline: auto; -fs-page-width: auto; -fs-page-height: auto; -fs-page-sequence: auto; -fs-pdf-font-embed: auto; -fs-pdf-font-encoding: Cp1252; -fs-page-orientation: auto; -fs-table-paginate: auto; -fs-text-decoration-extent: line; bottom: auto; caption-side: top; clear: none; ; content: normal; counter-increment: none; counter-reset: none; cursor: auto; ; display: table-row; empty-cells: show; float: none; font-style: normal; font-variant: normal; font-weight: normal; font-size: medium; line-height: normal; font-family: serif; -fs-table-cell-colspan: 1; -fs-table-cell-rowspan: 1; height: auto; left: auto; letter-spacing: normal; list-style-type: disc; list-style-position: outside; list-style-image: none; max-height: none; max-width: none; min-height: 0; min-width: 0; orphans: 2; ; ; ; overflow: visible; page: auto; page-break-after: auto; page-break-before: auto; page-break-inside: auto; position: static; ; right: auto; src: none; table-layout: auto; text-align: left; text-decoration: none; text-indent: 0; text-transform: none; top: auto; ; vertical-align: top; visibility: visible; white-space: normal; word-wrap: normal; widows: 2; width: auto; word-spacing: normal; z-index: auto; border-top-color: #000000; border-right-color: #000000; border-bottom-color: #000000; border-left-color: #000000; border-top-style: none; border-right-style: none; border-bottom-style: none; border-left-style: none; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;
 
             		ContentAccessor trContext = contentContextStack.peek();
 
-            		org.docx4j.org.xhtmlrenderer.newtable.TableCellBox tcb = (org.docx4j.org.xhtmlrenderer.newtable.TableCellBox)box;
+            		org.xhtmlrenderer.newtable.TableCellBox tcb = (org.xhtmlrenderer.newtable.TableCellBox)box;
 		            
             		// rowspan support: vertically merged cells are
             		// represented as a top cell containing the actual content with a vMerge tag with "restart" attribute 
@@ -1511,7 +1512,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 			    private static final int DEFAULT_DOTS_PER_PIXEL = 20;
 			    
 			    // DPI is then set = 72 * dotsPerPoint 
-			    // TODO reconcile that with org.docx4j.org.xhtmlrenderer.layout.SharedContext
+			    // TODO reconcile that with org.xhtmlrenderer.layout.SharedContext
 			
 			TODO: UnitsOfMeasurement defines DPI.  We should pass that to DocxRenderer!
        	*/
