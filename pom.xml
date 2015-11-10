@@ -11,7 +11,7 @@
 	<groupId>org.docx4j</groupId>
 	<artifactId>docx4j-ImportXHTML</artifactId>
 	<name>docx4j-ImportXHTML</name>
-	<version>3.2.3-SNAPSHOT</version>
+	<version>3.2.3-yf</version>
 	<description>
 		docx4j-ImportXHTML converts XHTML to OpenXML WordML (docx) using docx4j 
 	</description>
@@ -291,19 +291,19 @@
       <dependency>
         <groupId>org.xhtmlrenderer</groupId>
         <artifactId>flying-saucer-core</artifactId>
-         <version>9.0.9-SNAPSHOT</version>
+         <version>9.0.9-yf</version>
       </dependency>
 
       <dependency>
         <groupId>org.xhtmlrenderer</groupId>
         <artifactId>flying-saucer-docx</artifactId>
-         <version>9.0.9-SNAPSHOT</version>
+         <version>9.0.9-yf</version>
       </dependency>
 
 		<dependency>
 		  <groupId>org.docx4j</groupId>
 		  <artifactId>docx4j</artifactId>
-			<version>3.2.3-SNAPSHOT</version>
+			<version>3.2.3-yf</version>
 		</dependency>
 		
 		<dependency>
