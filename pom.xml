@@ -287,25 +287,23 @@
 	</reporting>
 	
 	<dependencies>
-	
-		<dependency>
-			<groupId>org.docx4j</groupId>
-			<artifactId>xhtmlrenderer</artifactId><!--  supports xhtml import -->
-			<version>3.0.0</version>
-			<!-- currently itext is required (fonts for width calculations)
-				<exclusions>
-					<exclusion>
-						<groupId>com.lowagie</groupId>
-						<artifactId>itext</artifactId>
-					</exclusion>
-				</exclusions>
-				 -->
-		</dependency>
+
+      <dependency>
+        <groupId>org.xhtmlrenderer</groupId>
+        <artifactId>flying-saucer-core</artifactId>
+         <version>9.0.9-SNAPSHOT</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.xhtmlrenderer</groupId>
+        <artifactId>flying-saucer-docx</artifactId>
+         <version>9.0.9-SNAPSHOT</version>
+      </dependency>
 
 		<dependency>
 		  <groupId>org.docx4j</groupId>
 		  <artifactId>docx4j</artifactId>
-			<version>3.2.1</version>
+			<version>3.2.3-SNAPSHOT</version>
 		</dependency>
 		
 		<dependency>
