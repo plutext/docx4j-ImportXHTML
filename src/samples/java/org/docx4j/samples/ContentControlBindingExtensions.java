@@ -107,15 +107,15 @@ public class ContentControlBindingExtensions {
 		startTime = System.currentTimeMillis();
 
 		// For docx4j <= 3.2.0
-		BindingHandler.applyBindings(wordMLPackage.getMainDocumentPart());
+		//BindingHandler.applyBindings(wordMLPackage.getMainDocumentPart());
 		
-		/* For docx4j > 3.2.0, replace that with:
+		/* For docx4j > 3.2.0, replace that with: */
 		
-			AtomicInteger bookmarkId = odh.getNextBookmarkId();
-			BindingHandler bh = new BindingHandler(wordMLPackage);
-			bh.setStartingIdForNewBookmarks(bookmarkId);
-			bh.applyBindings(wordMLPackage.getMainDocumentPart());
-		*/
+		AtomicInteger bookmarkId = odh.getNextBookmarkId();
+		BindingHandler bh = new BindingHandler(wordMLPackage);
+		bh.setStartingIdForNewBookmarks(bookmarkId);
+		bh.applyBindings(wordMLPackage.getMainDocumentPart());
+		/* */
 		
 		endTime = System.currentTimeMillis();
 		timingSummary.append("\nBindingHandler.applyBindings: " + (endTime-startTime));
