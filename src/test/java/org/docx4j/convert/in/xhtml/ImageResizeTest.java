@@ -54,8 +54,8 @@ public class ImageResizeTest{
 	public void testFixedSizeImage() throws Exception {
 		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "'/></div>");
 		Inline inline2 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' width='40px' height='20px' /></div>");
-		Assert.assertTrue(inline2.getExtent().getCx() / inline1.getExtent().getCx() == 26);
-		Assert.assertTrue(inline2.getExtent().getCy() / inline1.getExtent().getCy() == 13);
+      Assert.assertTrue(inline2.getExtent().getCx() / inline1.getExtent().getCx() == 20);
+      Assert.assertTrue(inline2.getExtent().getCy() / inline1.getExtent().getCy() == 10);
 	}
 
 	@Test

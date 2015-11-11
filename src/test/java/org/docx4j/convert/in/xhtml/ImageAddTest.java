@@ -27,6 +27,7 @@
  */
 package org.docx4j.convert.in.xhtml;
 
+import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.*;
@@ -54,30 +55,58 @@ public class ImageAddTest{
 	public void testSizeUnspecified() throws Exception {
 		
 		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "'/></div>");
-		Assert.assertTrue(inline1.getExtent().getCx() == 25400);
+      // emu = 914400 * px / dpi
+      int emu = 914400 * 2 / UnitsOfMeasurement.DPI;
+		Assert.assertTrue(inline1.getExtent().getCx() == emu);
 	}
 
 	@Test
 	public void testSize20px() throws Exception {
 		
 		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' width='20px' height='20px' /></div>");
-		Assert.assertTrue(inline1.getExtent().getCx() == 338667);
+      // emu = 914400 * px / dpi
+      int emu = 914400 * 20 / UnitsOfMeasurement.DPI;
+		Assert.assertTrue(inline1.getExtent().getCx() == emu);
 	}
+
+   @Test
+   public void testSize20pxCSS() throws Exception {
+      
+      Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' style='width: 20px; height: 20px;' /></div>");
+      // emu = 914400 * px / dpi
+      int emu = 914400 * 20 / UnitsOfMeasurement.DPI;
+      Assert.assertTrue(inline1.getExtent().getCx() == emu);
+   }
 
 	@Test
 	public void testSize20NoUnits() throws Exception {
 //		// values in dots are 20x as expected		
 		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' width='20' height='20' /></div>");
-		Assert.assertTrue(inline1.getExtent().getCx() == 338667);
+      // emu = 914400 * px / dpi
+      int emu = 914400 * 20 / UnitsOfMeasurement.DPI;
+		Assert.assertTrue(inline1.getExtent().getCx() == emu);
 	}
 	
 	@Test
 	public void testSize20pt() throws Exception {
 		
 		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' width='20pt' height='20pt' /></div>");
-		Assert.assertTrue(inline1.getExtent().getCx() == 451273);
+      // emu = points * 12700
+      int emu = 12700 * 20;
+      // units may be off by a bit due to rounding
+      Assert.assertTrue(Math.round(inline1.getExtent().getCx() / 635f) == Math.round(emu / 635f));
 	}
-	
+
+   @Test
+   public void testSize20ptCSS() throws Exception {
+      
+      Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' style='width: 20pt; height: 20pt;' /></div>");
+      // emu = points * 12700
+      int emu = 12700 * 20;
+      // units may be off by a bit due to rounding
+      Assert.assertTrue(Math.round(inline1.getExtent().getCx() / 635f) == Math.round(emu / 635f));
+   }
+
 	@Test
 	public void testSizeNoHeight() throws Exception {
 		
@@ -102,8 +131,9 @@ public class ImageAddTest{
 		// box.getHeight() and  box.getWidth() include padding
 		
 		Inline inline2 = getInline("<div><img style='padding-top:10px;padding-left:10px;' src='" + PNG_IMAGE_DATA + "' width='20px' height='10px' /></div>");
-		Assert.assertTrue(inline2.getExtent().getCx() == 338667);		
-		//Assert.assertTrue(inline2.getExtent().getCx() / inline2.getExtent().getCy() == 2);
+      // emu = px / dpi * 914400
+      int emu = 914400 * 20 / UnitsOfMeasurement.DPI;
+		Assert.assertTrue(inline2.getExtent().getCx() == emu);
 	}
 	
 	private Inline getInline(String html) throws Exception {
