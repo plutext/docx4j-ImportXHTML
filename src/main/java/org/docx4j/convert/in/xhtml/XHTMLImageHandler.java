@@ -32,5 +32,11 @@ public interface XHTMLImageHandler {
 	 * 
 	 */
 	
-
+	/**
+	 * set the maximum width available (in twips); useful for scaling bare images
+	 * if they are to go in a table cell.  
+	 * 
+	 * @param maxWidth
+	 */
+	public void setMaxWidth(int maxWidth);
 }

@@ -220,6 +220,19 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	
 	private XHTMLImageHandler xHTMLImageHandler = new XHTMLImageHandlerDefault();
 	
+
+	/**
+	 * set the maximum width available (in twips); useful for scaling bare images
+	 * if they are to go in a table cell.  
+	 * 
+	 * @param maxWidth
+	 */
+	public void setMaxWidth(int maxWidth) {
+		xHTMLImageHandler.setMaxWidth(maxWidth);
+	}
+	
+	
+	
 	private DivHandler divHandler;
 	
 	public void setDivHandler(DivHandler divHandler) {

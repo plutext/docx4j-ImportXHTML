@@ -19,6 +19,21 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 	
 	public static Logger log = LoggerFactory.getLogger(XHTMLImageHandlerDefault.class);		
 	
+	private int maxWidth =-1;	
+	public int getMaxWidth() {
+		return maxWidth;
+	}
+
+	/**
+	 * set the maximum width available (in twips); useful for scaling bare images
+	 * if they are to go in a table cell.  
+	 * 
+	 * @param maxWidth
+	 */
+	public void setMaxWidth(int maxWidth) {
+		this.maxWidth = maxWidth;
+	}	
+	
     protected HashMap<String, BinaryPartAbstractImage> imagePartCache = new HashMap<String, BinaryPartAbstractImage>(); 
 	
 	/**
@@ -30,7 +45,7 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 	 * @param cy
 	 */    
 	public void addImage(Docx4jUserAgent docx4jUserAgent, WordprocessingMLPackage wordMLPackage, P p, Element e, Long cx, Long cy) {
-
+		
 		BinaryPartAbstractImage imagePart = null;
 		
 		boolean isError = false;
@@ -96,9 +111,15 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 
 
 				
-				Inline inline;
+				Inline inline=null;
 				if (cx == null && cy == null) {
-					inline = imagePart.createImageInline(null, e.getAttribute("alt"), 0, 1, false);
+					
+					if (maxWidth>0) {
+						log.debug("image maxWidth:" + maxWidth);
+						inline = imagePart.createImageInline(null, e.getAttribute("alt"), 0, 1, false, maxWidth);
+					} else {
+						inline = imagePart.createImageInline(null, e.getAttribute("alt"), 0, 1, false);						
+					}
 				} else {
 					
 					if (cx == null) {
