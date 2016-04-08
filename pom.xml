@@ -11,7 +11,7 @@
 	<groupId>org.docx4j</groupId>
 	<artifactId>docx4j-ImportXHTML</artifactId>
 	<name>docx4j-ImportXHTML</name>
-	<version>3.2.3-SNAPSHOT</version>
+	<version>3.3.0-SNAPSHOT</version>
 	<description>
 		docx4j-ImportXHTML converts XHTML to OpenXML WordML (docx) using docx4j 
 	</description>
@@ -161,6 +161,7 @@
 					<maxmemory>512m</maxmemory>
 					<!-- 18 MB without the exclusion; still 15MB with -->
 					<!-- <excludePackageNames>org.plutext.jaxb.svg11:org.plutext.jaxb.xslfo</excludePackageNames> -->
+			        <additionalparam>-Xdoclint:none</additionalparam> <!-- for Java 8 -->					
 				</configuration>
 				<executions>
 					<execution>
@@ -305,7 +306,7 @@
 		<dependency>
 		  <groupId>org.docx4j</groupId>
 		  <artifactId>docx4j</artifactId>
-			<version>3.2.1</version>
+			<version>3.3.0-SNAPSHOT</version>
 		</dependency>
 		
 		<dependency>
