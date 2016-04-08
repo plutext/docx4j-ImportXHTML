@@ -399,7 +399,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	
 	private CTMarkupRange markuprange;
 	
-	
+
 	/**
 	 * Use the default font size in this docx, as equivalent of CSS font-size: medium
 	 * @since 3.0
@@ -765,10 +765,16 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     private LinkedList<ContentAccessor> contentContextStack = new LinkedList<ContentAccessor>();
     
     private void pushBlockStack(ContentAccessor ca) {
+    	
+    	//log.debug("pushed " + ca.getClass().getSimpleName());
+    	
     	contentContextStack.push(ca);
     	attachmentPointP = null;
     }
     private ContentAccessor popBlockStack() {
+    	
+    	//log.debug("popping " + contentContextStack.peek().getClass().getSimpleName());
+    	
     	attachmentPointP = null;
     	return contentContextStack.pop();
     }
@@ -962,11 +968,17 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		            
 		    		tableProperties = new TableProperties();
 		    		tableProperties.setTableBox(tableBox);
+
+//		    		log.debug("parent " + parent.getClass().getSimpleName());
+//		    		log.debug("parent " + parent.getElement().getNodeName());
 		    		
 		    		boolean isNested = (parent instanceof TableBox
 		    				|| (parent!=null
 		    					&& parent.getElement()!=null
-		    					&& parent.getElement().getNodeName().equals("table")));
+		    					&& ( parent.getElement().getNodeName().equals("table")
+		    						 || parent.getElement().getNodeName().equals("td"))));
+		    		
+//		    		log.debug("is nested? " + isNested);
 		            
 		    		tableHelper.setupTblPr( tableBox,  tbl,  tableProperties, isNested);
 		    		tableHelper.setupTblGrid( tableBox,  tbl,  tableProperties);
