@@ -30,8 +30,9 @@ package org.docx4j.samples;
 import java.io.File;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.docx4j.XmlUtils;
+import org.docx4j.convert.in.xhtml.ImportXHTMLProperties;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
 import org.docx4j.jaxb.Context;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
@@ -98,6 +99,7 @@ public class ConvertInXHTMLFile {
 					
 		// Convert the XHTML, and add it into the empty docx we made
         XHTMLImporterImpl XHTMLImporter = new XHTMLImporterImpl(wordMLPackage);
+        
         XHTMLImporter.setHyperlinkStyle("Hyperlink");
 		wordMLPackage.getMainDocumentPart().getContent().addAll( 
 				XHTMLImporter.convert(unescaped, baseURL) );
