@@ -62,6 +62,12 @@ public class TableHelper {
     	this.importer=importer;
     }
 	
+    /**
+     * @param cssTable
+     * @param tbl
+     * @param tableProperties
+     * @param isNested - don't adjust indent for table in table
+     */
     protected void setupTblPr(TableBox cssTable, Tbl tbl, TableProperties tableProperties, boolean isNested) {
     	
         Element e = cssTable.getElement();     	
@@ -200,6 +206,8 @@ public class TableHelper {
     	tbl.setTblGrid(tblGrid);
     	
     	int[] colPos = tableProperties.getColumnPos();
+    	
+    	log.debug("setupTblGrid " + cssTable.numEffCols() + "  " + colPos.length);
     	
     	for (int i=1; i<=cssTable.numEffCols(); i++) {
     		
