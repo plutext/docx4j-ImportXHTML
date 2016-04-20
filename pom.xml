@@ -312,7 +312,7 @@
 		<dependency>
 		  <groupId>org.docx4j</groupId>
 		  <artifactId>docx4j</artifactId>
-			<version>3.3.0-SNAPSHOT</version>
+			<version>3.3.0</version>
 		</dependency>
 		
 		<dependency>
