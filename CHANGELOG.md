@@ -2,6 +2,32 @@ CHANGELOG
 =========
 
 
+Version 3.3.0 (minor release)
+===============
+
+Release date
+------------
+
+21 April 2016
+
+
+Notable Changes in Version 3.3.0
+---------------------------------
+
+Image size (where specified in HTML)
+
+Nested table handling
+
+Bump dependent jar versions
+
+
+Compatibility notes
+-------------------
+
+Uses docx4j 3.3.0 (though not heavily dependent on it)
+
+
+
 Version 3.2.2
 ===============
 
