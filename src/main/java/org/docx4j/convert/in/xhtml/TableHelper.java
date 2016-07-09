@@ -55,6 +55,8 @@ import javax.xml.bind.JAXBElement;
 
 public class TableHelper {
 	
+	private static final String TABLE = "table";
+	
 	public static Logger log = LoggerFactory.getLogger(TableHelper.class);
 	    
 	private XHTMLImporterImpl importer;
@@ -662,6 +664,13 @@ public class TableHelper {
 		
 	}
     
+	protected boolean isTableStyle(Style s) {
+	    if(s.getType() != null && s.getType().equals(TABLE)) {
+	        return true;
+	    }
+	    return false;
+	}
+	
     private void setCellWidthAuto(TcPr tcPr) {
     	// <w:tcW w:w="0" w:type="auto"/>
 		TblWidth tblW = Context.getWmlObjectFactory().createTblWidth();

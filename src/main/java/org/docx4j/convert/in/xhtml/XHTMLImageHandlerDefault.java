@@ -10,7 +10,11 @@ import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
 import org.docx4j.org.xhtmlrenderer.docx.Docx4JFSImage;
 import org.docx4j.org.xhtmlrenderer.docx.Docx4jUserAgent;
+import org.docx4j.wml.CTTblCellMar;
+import org.docx4j.wml.CTTblPrBase;
 import org.docx4j.wml.P;
+import org.docx4j.wml.Style;
+import org.docx4j.wml.Style.BasedOn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
@@ -19,23 +23,25 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 	
 	public static Logger log = LoggerFactory.getLogger(XHTMLImageHandlerDefault.class);		
 	
-	private int maxWidth =-1;	
+	private int maxWidth = -1;
+	private String tableStyle;
 	public int getMaxWidth() {
-		return maxWidth;
+	    return maxWidth;
 	}
-
-	/**
-	 * set the maximum width available (in twips); useful for scaling bare images
-	 * if they are to go in a table cell.  
-	 * 
-	 * @param maxWidth
-	 */
-	public void setMaxWidth(int maxWidth) {
-		this.maxWidth = maxWidth;
-	}	
+	@Override
+	public void setMaxWidth(int maxWidth, String tableStyle) {
+	    this.maxWidth = maxWidth;
+	    this.tableStyle = tableStyle;
+	}
 	
     protected HashMap<String, BinaryPartAbstractImage> imagePartCache = new HashMap<String, BinaryPartAbstractImage>(); 
 	
+    private XHTMLImporterImpl importer;
+    
+    public XHTMLImageHandlerDefault(XHTMLImporterImpl importer) {
+    	this.importer = importer;
+    }
+    
 	/**
 	 * @param docx4jUserAgent
 	 * @param wordMLPackage
@@ -115,10 +121,14 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 				if (cx == null && cy == null) {
 					
 					if (maxWidth>0) {
-						log.debug("image maxWidth:" + maxWidth);
-						inline = imagePart.createImageInline(null, e.getAttribute("alt"), 0, 1, false, maxWidth);
-					} else {
-						inline = imagePart.createImageInline(null, e.getAttribute("alt"), 0, 1, false);						
+						log.debug("image maxWidth:" + maxWidth + ", table style: " + tableStyle);
+                        long excessWidth = getTblCellMargins(tableStyle);
+                        if(excessWidth > 0) {
+                            log.debug("table style margins subtracted (twips): " + excessWidth);
+                        }
+                        inline = imagePart.createImageInline(null, e.getAttribute("alt"), 0, 1, false, maxWidth - (int)excessWidth);
+                    } else {
+						inline = imagePart.createImageInline(null, e.getAttribute("alt"), 0, 1, false);
 					}
 				} else {
 					
@@ -169,5 +179,63 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 		
 	}
 	
-
+    /**
+     * Get table cell margins from table style.
+     * <br>Parameter tableStyle can be null - 0 will be returned.
+     * @return left margin plus right margin (twips)
+     */
+    private long getTblCellMargins(String tableStyle) {
+        Style s = null;
+        if(tableStyle != null && !tableStyle.isEmpty()) {
+            s = importer.getStyleByIdOrName(tableStyle);
+        }
+        if(s != null && importer.getTableHelper().isTableStyle(s)) {
+            CTTblCellMar cellMar = getTblCellMar(s);
+            if(cellMar == null) {
+                //try "based on" style
+                CTTblCellMar bsCellMar = getBasedOnTblCellMar(s);
+                if(bsCellMar != null) {
+                    return getLeftPlusRightMarginsValue(bsCellMar);
+                }
+            } else {
+                return getLeftPlusRightMarginsValue(cellMar);
+            }
+        }
+        return 0;
+    }
+    
+    private long getLeftPlusRightMarginsValue(CTTblCellMar cellMar) {
+        return cellMar.getLeft().getW().longValue() + cellMar.getRight().getW().longValue();
+    }
+    
+    /**
+     * Get cell margins from "based on" style.
+     * <br>Search recursively while possible.
+     */
+    private CTTblCellMar getBasedOnTblCellMar(Style s) {
+        BasedOn bo = s.getBasedOn();
+        if(bo != null) {
+            String basedOn = bo.getVal();
+            if(basedOn != null && !basedOn.isEmpty()) {
+                Style bs = importer.getStyleByIdOrName(basedOn);
+                if(bs != null) {
+                    CTTblCellMar bsCellMar = getTblCellMar(bs);
+                    if(bsCellMar != null) {
+                        return bsCellMar;
+                    } else {
+                        return getBasedOnTblCellMar(bs);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
+    private CTTblCellMar getTblCellMar(Style s) {
+        CTTblPrBase tpb = s.getTblPr();
+        if(tpb != null) {
+            return tpb.getTblCellMar();
+        }
+        return null;
+    }
 }
