@@ -218,17 +218,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		this.xHTMLImageHandler = xHTMLImageHandler;
 	}
 	
-	private XHTMLImageHandler xHTMLImageHandler = new XHTMLImageHandlerDefault();
+	private XHTMLImageHandler xHTMLImageHandler = new XHTMLImageHandlerDefault(this);
 	
-
-	/**
-	 * set the maximum width available (in twips); useful for scaling bare images
-	 * if they are to go in a table cell.  
-	 * 
-	 * @param maxWidth
-	 */
-	public void setMaxWidth(int maxWidth) {
-		xHTMLImageHandler.setMaxWidth(maxWidth);
+	@Override
+	public void setMaxWidth(int maxWidth, String tableStyle) {
+	    xHTMLImageHandler.setMaxWidth(maxWidth, tableStyle);
 	}
 	
 	
@@ -252,6 +246,10 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	}
 	private TableHelper tableHelper;
     
+	protected TableHelper getTableHelper() {
+	    return tableHelper;
+	}
+	
     private DocxRenderer renderer;
     
     /**
@@ -1490,6 +1488,36 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 				addParagraphProperties(pPr, blockBox, cssMap );
 			}        	
     	}     	
+    }
+    
+    /**
+     * If one parameter is passed then search style by id (1st parameter), 
+     * if style by id is not found then search style by name (also 1st parameter).
+     * <br>If two - then search by id (1st parameter) and if style by id is not found then search style by name (2nd parameter).
+     * <br>Other parameters are ignored.
+     */
+    protected Style getStyleByIdOrName(String... parameters) {
+        String id = parameters[0];
+        String name = parameters.length > 1 ? parameters[1] : id;
+        Style s = null;
+        // Our XHTML export gives a space separated list of class names,
+        // reflecting the style hierarchy. Here, we just want the first one.
+        int pos = id.indexOf(" ");
+        if (pos > -1) {
+            id = id.substring(0,  pos);
+        }
+        // try Id
+        s = this.stylesByID.get(id);
+        if(s == null) {
+            // try name, which can have spaces
+            for(Style style: this.stylesByID.values()) {
+                if(style.getName() != null && style.getName().getVal().equals(name)) {
+                    s = style;
+                    break;
+                }
+            }
+        }
+        return s;
     }
     
     private void handleHeadingElement(PPr pPr, Styleable blockBox) {
