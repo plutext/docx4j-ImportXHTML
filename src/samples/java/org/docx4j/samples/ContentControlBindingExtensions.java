@@ -20,12 +20,15 @@
 
 package org.docx4j.samples;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.xml.bind.JAXBContext;
 
 import org.docx4j.XmlUtils;
 import org.docx4j.model.datastorage.BindingHandler;
+import org.docx4j.model.datastorage.CustomXmlDataStoragePartSelector;
 import org.docx4j.model.datastorage.OpenDoPEHandler;
 import org.docx4j.model.datastorage.OpenDoPEIntegrity;
 import org.docx4j.model.datastorage.OpenDoPEReverter;
@@ -34,6 +37,7 @@ import org.docx4j.model.datastorage.RemovalHandler.Quantifier;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.io.SaveToZipFile;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.openpackaging.parts.CustomXmlDataStoragePart;
 
 
 /**
@@ -63,8 +67,11 @@ public class ContentControlBindingExtensions {
 	 */
 	public static void main(String[] args) throws Exception {
 		
-		String inputfilepath = System.getProperty("user.dir") + "/sample-docs/word/databinding/invoice2.docx";
+		String inputfilepath = System.getProperty("user.dir") + "/sample-docs/word/databinding/invoice.docx";
+
 		
+		String data = System.getProperty("user.dir") + "/sample-docs/word/databinding/invoice-data.xml";
+
 
 		WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new java.io.File(inputfilepath));		
 		
@@ -72,19 +79,35 @@ public class ContentControlBindingExtensions {
 		System.out.println(filepathprefix);
 		
 		StringBuilder timingSummary = new StringBuilder();
+
+		
+		// Find custom xml item id and inject data_file.xml		
+		long startTime = System.currentTimeMillis();
+		CustomXmlDataStoragePart customXmlDataStoragePart 
+			= CustomXmlDataStoragePartSelector.getCustomXmlDataStoragePart(wordMLPackage);		
+		if (customXmlDataStoragePart==null) {
+			throw new RuntimeException("no xml");
+		}
+		customXmlDataStoragePart.getData().setDocument(new FileInputStream(new File(data)));
+		long endTime = System.currentTimeMillis();
+		timingSummary.append("\nmerge data: " + (endTime-startTime));
+		System.out.println("data merged");
+	
+		SaveToZipFile saver = new SaveToZipFile(wordMLPackage);		
+		saver.save(new File(System.getProperty("user.dir") + "/OUT_injected.docx"));
+		
 		
 
 		// Process conditionals and repeats
-		long startTime = System.currentTimeMillis();
+		 startTime = System.currentTimeMillis();
 		OpenDoPEHandler odh = new OpenDoPEHandler(wordMLPackage);
 		odh.preprocess();
-		long endTime = System.currentTimeMillis();
+		 endTime = System.currentTimeMillis();
 		timingSummary.append("OpenDoPEHandler: " + (endTime-startTime));
 
-		System.out.println(
-				XmlUtils.marshaltoString(wordMLPackage.getMainDocumentPart().getJaxbElement(), true, true)
-				);		
-		SaveToZipFile saver = new SaveToZipFile(wordMLPackage);
+//		System.out.println(
+//				XmlUtils.marshaltoString(wordMLPackage.getMainDocumentPart().getJaxbElement(), true, true)
+//				);		
 		saver.save(filepathprefix + "_1_preprocessed.docx");
 		System.out.println("Saved: " + filepathprefix + "_1_preprocessed.docx");
 		
@@ -94,34 +117,33 @@ public class ContentControlBindingExtensions {
 		endTime = System.currentTimeMillis();
 		timingSummary.append("\nOpenDoPEIntegrity: " + (endTime-startTime));
 		
-		System.out.println(
-				XmlUtils.marshaltoString(wordMLPackage.getMainDocumentPart().getJaxbElement(), true, true)
-				);		
+//		System.out.println(
+//				XmlUtils.marshaltoString(wordMLPackage.getMainDocumentPart().getJaxbElement(), true, true)
+//				);		
 		saver = new SaveToZipFile(wordMLPackage);
 		saver.save(filepathprefix + "_2_integrity.docx");
 		System.out.println("Saved: " + filepathprefix + "_2_integrity.docx");
 		
 		// Apply the bindings
+		saver = new SaveToZipFile(wordMLPackage);		
 		
 		BindingHandler.setHyperlinkStyle("Hyperlink");						
 		startTime = System.currentTimeMillis();
 
-		// For docx4j <= 3.2.0
-		//BindingHandler.applyBindings(wordMLPackage.getMainDocumentPart());
 		
-		// For docx4j > 3.2.0, replace that with:
-		
-			AtomicInteger bookmarkId = odh.getNextBookmarkId();
-			BindingHandler bh = new BindingHandler(wordMLPackage);
-			bh.setStartingIdForNewBookmarks(bookmarkId);
-			bh.applyBindings(wordMLPackage.getMainDocumentPart());
+//			AtomicInteger bookmarkId = odh.getNextBookmarkId();
+		AtomicInteger bookmarkId = new AtomicInteger();
+
+		BindingHandler bh = new BindingHandler(wordMLPackage);
+		bh.setStartingIdForNewBookmarks(bookmarkId);
+		bh.applyBindings(wordMLPackage.getMainDocumentPart());
 		
 		
 		endTime = System.currentTimeMillis();
 		timingSummary.append("\nBindingHandler.applyBindings: " + (endTime-startTime));
-		System.out.println(
-				XmlUtils.marshaltoString(wordMLPackage.getMainDocumentPart().getJaxbElement(), true, true)
-				);
+//		System.out.println(
+//				XmlUtils.marshaltoString(wordMLPackage.getMainDocumentPart().getJaxbElement(), true, true)
+//				);
 		saver.save(filepathprefix + "_3_bound.docx");
 		System.out.println("Saved: " + filepathprefix + "_3_bound.docx");
 		
