@@ -2,6 +2,28 @@ CHANGELOG
 =========
 
 
+Version 3.3.1 (minor release)
+===============
+
+Release date
+------------
+
+16 August 2016
+
+
+Notable Changes in Version 3.3.1
+---------------------------------
+
+For image inside table cell, remove table margins from image width 
+
+
+Compatibility notes
+-------------------
+
+Uses docx4j 3.3.1 (though not heavily dependent on it)
+
+
+
 Version 3.3.0 (minor release)
 ===============
 
