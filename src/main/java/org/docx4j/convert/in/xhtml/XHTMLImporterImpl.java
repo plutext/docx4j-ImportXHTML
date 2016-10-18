@@ -48,6 +48,7 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.transform.Source;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.docx4j.Docx4jProperties;
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.XmlUtils;
@@ -2164,13 +2165,10 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 
 	
 	private Hyperlink createHyperlink(String url, RPr rPr, String linkText, RelationshipsPart rp) {
-		
-		if (linkText.contains("&")
-				&& !linkText.contains("&amp;")) {
-			// escape them so we can unmarshall
-			linkText = linkText.replace("&", "&amp;");
-		}
-		
+
+		// escape special characters so we can unmarshall
+		linkText = StringEscapeUtils.escapeXml10(linkText);
+
 		try {
 			String hpl = null;
 			
