@@ -59,6 +59,7 @@ public class FontHandler {
 		
 		RFonts rFonts = Context.getWmlObjectFactory().createRFonts();
 		rFonts.setAscii(font);
+		rFonts.setHAnsi(font);  // handle chars with diacritic eg ěščřžýáíé
 		
 		FontHandler.addFontMapping(cssFontFamily, rFonts);
 	}
