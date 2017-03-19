@@ -1728,11 +1728,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             			
 	                	Hyperlink h = null;
 	                	String linkText = inlineBox.getElement().getTextContent();
+	                	//log.debug("getTextContent:" + linkText);  
 	                	
 	                    RPr rPr =  Context.getWmlObjectFactory().createRPr();
 	                    formatRPr(rPr, cssClass, cssMap);
-	                    	                	
-	                	log.debug(linkText);
+	                    
 	                	log.debug(XmlUtils.marshaltoString(rPr));
 	                	
 	                	// ensure we've got our current p set correctly; this is done above already 
@@ -1740,6 +1740,10 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	                	
 	                	if (linkText!=null
 	                			&& !linkText.trim().equals("")) {
+	                		
+	                    	// For example, consider <a href=\"#requirement897\">[R_897] <b>Requirement</b> 3</a>
+	                    	// Here we are processing the text "[R_897] " (ie the leading text)	                		
+		                	log.debug("getText:" + inlineBox.getText());
 	                		
 	                    	h = createHyperlink(
 	                    			href, 
@@ -1759,8 +1763,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		                    	return; // don't change contentContext
 		                		
 		                	} else {
+		                    	log.debug("now attaching inside hyperlink ");
 		                		attachmentPointH = h;
-		                		return; //.getContent();
+		                		return; 
 		                	}
 		                	
 	                	} 
@@ -1785,6 +1790,18 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             		
             	} else if (inlineBox.isEndsHere()) {
                 	log.debug("Processing ..</a> ");
+                	
+                	// For example, consider <a href=\"#requirement897\">[R_897] <b>Requirement</b> 3</a>
+                	// Here we are processing the text " 3" (ie the trailing content)
+                	log.debug("getText:" + inlineBox.getText()); // [R_897]
+                	
+                	String endingText = inlineBox.getText();
+                	
+                	if (endingText!=null
+                			&& endingText.length()>0) {
+                		addRun(cssClass, cssMap, inlineBox.getText());
+                	}
+                	
                 	attachmentPointH = null;
                 	return; 
             		// Can't do bookmark end processing here,
@@ -2165,11 +2182,18 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	
 	private Hyperlink createHyperlink(String url, RPr rPr, String linkText, RelationshipsPart rp) {
 		
+		// Handle XML predefined entities - escape them so we can unmarshall
 		if (linkText.contains("&")
-				&& !linkText.contains("&amp;")) {
-			// escape them so we can unmarshall
+				&& !linkText.contains("&amp;") ) {
 			linkText = linkText.replace("&", "&amp;");
 		}
+		if (linkText.contains("<") ) {
+			linkText = linkText.replace("<", "&lt;");  // no need to worry about embedded elements (ie <b>) here since there can't be any - any such are added to the hyperlink later
+		}
+		if (linkText.contains(">") ) {
+			linkText = linkText.replace(">", "&gt;");
+		}		
+		// No need for special handling for &apos; or &quot; 
 		
 		try {
 			String hpl = null;

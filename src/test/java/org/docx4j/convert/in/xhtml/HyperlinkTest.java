@@ -27,6 +27,7 @@
  */
 package org.docx4j.convert.in.xhtml;
 
+import org.docx4j.TextUtils;
 import org.docx4j.XmlUtils;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.exceptions.InvalidFormatException;
@@ -36,6 +37,9 @@ import org.docx4j.wml.*;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
@@ -229,47 +233,44 @@ public class HyperlinkTest {
 		// Test content
 		assertTrue(h.getContent().size()==4);
 
-		/*
-	    <w:hyperlink r:id="rId2">
-	        <w:r>
-	            <w:rPr>
-	                <w:b w:val="false"/>
-	                <w:i w:val="false"/>
-	                <w:color w:val="0000ff"/>
-	                <w:sz w:val="22"/>
-	                <w:u w:val="single"/>
-	            </w:rPr>
-	            <w:t>Some </w:t>
-	        </w:r>
-	        <w:r>
-	            <w:rPr>
-	                <w:b w:val="false"/>
-	                <w:i w:val="false"/>
-	                <w:color w:val="0000ff"/>
-	                <w:sz w:val="22"/>
-	            </w:rPr>
-	            <w:t>rich</w:t>
-	        </w:r>
-	        <w:r>
-	            <w:rPr>
-	                <w:b w:val="false"/>
-	                <w:i w:val="false"/>
-	                <w:color w:val="0000ff"/>
-	                <w:sz w:val="22"/>
-	                <w:u w:val="single"/>
-	            </w:rPr>
-	            <w:t xml:space="preserve"> </w:t>
-	        </w:r>
-	        <w:r>
-	            <w:rPr>
-	                <w:b/>
-	                <w:i w:val="false"/>
-	                <w:color w:val="0000ff"/>
-	                <w:sz w:val="22"/>
-	            </w:rPr>
-	            <w:t>content</w:t>
-	        </w:r>
-	    </w:hyperlink> */		
+	}
+	
+	@Test public void testXmlPredefinedEntities() throws Exception {
+		
+		List<Object> converted = convert("<div><p><a href=\"#requirement897\">[R_897] &lt; &apos; Requirement 3 &lt; 2 &quot; done</a></p></div>");
+		System.out.println(XmlUtils.marshaltoString(converted.get(0), true, true));
+				
+		List<Object> objects = converted;
+		P p = (P)objects.get(0);
+				
+		P.Hyperlink h = (P.Hyperlink) p.getContent().get(0);
+		
+		// Test content
+		Writer out = new StringWriter();
+		TextUtils.extractText(h, out);
+		out.close();				
+		assertTrue(out.toString().equals("[R_897] < ' Requirement 3 < 2 \" done"));
+		
+	}
+	
+	@Test public void testRichContentTail() throws Exception {
+		
+		List<Object> converted = convert("<div><p><a href=\"#requirement897\">[R_897] <b>Requirement</b> 12</a></p></div>");
+		System.out.println(XmlUtils.marshaltoString(converted.get(0), true, true));
+				
+		List<Object> objects = converted;
+		P p = (P)objects.get(0);
+				
+		P.Hyperlink h = (P.Hyperlink) p.getContent().get(0);
+				
+		// Test content
+		assertTrue(h.getContent().size()==3);
+
+		Writer out = new StringWriter();
+		TextUtils.extractText(h, out);
+		out.close();				
+		assertTrue(out.toString().equals("[R_897] Requirement 12"));
+		
 	}
 	
 	private void testBookmarkName(Object o, String name) {
