@@ -2,6 +2,33 @@ CHANGELOG
 =========
 
 
+Version 3.3.4 (minor release)
+===============
+
+Release date
+------------
+
+15 June 2017
+
+
+Notable Changes in Version 3.3.4
+---------------------------------
+
+rFonts.setHAnsi(font) for convenient handling of chars with diacritic
+
+Hyperlinks: handle XML predefined entities; handle trailing text in mixed content
+
+
+Compatibility notes
+-------------------
+
+Version number 3.3.4 assigned, to align with docx4j release number
+of same date.
+
+docx4j 3.3.4 or later recommended (though 3.3.1 or later ought to work)
+
+
+
 Version 3.3.1 (minor release)
 ===============
 
