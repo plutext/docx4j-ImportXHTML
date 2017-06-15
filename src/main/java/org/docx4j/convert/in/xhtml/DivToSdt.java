@@ -91,7 +91,7 @@ public class DivToSdt implements DivHandler {
     		
     		contentContext.getContent().add(sdt);
     		
-    		return sdt.getSdtContent();
+    		return (ContentAccessor) sdt.getSdtContent();
     	}
 		
 		
