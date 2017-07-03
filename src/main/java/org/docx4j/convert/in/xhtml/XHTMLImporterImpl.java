@@ -1569,6 +1569,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 			TODO: UnitsOfMeasurement defines DPI.  We should pass that to DocxRenderer!
        	*/
 		
+		// System.out.println(box.getStyle().toStringMine() );
+		// max-height: none; max-width: none; min-height: 0; min-width: 0;
+		
 		
 		// 20x as expected
 		Rectangle contentBounds = box.getContentAreaEdge(box.getAbsX(), box.getAbsY(), 
@@ -1580,6 +1583,21 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		// System.out.println("content width: " + box.getContentWidth());
 		// box.getHeight() and  box.getWidth() impacted by style='padding-top:10px;' etc, so don't use here
 		
+		// support max-width eg 10px
+		int oldMaxWidth = -1;
+		if (xHTMLImageHandler instanceof XHTMLImageHandlerDefault) {
+			oldMaxWidth = ((XHTMLImageHandlerDefault)xHTMLImageHandler).getMaxWidth();
+			if (!box.getStyle().isMaxWidthNone()) {
+				// max-width is set; to what?
+				int maxWidth = box.getStyle().getMaxWidth(getRenderer().getLayoutContext(), 0); // revisit base value?
+					// eg 10px x 20 dots per pixel = 200
+				if (maxWidth>0) {
+					((XHTMLImageHandlerDefault)xHTMLImageHandler)
+						.setMaxWidth( (int) dotsToTwip(maxWidth));
+				}
+			}
+		}
+		
 		Long cy = contentBounds.height==0 ? null : 
 			UnitsOfMeasurement.twipToEMU( dotsToTwip(contentBounds.height) );
 		Long cx = contentBounds.width==0 ? null : 
@@ -1587,6 +1605,12 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		
 		xHTMLImageHandler.addImage( renderer.getDocx4jUserAgent(), wordMLPackage, 
 				this.getCurrentParagraph(true), box.getElement(), cx, cy);
+		
+		// reset maxWidth
+		if ( (xHTMLImageHandler instanceof XHTMLImageHandlerDefault) 
+			&& !box.getStyle().isMaxWidthNone()) {
+			((XHTMLImageHandlerDefault)xHTMLImageHandler).setMaxWidth(oldMaxWidth);
+		}
 	}
 	
 	private float dotsToTwip(float dots) {
@@ -2220,6 +2244,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 				org.docx4j.relationships.Relationship rel = factory.createRelationship();
 				rel.setType( Namespaces.HYPERLINK  );
 				rel.setTarget(url);
+				if (log.isDebugEnabled()) {
+					log.debug("target " + url);
+				}
 				rel.setTargetMode("External");  
 										
 				rp.addRelationship(rel);

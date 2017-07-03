@@ -33,6 +33,10 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 	    this.maxWidth = maxWidth;
 	    this.tableStyle = tableStyle;
 	}
+
+	public void setMaxWidth(int maxWidth) {
+	    this.maxWidth = maxWidth;
+	}
 	
     protected HashMap<String, BinaryPartAbstractImage> imagePartCache = new HashMap<String, BinaryPartAbstractImage>(); 
 	
@@ -50,7 +54,8 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 	 * @param cx  width of image itself (ie excluding CSS margin, padding) in EMU 
 	 * @param cy
 	 */    
-	public void addImage(Docx4jUserAgent docx4jUserAgent, WordprocessingMLPackage wordMLPackage, P p, Element e, Long cx, Long cy) {
+	public void addImage(Docx4jUserAgent docx4jUserAgent, WordprocessingMLPackage wordMLPackage, 
+			P p, Element e, Long cx, Long cy) {
 		
 		BinaryPartAbstractImage imagePart = null;
 		
@@ -94,7 +99,10 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 					}
 					
 					Docx4JFSImage docx4JFSImage = docx4jUserAgent.getDocx4JImageResource(url);
-					if (docx4JFSImage != null) {// in case of wrong URL - docx4JFSImage will be null
+					if (docx4JFSImage == null) {						
+						// in case of wrong URL - docx4JFSImage will be null
+						log.error("Couldn't fetch " + url);
+					} else {
 						imageBytes = docx4JFSImage.getBytes();
 					}
 				}
@@ -122,6 +130,7 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 					
 					if (maxWidth>0) {
 						log.debug("image maxWidth:" + maxWidth + ", table style: " + tableStyle);
+						System.out.println("image maxWidth:" + maxWidth);
                         long excessWidth = getTblCellMargins(tableStyle);
                         if(excessWidth > 0) {
                             log.debug("table style margins subtracted (twips): " + excessWidth);
