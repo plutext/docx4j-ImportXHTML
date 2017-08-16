@@ -2085,7 +2085,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             } else if (listHelper.peekListItemStateStack().isFirstChild) {
 
             	// totalPadding gives indent to the bullet;
-            	pPr.setInd(listHelper.getInd(totalPadding)); 
+            	pPr.setInd(listHelper.getInd(totalPadding-tableIndentContrib())); 
+            	
+            	// TODO: subtract table indent
             	
             } else {
             	
@@ -2093,7 +2095,10 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             	// we want to align this subsequent p with the preceding text;
             	// assume 360 twips
             	
-            	pPr.setInd(listHelper.getInd(totalPadding + 360)); // TODO FIXME
+            	pPr.setInd(listHelper.getInd(totalPadding + 360-tableIndentContrib())); // TODO FIXME
+            	
+            	// TODO: subtract table indent
+            	
             } 
         	
             listHelper.peekListItemStateStack().isFirstChild=false;
@@ -2129,7 +2134,31 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	
     }
     
+    private int tableIndentContrib() {
     	
+    	int tblIndents = 0;
+    	
+    	for (ContentAccessor ca : contentContextStack) {
+    		
+    		log.debug(ca.getClass().getName());
+    		
+    		if (ca instanceof Tbl) {
+    			Tbl tbl = (Tbl)ca;
+    			if (tbl.getTblPr()!=null
+    					&& tbl.getTblPr().getTblInd()!=null
+    					&& tbl.getTblPr().getTblInd().getW() !=null) {
+    				
+    				tblIndents = tblIndents + tbl.getTblPr().getTblInd().getW().intValue();
+    				
+    			}
+    		}
+    		
+    	}
+    	
+    	log.debug("taking into account tbl indent: " + tblIndents);
+    	
+    	return tblIndents;
+    }
 
     private void addRunProperties(RPr rPr, Map cssMap) {
     	

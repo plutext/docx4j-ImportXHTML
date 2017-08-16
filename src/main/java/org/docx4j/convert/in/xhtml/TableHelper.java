@@ -415,6 +415,7 @@ public class TableHelper {
 		FSDerivedValue borderColor = box.getStyle().valueByName( CSSName.getByPropertyName("border-"+side+"-color") );
 		float width = box.getStyle().getFloatPropertyProportionalHeight(
 				CSSName.getByPropertyName("border-"+side+"-width"), 0, importer.getRenderer().getLayoutContext() );
+		log.debug("border width: " + width);
 
 		// zero-width border still drawn as "hairline", so remove it too
 		if(borderStyle.asIdentValue() == IdentValue.NONE || width == 0.0f) {
@@ -428,7 +429,8 @@ public class TableHelper {
 			return createBorderStyle(STBorder.NONE, "FFFFFF", BigInteger.ZERO);
 		}
 		
-		// double border width in html is applied to the whole border, while the word applying it to each bar and the gap in between 
+		// double border width in html is applied to the whole border, 
+		// while the word applying it to each bar and the gap in between 
 		if(borderStyle.asIdentValue() == IdentValue.DOUBLE) {
 			width /= 3;
 		}
@@ -439,9 +441,13 @@ public class TableHelper {
 		} catch (IllegalArgumentException e) {
 			stBorder = STBorder.SINGLE; 
 		}
+		if (log.isDebugEnabled()) {
+			log.debug(borderStyle.asString() + " -> " + stBorder);
+		}
 
 		// w:ST_EighthPointMeasure - Measurement in Eighths of a Point
 		width = UnitsOfMeasurement.twipToPoint( Math.round(width) ) * 8.0f;
+		log.debug("converted border width: " + width);
 		
 		String color = borderColor.asString();
 		if (color.startsWith("#")) color=color.substring(1); // Fix for https://github.com/plutext/docx4j/issues/101
