@@ -169,7 +169,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 			}
 		}
 
-    	listHelper = new ListHelper(ndp);
+    	listHelper = new ListHelper(this, ndp);
     	tableHelper = new TableHelper(this);
     	
     	
@@ -2129,7 +2129,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	
     }
     
-    
+    	
 
     private void addRunProperties(RPr rPr, Map cssMap) {
     	

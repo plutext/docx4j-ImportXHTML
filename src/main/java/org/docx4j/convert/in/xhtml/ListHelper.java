@@ -36,7 +36,9 @@ import javax.xml.bind.JAXBException;
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.XmlUtils;
 import org.docx4j.jaxb.Context;
+import org.docx4j.model.listnumbering.ListNumberingDefinition;
 import org.docx4j.model.properties.paragraph.Indent;
+import org.docx4j.openpackaging.exceptions.InvalidOperationException;
 import org.docx4j.openpackaging.parts.WordprocessingML.NumberingDefinitionsPart;
 import org.docx4j.org.xhtmlrenderer.css.constants.CSSName;
 import org.docx4j.org.xhtmlrenderer.css.style.derived.LengthValue;
@@ -58,6 +60,10 @@ import org.docx4j.wml.PPrBase.NumPr.Ilvl;
 import org.docx4j.wml.PPrBase.NumPr.NumId;
 import org.docx4j.wml.RFonts;
 import org.docx4j.wml.RPr;
+import org.docx4j.wml.Numbering.Num;
+import org.docx4j.wml.Numbering.Num.AbstractNumId;
+import org.docx4j.wml.Numbering.Num.LvlOverride;
+import org.docx4j.wml.Numbering.Num.LvlOverride.StartOverride;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
@@ -68,10 +74,13 @@ public class ListHelper {
 	
 	public static Logger log = LoggerFactory.getLogger(ListHelper.class);		
 	
-	public ListHelper(NumberingDefinitionsPart ndp) {
+	public ListHelper(XHTMLImporterImpl importer, NumberingDefinitionsPart ndp) {
+    	this.importer=importer;
 		this.ndp=ndp;
 	}
 	
+	private XHTMLImporterImpl importer;
+
 	// Commented out for now; See list.txt
 //	public static final String XHTML_AbstractNum_For_OL = "XHTML_AbstractNum_For_OL";
 //	public static final String XHTML_AbstractNum_For_UL = "XHTML_AbstractNum_For_UL";	
@@ -266,7 +275,9 @@ public class ListHelper {
 	}
 	
 	protected Ind getInd(int twip) {
-			
+		
+		if (twip < 40) twip = 40;  // TMP FIXME!
+		
 		Ind ind = Context.getWmlObjectFactory().createPPrBaseInd();
 		
 //		ind.setLeft(BigInteger.valueOf(twip) );
@@ -283,6 +294,9 @@ public class ListHelper {
         // Expectation is that one or other would generally be used.
 		int totalPadding = 0;
 		for(BlockBox bb : listStack) {
+			
+			log.debug(bb.getElement().getLocalName());
+			
             LengthValue padding = (LengthValue)bb.getStyle().valueByName(CSSName.PADDING_LEFT);
             totalPadding +=Indent.getTwip(padding.getCSSPrimitiveValue());
             
@@ -399,6 +413,81 @@ public class ListHelper {
 		if (lvl==null) {
 			// Nope, need to create it
 			abstractList.getLvl().add( createLevel(listStack.size()-1, cssMap) ); 
+		} else {
+			log.debug("Numering definition exists for this level " + lvl.getIlvl().intValue());
+			// Can we re-use it?
+            NumFmt numfmtExisting = lvl.getNumFmt(); 
+            
+            if (concreteList.getLvlOverride().size()>0
+            		&& concreteList.getLvlOverride().get(0).getIlvl().intValue()==(listStack.size()-1)) {
+            	
+            		// TODO: assumes a single override level is defined
+            	
+            	Lvl overrideLvlTmp = concreteList.getLvlOverride().get(0).getLvl();
+            	if (overrideLvlTmp.getNumFmt()!=null) {
+            		numfmtExisting = overrideLvlTmp.getNumFmt();
+            	}
+            }
+            
+            NumberFormat specified = getNumberFormatFromCSSListStyleType(
+                				cssMap.get("list-style-type" ).getCssText());
+			if (numfmtExisting.getVal()==specified) {
+				log.debug(".. using pre-existing definition ");				
+			} else {
+				log.debug(".. but it is different");	
+				// do we have a suitable override?
+				
+					// at present, we define a new override each time
+				
+				// if not, we need to add an override
+			    // docx4j provides machinery to restart numbering
+				int ilvl = lvl.getIlvl().intValue();
+			    long newNumId = ndp.restart(concreteList.getAbstractNumId().getVal().longValue(), ilvl, 
+			    		/* restart at */ 1);
+			    // retrieve it
+			    ListNumberingDefinition listDef = ndp.getInstanceListDefinitions().get(""+newNumId);
+			    
+			    concreteList = listDef.getNumNode();
+			    
+			    // TODO code below is copy/pasted.  Should extract method.
+			    
+		        // Create object for lvl
+		        Lvl overrideLvl = wmlObjectFactory.createLvl(); 
+		            overrideLvl.setIlvl( BigInteger.valueOf( ilvl) );
+		            
+		            // Create object for pPr
+		            PPr ppr = wmlObjectFactory.createPPr(); 
+		            overrideLvl.setPPr(ppr); 
+		            
+		            ppr.setInd(getInd(getAncestorIndentation())); 
+		                    
+		            // Create object for numFmt
+		            NumFmt numfmt = wmlObjectFactory.createNumFmt(); 
+		            overrideLvl.setNumFmt(numfmt); 
+		                numfmt.setVal(
+		                		getNumberFormatFromCSSListStyleType(
+		                				cssMap.get("list-style-type" ).getCssText()));
+		                
+		                
+		            // Create object for lvlText
+		            Lvl.LvlText lvllvltext = wmlObjectFactory.createLvlLvlText(); 
+		            overrideLvl.setLvlText(lvllvltext); 
+		                lvllvltext.setVal( getLvlTextFromCSSListStyleType(
+		        				cssMap.get("list-style-type" ).getCssText(), 
+		        				ilvl+1));
+		                
+	                // Bullets have an associated font
+	                RFonts rfonts = geRFontsForCSSListStyleType(cssMap.get("list-style-type" ).getCssText());
+	                if (rfonts!=null) {
+	                	RPr rpr = wmlObjectFactory.createRPr(); 
+	        	        rpr.setRFonts(rfonts);
+	        	        overrideLvl.setRPr(rpr);
+	                }
+		                
+			    listDef.getNumNode().getLvlOverride().get(0).setLvl(overrideLvl);
+			    
+			}
+			
 		}
 		
 		setNumbering(p.getPPr(), concreteList.getNumId());
