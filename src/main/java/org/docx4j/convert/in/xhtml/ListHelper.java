@@ -412,9 +412,11 @@ public class ListHelper {
 		Lvl lvl = getLevel(abstractList, listStack.size()-1);
 		if (lvl==null) {
 			// Nope, need to create it
-			abstractList.getLvl().add( createLevel(listStack.size()-1, cssMap) ); 
+			int level = listStack.size()-1;
+			ndp.addAbstractListNumberingDefinitionLevel(abstractList, createLevel(level, cssMap));
+			//log.debug("ADDED LEVEL " + level);
 		} else {
-			log.debug("Numering definition exists for this level " + lvl.getIlvl().intValue());
+			log.debug("Numbering definition exists for this level " + lvl.getIlvl().intValue());
 			// Can we re-use it?
             NumFmt numfmtExisting = lvl.getNumFmt(); 
             
