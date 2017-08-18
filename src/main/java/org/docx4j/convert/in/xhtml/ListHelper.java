@@ -247,7 +247,7 @@ public class ListHelper {
 			return "";
 		}
 		
-		return "%"+level;
+		return "%"+level+".";
 	}
 	
 	private RFonts geRFontsForCSSListStyleType(String listStyleType) {
