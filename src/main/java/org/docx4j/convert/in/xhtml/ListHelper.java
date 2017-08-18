@@ -107,7 +107,8 @@ public class ListHelper {
 		BlockBox box = listStack.pop();
 		if (listStack.size()==0) {
 			// We're not in a list any more
-			concreteList=null;
+			log.debug("outside list");
+			concreteList=null; // logic in addNumbering also creates a new abstractList
 		}
 		listItemStateStack.pop();
 		return box;
@@ -329,6 +330,9 @@ public class ListHelper {
 		
 	private Lvl createLevel(int level, Map<String, CSSValue> cssMap) {
 		
+//		System.out.println("creating level" + level);
+//		(new Throwable()).printStackTrace();
+		
 		if (level>8) level=8; // Word can't open a document with Ilvl>8
 
         // Create object for lvl
@@ -405,8 +409,15 @@ public class ListHelper {
 		if (concreteList==null) {
 			// We've just entered a list, so create a new one
 			abstractList = createNewAbstractList();		
-			concreteList = ndp.addAbstractListNumberingDefinition(abstractList);			
-		}
+			concreteList = ndp.addAbstractListNumberingDefinition(abstractList);
+			
+			log.debug("Using abstractList " + abstractList.getAbstractNumId().intValue());
+		} 
+		// sanity check
+//		else if ( concreteList.getAbstractNumId().getVal()!=abstractList.getAbstractNumId()) {
+//			throw new RuntimeException("concrete list points to " + concreteList.getAbstractNumId().getVal().intValue() 
+//					+ " not " + abstractList.getAbstractNumId().intValue());
+//		}
 		
 		// Do we have a definition for this level yet?
 		Lvl lvl = getLevel(abstractList, listStack.size()-1);
@@ -416,7 +427,8 @@ public class ListHelper {
 			ndp.addAbstractListNumberingDefinitionLevel(abstractList, createLevel(level, cssMap));
 			//log.debug("ADDED LEVEL " + level);
 		} else {
-			log.debug("Numbering definition exists for this level " + lvl.getIlvl().intValue());
+			log.debug("Numbering definition exists for this level " + lvl.getIlvl().intValue() 
+					+ " in abstractList " + abstractList.getAbstractNumId().intValue());
 			// Can we re-use it?
             NumFmt numfmtExisting = lvl.getNumFmt(); 
             
@@ -444,13 +456,14 @@ public class ListHelper {
 				// if not, we need to add an override
 			    // docx4j provides machinery to restart numbering
 				int ilvl = lvl.getIlvl().intValue();
-			    long newNumId = ndp.restart(concreteList.getAbstractNumId().getVal().longValue(), ilvl, 
+				log.debug("concrete list points at abstract " + concreteList.getAbstractNumId().getVal().longValue());
+			    long newNumId = ndp.restart(concreteList.getNumId().longValue(), ilvl, 
 			    		/* restart at */ 1);
 			    // retrieve it
 			    ListNumberingDefinition listDef = ndp.getInstanceListDefinitions().get(""+newNumId);
 			    
 			    concreteList = listDef.getNumNode();
-			    
+			    log.debug("new concrete list, pointing at " + concreteList.getAbstractNumId().getVal().longValue() );
 			    // TODO code below is copy/pasted.  Should extract method.
 			    
 		        // Create object for lvl
