@@ -431,7 +431,10 @@ public class ListHelper {
 			int level = listStack.size()-1;
 			ndp.addAbstractListNumberingDefinitionLevel(abstractList, createLevel(level, cssMap));
 			//log.debug("ADDED LEVEL " + level);
-			lvl = getLevel(abstractList, listStack.size()-1);
+			//lvl = getLevel(abstractList, listStack.size()-1);
+			
+			// ready for next item
+			peekListItemStateStack().isFirstItem = false;
 		}
 		else
 		{
