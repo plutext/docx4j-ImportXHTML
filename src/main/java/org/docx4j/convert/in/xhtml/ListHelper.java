@@ -96,7 +96,10 @@ public class ListHelper {
 
 	// The current list
 	private Numbering.AbstractNum abstractList;
-	private Numbering.Num concreteList;
+	
+	private Numbering.Num getConcreteList() {
+		return listItemStateStack.peek().concreteList;
+	}
 
 	protected void pushListStack(BlockBox ca) {
 		listStack.push(ca);
@@ -108,7 +111,6 @@ public class ListHelper {
 		if (listStack.size()==0) {
 			// We're not in a list any more
 			log.debug("outside list");
-			concreteList=null; // logic in addNumbering also creates a new abstractList
 		}
 		listItemStateStack.pop();
 		return box;
@@ -133,11 +135,22 @@ public class ListHelper {
 	 *
 	 *  ListItemContentState needs to be re-inited as we enter
 	 *  each list item.
+	 *  
+	 *  It is also useful for complex list structures
+	 *  (multiple overrides for a given level)
 	 */
 	private LinkedList<ListItemContentState> listItemStateStack = new LinkedList<ListItemContentState>();
 
 	class ListItemContentState {
 
+		/**
+		 * Store this at each level, so that
+		 * when we go up a level we can resume using
+		 * the previous (if different) concrete list
+		 * where appropriate.
+		 */
+		private Numbering.Num concreteList;
+		
 		protected boolean isFirstChild = true;
 		protected boolean haveMergedFirstP = false;
 		
@@ -157,7 +170,14 @@ public class ListHelper {
 		return listItemStateStack.peek();
 	}
 	private void pushListItemStateStack() {
+		
+		// Init with current concrete list
+		Numbering.Num currentConcreteList=null;
+		if (peekListItemStateStack()!=null) {
+			currentConcreteList = peekListItemStateStack().concreteList;
+		}
 		listItemStateStack.push(new ListItemContentState());
+		peekListItemStateStack().concreteList = currentConcreteList; 
 	}
 
 
@@ -301,17 +321,17 @@ public class ListHelper {
 		int totalPadding = 0;
 		for(BlockBox bb : listStack) {
 
-			log.debug(bb.getElement().getLocalName());
+//			log.debug(bb.getElement().getLocalName());
 
 			LengthValue padding = (LengthValue)bb.getStyle().valueByName(CSSName.PADDING_LEFT);
 			totalPadding +=Indent.getTwip(padding.getCSSPrimitiveValue());
 
-			log.debug("+padding-left: " + totalPadding);
+//			log.debug("+padding-left: " + totalPadding);
 
 			LengthValue margin = (LengthValue)bb.getStyle().valueByName(CSSName.MARGIN_LEFT);
 			totalPadding +=Indent.getTwip(margin.getCSSPrimitiveValue());
 
-			log.debug("+margin-left: " + totalPadding);
+//			log.debug("+margin-left: " + totalPadding);
 
 		}
 		return totalPadding;
@@ -408,13 +428,27 @@ public class ListHelper {
 		return lvl;
 
 	}
+	
+	private LvlOverride findOverride(int lvl) {
+		
+//		NumFmt numFmt = null;
+		
+		for (LvlOverride lo : getConcreteList().getLvlOverride() ) {
+			
+			if (lo.getIlvl().intValue()==lvl) {
+				// this is the level we are looking for
+				return  lo;
+			}
+		}
+		return null;
+	}
 
 	void addNumbering(P p, Element e, Map<String, CSSValue> cssMap) {
 
-		if (concreteList==null) {
+		if (getConcreteList()==null) {
 			// We've just entered a list, so create a new one
 			abstractList = createNewAbstractList();
-			concreteList = ndp.addAbstractListNumberingDefinition(abstractList);
+			listItemStateStack.peek().concreteList = ndp.addAbstractListNumberingDefinition(abstractList); 
 
 			log.debug("Using abstractList " + abstractList.getAbstractNumId().intValue());
 		}
@@ -440,17 +474,20 @@ public class ListHelper {
 		{
 			log.debug("Numbering definition exists for this level " + lvl.getIlvl().intValue()
 					  + " in abstractList " + abstractList.getAbstractNumId().intValue());
+			
 			// Can we re-use it?
-			NumFmt numfmtExisting = lvl.getNumFmt();
-
-			if (concreteList.getLvlOverride().size()>0
-				&& concreteList.getLvlOverride().get(0).getIlvl().intValue()==(listStack.size()-1)) {
-
-				// TODO: assumes a single override level is defined
-
-				Lvl overrideLvlTmp = concreteList.getLvlOverride().get(0).getLvl();
+			NumFmt numfmtExisting = null;
+			LvlOverride lo = findOverride(listStack.size()-1);
+				// That looks at the current concrete list.
+				// We could also look at other concrete lists pointing at the same abstract list, 
+				// but that's a TODO if necessary
+			if (lo!=null) {
+				Lvl overrideLvlTmp = lo.getLvl();
 				if (overrideLvlTmp.getNumFmt()!=null) {
 					numfmtExisting = overrideLvlTmp.getNumFmt();
+				} 
+				if (numfmtExisting==null) {
+					numfmtExisting=lvl.getNumFmt();
 				}
 			}
 
@@ -458,13 +495,18 @@ public class ListHelper {
 					cssMap.get("list-style-type" ).getCssText());
 			
 			if (peekListItemStateStack().isFirstItem // and level already exists,
-					|| numfmtExisting.getVal()!=specified ) {
+					|| numfmtExisting ==null
+					|| numfmtExisting.getVal()!=specified  ) {
 
 				// can't re-use..
 				
 				if (log.isDebugEnabled() ) {
-					if (numfmtExisting.getVal()!=specified) {
-						log.debug(".. but it is different");						
+					
+					if (numfmtExisting ==null) {
+						log.debug(".. but it doesn't override formatting" ); 
+					} else if (numfmtExisting.getVal()!=specified) {
+						log.debug(".. but it is different: "  + specified.value() 
+							+ " vs " + numfmtExisting.getVal().value()  );						
 					}
 					if (peekListItemStateStack().isFirstItem) {
 						log.debug(".. but it is a new HTML list");	
@@ -501,14 +543,14 @@ public class ListHelper {
 				// if not, we need to add an override
 				// docx4j provides machinery to restart numbering
 				int ilvl = lvl.getIlvl().intValue();
-				log.debug("concrete list points at abstract " + concreteList.getAbstractNumId().getVal().longValue());
-				long newNumId = ndp.restart(concreteList.getNumId().longValue(), ilvl,
+				log.debug("concrete list points at abstract " + getConcreteList().getAbstractNumId().getVal().longValue());
+				long newNumId = ndp.restart(getConcreteList().getNumId().longValue(), ilvl,
 			    		/* restart at */ 1);
 				// retrieve it
 				ListNumberingDefinition listDef = ndp.getInstanceListDefinitions().get(""+newNumId);
 
-				concreteList = listDef.getNumNode();
-				log.debug("new concrete list, pointing at " + concreteList.getAbstractNumId().getVal().longValue() );
+				listItemStateStack.peek().concreteList = listDef.getNumNode();
+				log.debug("new concrete list " + getConcreteList().getNumId().intValue() +", pointing at " + getConcreteList().getAbstractNumId().getVal().longValue() );
 				// TODO code below is copy/pasted.  Should extract method.
 
 				// Create object for lvl
@@ -552,7 +594,7 @@ public class ListHelper {
 
 		}
 
-		setNumbering(p.getPPr(), concreteList.getNumId());
+		setNumbering(p.getPPr(), getConcreteList().getNumId());
 
 	}
 
