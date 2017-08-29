@@ -312,7 +312,7 @@
 		<dependency>
 		  <groupId>org.docx4j</groupId>
 		  <artifactId>docx4j</artifactId>
-			<version>3.3.5</version>
+			<version>3.3.6-SNAPSHOT</version>
 		</dependency>
 		
 		<dependency>
@@ -333,6 +333,7 @@
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.12</version>
+			<scope>test</scope>
 		</dependency>
 	 	
 	</dependencies>
