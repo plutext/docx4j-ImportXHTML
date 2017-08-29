@@ -444,6 +444,8 @@ public class ListHelper {
 	}
 
 	void addNumbering(P p, Element e, Map<String, CSSValue> cssMap) {
+		
+		log.debug("add");
 
 		if (getConcreteList()==null) {
 			// We've just entered a list, so create a new one
@@ -486,9 +488,9 @@ public class ListHelper {
 				if (overrideLvlTmp.getNumFmt()!=null) {
 					numfmtExisting = overrideLvlTmp.getNumFmt();
 				} 
-				if (numfmtExisting==null) {
-					numfmtExisting=lvl.getNumFmt();
-				}
+			}
+			if (numfmtExisting==null) {
+				numfmtExisting=lvl.getNumFmt();
 			}
 
 			NumberFormat specified = getNumberFormatFromCSSListStyleType(
