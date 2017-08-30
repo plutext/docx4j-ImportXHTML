@@ -763,6 +763,10 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      */
     private LinkedList<ContentAccessor> contentContextStack = new LinkedList<ContentAccessor>();
     
+	protected LinkedList<ContentAccessor> getContentContextStack() {
+		return contentContextStack;
+	}
+    
     private void pushBlockStack(ContentAccessor ca) {
     	
     	//log.debug("pushed " + ca.getClass().getSimpleName());
@@ -971,15 +975,18 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 //		    		log.debug("parent " + parent.getClass().getSimpleName());
 //		    		log.debug("parent " + parent.getElement().getNodeName());
 		    		
+		    		/*
 		    		boolean isNested = (parent instanceof TableBox
 		    				|| (parent!=null
 		    					&& parent.getElement()!=null
 		    					&& ( parent.getElement().getNodeName().equals("table")
 		    						 || parent.getElement().getNodeName().equals("td"))));
+		    		// 2017 08 30, could look at block stack instead?
+		    		*/
 		    		
 //		    		log.debug("is nested? " + isNested);
 		            
-		    		tableHelper.setupTblPr( tableBox,  tbl,  tableProperties, isNested);
+		    		tableHelper.setupTblPr( tableBox,  tbl,  tableProperties);
 		    		tableHelper.setupTblGrid( tableBox,  tbl,  tableProperties);
 		            
 	            	
@@ -2085,11 +2092,13 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             	pPr.setInd(null); 
             } else 
 */            	
+    		
+    		int tableIndentContrib = tableHelper.tableIndentContrib(this.contentContextStack);
             if (listHelper.peekListItemStateStack().isFirstChild) {
 
             	// totalPadding gives indent to the bullet;
             	log.debug("List indent case 2: pPr indent set for item itself");
-            	pPr.setInd(listHelper.createIndent(totalPadding-tableIndentContrib(), true)); 
+            	pPr.setInd(listHelper.createIndent(totalPadding-tableIndentContrib, true)); 
             	
             } else {
             	
@@ -2098,7 +2107,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             	// assume 360 twips
             	
             	log.debug("List indent case 3: pPr indent set for follwing child");
-            	pPr.setInd(listHelper.createIndent(totalPadding + 360-tableIndentContrib(), false));
+            	pPr.setInd(listHelper.createIndent(totalPadding + 360-tableIndentContrib, false));
             } 
         	
             listHelper.peekListItemStateStack().isFirstChild=false;
@@ -2135,40 +2144,6 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     }
     
     
-    /**
-     * Where list item indentation is affected by the presence of tables,
-     * we could adjust for this in the numbering, or in an ad hoc property.
-     * Which is better?  Ad hoc property is better, since in a contrived
-     * example, not all list items are in the table. 
-     * See example src/test/resources/numbering/indents_with_tables.html
-     * 
-     * @return
-     */
-    private int tableIndentContrib() {
-    	
-    	int tblIndents = 0;
-    	
-    	for (ContentAccessor ca : contentContextStack) {
-    		
-    		log.debug(ca.getClass().getName());
-    		
-    		if (ca instanceof Tbl) {
-    			Tbl tbl = (Tbl)ca;
-    			if (tbl.getTblPr()!=null
-    					&& tbl.getTblPr().getTblInd()!=null
-    					&& tbl.getTblPr().getTblInd().getW() !=null) {
-    				
-    				tblIndents = tblIndents + tbl.getTblPr().getTblInd().getW().intValue();
-    				
-    			}
-    		}
-    		
-    	}
-    	
-    	log.debug("taking into account tbl indent: " + tblIndents);
-    	
-    	return tblIndents;
-    }
 
     private void addRunProperties(RPr rPr, Map cssMap) {
     	
@@ -2357,6 +2332,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     }
 
 	
+
 	public final static class TableProperties {
 		
 		private TableBox tableBox;

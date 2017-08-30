@@ -3,7 +3,7 @@ package org.docx4j.convert.in.xhtml;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Map;
+import java.util.LinkedList;
 
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.XmlUtils;
@@ -49,9 +49,6 @@ import org.docx4j.wml.TrPr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
-import org.w3c.dom.css.CSSValue;
-
-import javax.xml.bind.JAXBElement;
 
 public class TableHelper {
 	
@@ -68,9 +65,8 @@ public class TableHelper {
      * @param cssTable
      * @param tbl
      * @param tableProperties
-     * @param isNested - don't adjust indent for table in table
      */
-    protected void setupTblPr(TableBox cssTable, Tbl tbl, TableProperties tableProperties, boolean isNested) {
+    protected void setupTblPr(TableBox cssTable, Tbl tbl, TableProperties tableProperties) {
     	
         Element e = cssTable.getElement();     	
 
@@ -111,25 +107,37 @@ public class TableHelper {
 		// But want just margin.left
 		
         log.debug("list depth:" + importer.getListHelper().getDepth());
-        if (importer.getListHelper().getDepth()>0
-        		&& !isNested) { // don't adjust indent for table in table
-        	
-        	// Special handling for indent, since we need to sum values for ancestors
-    		int totalPadding = importer.getListHelper().getAbsoluteListItemIndent(cssTable);
-            
+        if (importer.getListHelper().getDepth()>0 ) { 
+
     		TblWidth tblInd = tblPr.getTblInd();
     		if (tblInd==null) {
     			tblInd = new TblWidth();
     			tblPr.setTblInd(tblInd);
     		}
-        	// totalPadding gives indent to the bullet;
-        	// we want to align this subsequent p with the preceding text;
-        	// assume 360 twips
-    		tblInd.setW(BigInteger.valueOf(totalPadding + 360 + 115)); // TODO FIX 360, and take cssTable.getMargin() into account
     		tblInd.setType(TblWidth.TYPE_DXA);
-            	        	
-    		importer.getListHelper().peekListItemStateStack().isFirstChild=false;
-            
+        	
+        	// Handle using the same logic we use for indenting a paragraph
+    		int totalPadding = importer.getListHelper().getAbsoluteListItemIndent(cssTable);
+    		int tableIndentContrib = tableIndentContrib(importer.getContentContextStack());
+            if (importer.getListHelper().peekListItemStateStack().isFirstChild) {
+            	
+
+            	// totalPadding gives indent to the bullet;
+            	log.debug("Table in list indent case 1: tblInd set for item itself");
+            	tblInd.setW(BigInteger.valueOf(totalPadding-tableIndentContrib)); 
+            	
+            } else {
+            	
+            	// totalPadding gives indent to the bullet;
+            	// we want to align this subsequent p with the preceding text;
+            	// assume 360 twips
+            	
+            	log.debug("Table in list indent case 2: tblInd set for follwing child");
+            	tblInd.setW(BigInteger.valueOf(totalPadding+360-tableIndentContrib)); 
+            } 
+        	
+            importer.getListHelper().peekListItemStateStack().isFirstChild=false;
+    		
         } else if (cssTable.getMargin() !=null
 				&& cssTable.getMargin().left()>0) {
         	
@@ -685,6 +693,40 @@ public class TableHelper {
 		tcPr.setTcW(tblW);    	
     }
 
+    /**
+     * Where list item indentation is affected by the presence of tables,
+     * we could adjust for this in the numbering, or in an ad hoc property.
+     * Which is better?  Ad hoc property is better, since in a contrived
+     * example, not all list items are in the table. 
+     * See example src/test/resources/numbering/indents_with_tables.html
+     * 
+     * @return
+     */
+    protected int tableIndentContrib(LinkedList<ContentAccessor> contentContextStack) {
+    	
+    	int tblIndents = 0;
+    	
+    	for (ContentAccessor ca : contentContextStack) {
+    		
+    		log.debug(ca.getClass().getName());
+    		
+    		if (ca instanceof Tbl) {
+    			Tbl tbl = (Tbl)ca;
+    			if (tbl.getTblPr()!=null
+    					&& tbl.getTblPr().getTblInd()!=null
+    					&& tbl.getTblPr().getTblInd().getW() !=null) {
+    				
+    				tblIndents = tblIndents + tbl.getTblPr().getTblInd().getW().intValue();
+    				
+    			}
+    		}
+    		
+    	}
+    	
+    	log.debug("taking into account tbl indent: " + tblIndents);
+    	
+    	return tblIndents;
+    }
     
 	
 
