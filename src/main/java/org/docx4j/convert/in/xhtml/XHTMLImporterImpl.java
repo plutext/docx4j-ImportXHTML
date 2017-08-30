@@ -89,6 +89,7 @@ import org.docx4j.wml.HpsMeasure;
 import org.docx4j.wml.P;
 import org.docx4j.wml.P.Hyperlink;
 import org.docx4j.wml.PPr;
+import org.docx4j.wml.PPrBase.Ind;
 import org.docx4j.wml.PPrBase.PStyle;
 import org.docx4j.wml.R;
 import org.docx4j.wml.RFonts;
@@ -2075,19 +2076,20 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         	// Special handling for indent, since we need to sum values for ancestors
     		int totalPadding = getListHelper().getAbsoluteListItemIndent(styleable);
             
-        	// FS default css is 40px padding per level = 600 twip
+/*        	// FS default css is 40px padding per level = 600 twip
             int defaultInd =  600 * listHelper.getDepth();
             if (totalPadding==defaultInd
             		&& listHelper.peekListItemStateStack().isFirstChild) {
             	// we can't tell whether this is just a default, so ignore it; use the numbering setting
-            	log.debug("explicitly unsetting pPr indent");
+            	log.debug("List indent case 1: pPr indent null; defer to numbering");
             	pPr.setInd(null); 
-            } else if (listHelper.peekListItemStateStack().isFirstChild) {
+            } else 
+*/            	
+            if (listHelper.peekListItemStateStack().isFirstChild) {
 
             	// totalPadding gives indent to the bullet;
-            	pPr.setInd(listHelper.getInd(totalPadding-tableIndentContrib())); 
-            	
-            	// TODO: subtract table indent
+            	log.debug("List indent case 2: pPr indent set for item itself");
+            	pPr.setInd(listHelper.createIndent(totalPadding-tableIndentContrib(), true)); 
             	
             } else {
             	
@@ -2095,10 +2097,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             	// we want to align this subsequent p with the preceding text;
             	// assume 360 twips
             	
-            	pPr.setInd(listHelper.getInd(totalPadding + 360-tableIndentContrib())); // TODO FIXME
-            	
-            	// TODO: subtract table indent
-            	
+            	log.debug("List indent case 3: pPr indent set for follwing child");
+            	pPr.setInd(listHelper.createIndent(totalPadding + 360-tableIndentContrib(), false));
             } 
         	
             listHelper.peekListItemStateStack().isFirstChild=false;
@@ -2134,6 +2134,16 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	
     }
     
+    
+    /**
+     * Where list item indentation is affected by the presence of tables,
+     * we could adjust for this in the numbering, or in an ad hoc property.
+     * Which is better?  Ad hoc property is better, since in a contrived
+     * example, not all list items are in the table. 
+     * See example src/test/resources/numbering/indents_with_tables.html
+     * 
+     * @return
+     */
     private int tableIndentContrib() {
     	
     	int tblIndents = 0;
