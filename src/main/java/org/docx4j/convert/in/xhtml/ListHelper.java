@@ -300,17 +300,26 @@ public class ListHelper {
 		return rfonts;
 	}
 
-	protected Ind getInd(int twip) {
+	/**
+	 * Create an Ind object.  For the list item itself, 
+	 * we'll want it hanging.  For any additional 
+	 * paragraphs in the list item, it should be a simple 
+	 * indent (ie not hanging)  
+	 * @param twip
+	 * @return
+	 */
+	protected Ind createIndent(int twip, boolean hanging) {
 
 		if (twip < 40) twip = 40;  // TMP FIXME!
 
 		Ind ind = Context.getWmlObjectFactory().createPPrBaseInd();
 
-//		ind.setLeft(BigInteger.valueOf(twip) );
-
-		// Hanging hack
-		ind.setLeft(BigInteger.valueOf(twip+360) );
-		ind.setHanging(BigInteger.valueOf(360) );
+		if (hanging) {
+			ind.setLeft(BigInteger.valueOf(twip+360) );
+			ind.setHanging(BigInteger.valueOf(360) );
+		} else {
+			ind.setLeft(BigInteger.valueOf(twip) );			
+		}
 		return ind;
 	}
 
@@ -373,7 +382,7 @@ public class ListHelper {
 		PPr ppr = wmlObjectFactory.createPPr();
 		lvl.setPPr(ppr);
 
-		ppr.setInd(getInd(getAncestorIndentation()));
+		ppr.setInd(createIndent(getAncestorIndentation(), true));
 
 		// Create object for numFmt
 		NumFmt numfmt = wmlObjectFactory.createNumFmt();
@@ -563,7 +572,7 @@ public class ListHelper {
 				PPr ppr = wmlObjectFactory.createPPr();
 				overrideLvl.setPPr(ppr);
 
-				ppr.setInd(getInd(getAncestorIndentation()));
+				ppr.setInd(createIndent(getAncestorIndentation(), true));
 
 				// Create object for numFmt
 				NumFmt numfmt = wmlObjectFactory.createNumFmt();

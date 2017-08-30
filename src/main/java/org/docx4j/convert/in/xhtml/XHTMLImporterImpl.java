@@ -89,6 +89,7 @@ import org.docx4j.wml.HpsMeasure;
 import org.docx4j.wml.P;
 import org.docx4j.wml.P.Hyperlink;
 import org.docx4j.wml.PPr;
+import org.docx4j.wml.PPrBase.Ind;
 import org.docx4j.wml.PPrBase.PStyle;
 import org.docx4j.wml.R;
 import org.docx4j.wml.RFonts;
@@ -762,6 +763,10 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      */
     private LinkedList<ContentAccessor> contentContextStack = new LinkedList<ContentAccessor>();
     
+	protected LinkedList<ContentAccessor> getContentContextStack() {
+		return contentContextStack;
+	}
+    
     private void pushBlockStack(ContentAccessor ca) {
     	
     	//log.debug("pushed " + ca.getClass().getSimpleName());
@@ -970,15 +975,18 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 //		    		log.debug("parent " + parent.getClass().getSimpleName());
 //		    		log.debug("parent " + parent.getElement().getNodeName());
 		    		
+		    		/*
 		    		boolean isNested = (parent instanceof TableBox
 		    				|| (parent!=null
 		    					&& parent.getElement()!=null
 		    					&& ( parent.getElement().getNodeName().equals("table")
 		    						 || parent.getElement().getNodeName().equals("td"))));
+		    		// 2017 08 30, could look at block stack instead?
+		    		*/
 		    		
 //		    		log.debug("is nested? " + isNested);
 		            
-		    		tableHelper.setupTblPr( tableBox,  tbl,  tableProperties, isNested);
+		    		tableHelper.setupTblPr( tableBox,  tbl,  tableProperties);
 		    		tableHelper.setupTblGrid( tableBox,  tbl,  tableProperties);
 		            
 	            	
@@ -2075,17 +2083,22 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         	// Special handling for indent, since we need to sum values for ancestors
     		int totalPadding = getListHelper().getAbsoluteListItemIndent(styleable);
             
-        	// FS default css is 40px padding per level = 600 twip
+/*        	// FS default css is 40px padding per level = 600 twip
             int defaultInd =  600 * listHelper.getDepth();
             if (totalPadding==defaultInd
             		&& listHelper.peekListItemStateStack().isFirstChild) {
             	// we can't tell whether this is just a default, so ignore it; use the numbering setting
-            	log.debug("explicitly unsetting pPr indent");
+            	log.debug("List indent case 1: pPr indent null; defer to numbering");
             	pPr.setInd(null); 
-            } else if (listHelper.peekListItemStateStack().isFirstChild) {
+            } else 
+*/            	
+    		
+    		int tableIndentContrib = tableHelper.tableIndentContrib(this.contentContextStack);
+            if (listHelper.peekListItemStateStack().isFirstChild) {
 
             	// totalPadding gives indent to the bullet;
-            	pPr.setInd(listHelper.getInd(totalPadding)); 
+            	log.debug("List indent case 2: pPr indent set for item itself");
+            	pPr.setInd(listHelper.createIndent(totalPadding-tableIndentContrib, true)); 
             	
             } else {
             	
@@ -2093,7 +2106,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             	// we want to align this subsequent p with the preceding text;
             	// assume 360 twips
             	
-            	pPr.setInd(listHelper.getInd(totalPadding + 360)); // TODO FIXME
+            	log.debug("List indent case 3: pPr indent set for follwing child");
+            	pPr.setInd(listHelper.createIndent(totalPadding + 360-tableIndentContrib, false));
             } 
         	
             listHelper.peekListItemStateStack().isFirstChild=false;
@@ -2129,7 +2143,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	
     }
     
-    	
+    
 
     private void addRunProperties(RPr rPr, Map cssMap) {
     	
@@ -2318,6 +2332,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     }
 
 	
+
 	public final static class TableProperties {
 		
 		private TableBox tableBox;
