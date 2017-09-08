@@ -90,6 +90,7 @@ import org.docx4j.wml.P;
 import org.docx4j.wml.P.Hyperlink;
 import org.docx4j.wml.PPr;
 import org.docx4j.wml.PPrBase.Ind;
+import org.docx4j.wml.PPrBase.NumPr;
 import org.docx4j.wml.PPrBase.PStyle;
 import org.docx4j.wml.R;
 import org.docx4j.wml.RFonts;
@@ -878,7 +879,6 @@ public class XHTMLImporterImpl implements XHTMLImporter {
                 if (e.getNodeName().equals("div")) {
                 	
                 	if (divHandler!=null) {
-                		
                 		ContentAccessor ca = divHandler.enter(blockBox, this.contentContextStack.peek());
                 		if (ca!=null) {
                 			pushBlockStack(ca);
@@ -886,10 +886,36 @@ public class XHTMLImporterImpl implements XHTMLImporter {
                 		}
                 	}
                 	
-//                	attachmentPointP = this.getCurrentParagraph(true);
-//                	attachmentPointP.setPPr(this.getPPr(blockBox, cssMap));
-                	this.getCurrentParagraph(true).setPPr(this.getPPr(blockBox, cssMap));
-                	
+                	/* consider:
+                	 * 
+                	 *     <li><div>ListItem2</div></li>
+                	 * 
+                	 * That div has eg list-style-type: decimal; but display: block; 
+                	 * and won't have written the number yet, so handle this
+                	 * 
+                	 */
+                	if (/* its a block (the inline case is ok; list-item is TBD) */
+                			box.getStyle().getDisplayMine().equals("block")
+                			
+                		/* and we have an inherited definition */
+                			&& this.getCurrentParagraph(false)!=null
+                			&& this.getCurrentParagraph(false).getPPr()!=null 
+                			&& this.getCurrentParagraph(false).getPPr().getNumPr()!=null 
+                			) {
+                		NumPr numPr = this.getCurrentParagraph(false).getPPr().getNumPr();
+                    	this.getCurrentParagraph(true).setPPr(this.getPPr(blockBox, cssMap));
+                    	this.getCurrentParagraph(false).getPPr().setNumPr(numPr);
+                    	/* actually, we should be using the definition found here, 
+                    	 * since it could be intended to override! 
+                    	 * 
+                    	 * But currently we only write a list definition at line ~1100 where isListItem.
+                    	 * so for now we don't support overriding the list definition
+                    	 * */ 
+                	} else {
+                		// usual case
+                    	this.getCurrentParagraph(true).setPPr(this.getPPr(blockBox, cssMap));
+                		
+                	}
                 	
                 } else if (box.getStyle().getDisplayMine().equals("inline") ) {
             		
@@ -1208,19 +1234,17 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	            	
 	            	log.debug("default handling for " + e.getNodeName());
 	            	
-//	            	if (e.getNodeName().equals("figcaption")) {
-//	            		// force new p?
-//	            	}
-	            	
 	            	// Paragraph processing.  Generally, we'll create a new P.
 	            	// An exception to that is li/p[1], where we want to use 
 	            	// the p created for the li.
 	            	if (listHelper.getDepth()>0
 	            			&& !listHelper.peekListItemStateStack().haveMergedFirstP) {
 	            		// use existing attachmentPoint
+	            		log.debug("use existing attachmentPoint");
 	            		listHelper.peekListItemStateStack().haveMergedFirstP = true;
 	            	} else {
 	            		
+	            		log.debug("create new attachmentPoint");
 		            	P currentP = this.getCurrentParagraph(true);
 		                currentP.setPPr(this.getPPr(blockBox, cssMap));
 		                
@@ -2018,6 +2042,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     private boolean isListItem(Element e) {
     	
     	return e.getNodeName().equals("li");
+    	// TODO better: display: list-item; ?
     }
     
 	
