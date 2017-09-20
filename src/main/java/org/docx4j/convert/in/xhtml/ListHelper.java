@@ -79,6 +79,12 @@ public class ListHelper {
 		this.ndp=ndp;
 	}
 
+	/**
+	 * The indentation after the number, typically the same
+	 * as the hanging indent, which lines up subsequent paragraphs.
+	 */
+	protected static final int INDENT_AFTER = 360;
+	
 	private XHTMLImporterImpl importer;
 
 	// Commented out for now; See list.txt
@@ -151,7 +157,16 @@ public class ListHelper {
 		 */
 		private Numbering.Num concreteList;
 		
+		/**
+		 * In this list item, is this the content to be displayed
+		 * on the same line as the bullet/number? (versus an 
+		 * additional indented paragraph or table etc)
+		 */
 		protected boolean isFirstChild = true;
+		
+		/**
+		 * Facilitate special handling for case li/p[1]
+		 */
 		protected boolean haveMergedFirstP = false;
 		
 		/**
@@ -323,7 +338,7 @@ public class ListHelper {
 		return ind;
 	}
 
-	protected int getAncestorIndentation() {
+	protected int getSelfAndAncestorIndentation() {
 
 		// Indentation.  Sum of padding-left and margin-left on ancestor ol|ul
 		// Expectation is that one or other would generally be used.
@@ -341,13 +356,24 @@ public class ListHelper {
 			totalPadding +=Indent.getTwip(margin.getCSSPrimitiveValue());
 
 //			log.debug("+margin-left: " + totalPadding);
-
+			
+			// TODO: CSSName.BORDER_LEFT_WIDTH if CSSName.BORDER_LEFT_STYLE is not none
 		}
 		return totalPadding;
 	}
 
-	protected int getAbsoluteListItemIndent(Styleable styleable) {
+	/**
+	 * The indentation of this object, plus its ancestors in the list stack 
+	 * 
+	 * @param styleable
+	 * @return
+	 */
+	protected int getAbsoluteIndent(Styleable styleable) {
 
+		if (styleable== peekListStack()) {
+			return getSelfAndAncestorIndentation();
+		}
+		
 		int totalPadding = 0;
 		LengthValue padding = (LengthValue)styleable.getStyle().valueByName(CSSName.PADDING_LEFT);
 		totalPadding +=Indent.getTwip(padding.getCSSPrimitiveValue());
@@ -355,7 +381,7 @@ public class ListHelper {
 		LengthValue margin = (LengthValue)styleable.getStyle().valueByName(CSSName.MARGIN_LEFT);
 		totalPadding +=Indent.getTwip(margin.getCSSPrimitiveValue());
 
-		totalPadding +=getAncestorIndentation();
+		totalPadding +=getSelfAndAncestorIndentation();
 
 		return totalPadding;
 	}
@@ -382,7 +408,7 @@ public class ListHelper {
 		PPr ppr = wmlObjectFactory.createPPr();
 		lvl.setPPr(ppr);
 
-		ppr.setInd(createIndent(getAncestorIndentation(), true));
+		ppr.setInd(createIndent(getSelfAndAncestorIndentation(), true));
 
 		// Create object for numFmt
 		NumFmt numfmt = wmlObjectFactory.createNumFmt();
@@ -572,7 +598,7 @@ public class ListHelper {
 				PPr ppr = wmlObjectFactory.createPPr();
 				overrideLvl.setPPr(ppr);
 
-				ppr.setInd(createIndent(getAncestorIndentation(), true));
+				ppr.setInd(createIndent(getSelfAndAncestorIndentation(), true));
 
 				// Create object for numFmt
 				NumFmt numfmt = wmlObjectFactory.createNumFmt();

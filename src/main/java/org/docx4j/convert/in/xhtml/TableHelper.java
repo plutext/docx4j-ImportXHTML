@@ -117,7 +117,7 @@ public class TableHelper {
     		tblInd.setType(TblWidth.TYPE_DXA);
         	
         	// Handle using the same logic we use for indenting a paragraph
-    		int totalPadding = importer.getListHelper().getAbsoluteListItemIndent(cssTable);
+    		int totalPadding = importer.getListHelper().getAbsoluteIndent(cssTable);
     		int tableIndentContrib = tableIndentContrib(importer.getContentContextStack());
             if (importer.getListHelper().peekListItemStateStack().isFirstChild) {
             	
@@ -125,6 +125,7 @@ public class TableHelper {
             	// totalPadding gives indent to the bullet;
             	log.debug("Table in list indent case 1: tblInd set for item itself");
             	tblInd.setW(BigInteger.valueOf(totalPadding-tableIndentContrib)); 
+                importer.getListHelper().peekListItemStateStack().isFirstChild=false;
             	
             } else {
             	
@@ -133,10 +134,9 @@ public class TableHelper {
             	// assume 360 twips
             	
             	log.debug("Table in list indent case 2: tblInd set for follwing child");
-            	tblInd.setW(BigInteger.valueOf(totalPadding+360-tableIndentContrib)); 
+            	tblInd.setW(BigInteger.valueOf(totalPadding+ListHelper.INDENT_AFTER-tableIndentContrib)); 
             } 
         	
-            importer.getListHelper().peekListItemStateStack().isFirstChild=false;
     		
         } else if (cssTable.getMargin() !=null
 				&& cssTable.getMargin().left()>0) {

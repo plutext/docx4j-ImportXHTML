@@ -57,6 +57,7 @@ import org.docx4j.model.PropertyResolver;
 import org.docx4j.model.properties.Property;
 import org.docx4j.model.properties.PropertyFactory;
 import org.docx4j.model.properties.paragraph.AbstractParagraphProperty;
+import org.docx4j.model.properties.paragraph.Indent;
 import org.docx4j.model.properties.run.AbstractRunProperty;
 import org.docx4j.model.properties.run.FontSize;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
@@ -1303,7 +1304,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
                         		markuprange = null;
                         	}
 //                    		inAlreadyProcessed = false;        		
-	                        
+
+                        	// Handle case:  <li>plain text
+                        	if (listHelper.getDepth()>0) {
+        	            		listHelper.peekListItemStateStack().haveMergedFirstP = true;
+                        	}
 	                    }
 	                    break;
 
@@ -2106,7 +2111,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         	 */
         	
         	// Special handling for indent, since we need to sum values for ancestors
-    		int totalPadding = getListHelper().getAbsoluteListItemIndent(styleable);
+    		int totalPadding = getListHelper().getAbsoluteIndent(getListHelper().peekListStack());
+    		log.debug("totalPadding: " + totalPadding);
             
 /*        	// FS default css is 40px padding per level = 600 twip
             int defaultInd =  600 * listHelper.getDepth();
@@ -2119,11 +2125,31 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 */            	
     		
     		int tableIndentContrib = tableHelper.tableIndentContrib(this.contentContextStack);
-            if (listHelper.peekListItemStateStack().isFirstChild) {
+    		if (tableIndentContrib>0) {
+    			// we are in a table, so override the numPr indent
+    			if (listHelper.peekListItemStateStack().isFirstChild) {
+
+                	// totalPadding gives indent to the bullet;
+                	log.debug("List indent table case : pPr indent set for item itself");
+                	pPr.setInd(listHelper.createIndent(totalPadding-tableIndentContrib, true)); 
+                    listHelper.peekListItemStateStack().isFirstChild=false;
+    			} else {
+                	pPr.setInd(listHelper.createIndent(totalPadding 
+                			+ ListHelper.INDENT_AFTER
+                			+ getLocalIndentation(styleable) 
+                			-tableIndentContrib, false));
+    				
+    			}
+    			
+    		} else if (listHelper.peekListItemStateStack().isFirstChild) {
 
             	// totalPadding gives indent to the bullet;
             	log.debug("List indent case 2: pPr indent set for item itself");
-            	pPr.setInd(listHelper.createIndent(totalPadding-tableIndentContrib, true)); 
+            	//pPr.setInd(listHelper.createIndent(totalPadding-tableIndentContrib, true)); 
+            	pPr.setInd(null); // use the indent in numPr
+
+                listHelper.peekListItemStateStack().isFirstChild=false;
+                log.debug("first child in this list item now set to false");
             	
             } else {
             	
@@ -2132,10 +2158,19 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             	// assume 360 twips
             	
             	log.debug("List indent case 3: pPr indent set for follwing child");
-            	pPr.setInd(listHelper.createIndent(totalPadding + 360-tableIndentContrib, false));
+            	pPr.setInd(listHelper.createIndent(totalPadding 
+            			+ ListHelper.INDENT_AFTER
+            			+ getLocalIndentation(styleable) 
+            			-tableIndentContrib, false));
             } 
         	
-            listHelper.peekListItemStateStack().isFirstChild=false;
+            
+        } else {
+        	// not in list; handle indent
+        	log.debug("not in list; handle indent");
+    		Ind ind = Context.getWmlObjectFactory().createPPrBaseInd();
+    		ind.setLeft(BigInteger.valueOf(getAncestorIndentation(styleable)) );			
+    		pPr.setInd(ind);
         }
         
                 
@@ -2167,9 +2202,85 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	log.debug(XmlUtils.marshaltoString(pPr, true, true));
     	
     }
-    
-    
 
+	/**
+	 * Inside a list item, get the contribution of any div.
+	 */
+	protected int getLocalIndentation(Styleable styleable) {
+
+		int localPadding = 0;
+		
+		Object o = styleable;
+		
+		while (o !=null
+				&& o instanceof BlockBox 
+				&& !(o instanceof org.docx4j.org.xhtmlrenderer.newtable.TableCellBox) 
+				&& !( ((BlockBox)o).getElement()!=null && ((BlockBox)o).getElement().getLocalName().equals("li"))
+				) {
+			
+			BlockBox bb = (BlockBox)o;
+			localPadding += getBBIndentContrib(bb);
+			
+			o = bb.getContainingBlock();
+		}
+
+		return localPadding;
+	}
+    
+	protected int getAncestorIndentation(Styleable styleable) {
+
+		// Indentation.  Sum of padding-left and margin-left on ancestor divs
+		// Expectation is that one or other would generally be used.
+		int totalPadding = 0;
+		
+		Object o = styleable;
+		
+		while (o !=null
+				&& o instanceof BlockBox 
+				/* && !(o instanceof org.docx4j.org.xhtmlrenderer.newtable.TableCellBox) */ //  need to stop if we encounter a table cell? 
+				) {
+			
+			BlockBox bb = (BlockBox)o;
+			totalPadding += getBBIndentContrib(bb);
+			
+			o = bb.getContainingBlock();
+		}
+		return totalPadding;
+	}
+    
+	private int getBBIndentContrib(BlockBox bb) {
+
+		int paddingI = 0;
+
+		if (bb.getElement()==null) {
+			log.debug("null ... " + bb.getClass().getName()) ;
+		} else {
+			log.debug(bb.getElement().getLocalName() + bb.getClass().getName()) ;				
+		}
+
+		if (bb.getStyle()!=null
+				&& bb.getStyle().valueByName(CSSName.PADDING_LEFT)!=null) {
+				
+			LengthValue padding = (LengthValue)bb.getStyle().valueByName(CSSName.PADDING_LEFT);
+			paddingI +=Indent.getTwip(padding.getCSSPrimitiveValue());
+		}
+//		log.debug("+padding-left: " + totalPadding);
+
+		if (bb.getStyle()!=null
+				&& bb.getStyle().valueByName(CSSName.MARGIN_LEFT)!=null) {
+			
+			LengthValue margin = (LengthValue)bb.getStyle().valueByName(CSSName.MARGIN_LEFT);
+			paddingI +=Indent.getTwip(margin.getCSSPrimitiveValue());
+		}
+//		log.debug("+margin-left: " + totalPadding);
+		
+		// TODO: CSSName.BORDER_LEFT_WIDTH if CSSName.BORDER_LEFT_STYLE is not none
+		log.debug("adding: " + paddingI);
+		
+		return paddingI;
+	}
+	
+	
     private void addRunProperties(RPr rPr, Map cssMap) {
     	
     	log.debug("addRunProperties");
