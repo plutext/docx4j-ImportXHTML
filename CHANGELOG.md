@@ -2,6 +2,35 @@ CHANGELOG
 =========
 
 
+Version 3.3.6
+=============
+
+Release date
+------------
+
+7 October 2017
+
+
+Notable Changes in Version 3.3.6
+---------------------------------
+
+nested list improvements (including indentation where tables and lists are mixed)
+
+indentation of nested divs
+
+support max-width on image
+
+
+
+Compatibility notes
+-------------------
+
+Version number 3.3.6 assigned, to align with corresponding docx4j release
+
+docx4j 3.3.6 or later
+
+
+
 Version 3.3.4 (minor release)
 ===============
 

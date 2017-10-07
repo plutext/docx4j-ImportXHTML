@@ -6,7 +6,7 @@
     <property name="source" value="1.5"/>
 	<property name="dist" value="./dist"/>
 	
-	<property name="version" value="3.3.4"/>
+	<property name="version" value="3.3.6"/>
 
     <property name="src.main.java.dir" value="src/main/java"/>
     
@@ -56,7 +56,7 @@
         <pathelement location="${m2Repository}/org/docx4j/xhtmlrenderer/3.0.0/xhtmlrenderer-3.0.0.jar"/>
         <pathelement location="${m2Repository}/com/lowagie/itext/2.1.7/itext-2.1.7.jar"/>
         
-        <pathelement location="${m2Repository}/org/docx4j/docx4j/3.3.4/docx4j-3.3.4.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/docx4j/3.3.6/docx4j-3.3.6.jar"/>
         <pathelement location="${m2Repository}/org/plutext/jaxb-svg11/1.0.2/jaxb-svg11-1.0.2.jar"/>
         <pathelement location="${m2Repository}/net/engio/mbassador/1.1.10/mbassador-1.1.10.jar"/>
         <pathelement location="${m2Repository}/org/slf4j/jcl-over-slf4j/1.7.5/jcl-over-slf4j-1.7.5.jar"/>
