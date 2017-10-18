@@ -795,6 +795,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     P attachmentPointP = null;
     P.Hyperlink attachmentPointH = null;
     private P getCurrentParagraph(boolean create) {
+    	
     	if (attachmentPointP !=null) return attachmentPointP;  
     	if (create) {
 //    		log.debug("defining new p", new Throwable());
@@ -1098,7 +1099,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 					// search for vertically spanned cells to the right from current, and insert dummy cells after it
 		            tableHelper.insertDummyVMergedCells(trContext, tcb, false);
 
-            	} else if (isListItem(blockBox.getElement())) {
+            	} else if (isListItem(blockBox.getElement())
+            			/*
+            			 *   <li>
+					            <p>Item 2</p>
+					            DON"T TRIGGER THIS LINE
+					        </li>
+            			 */
+            			&& !(blockBox instanceof org.docx4j.org.xhtmlrenderer.render.AnonymousBlockBox)) {
 
 		            // Paragraph level styling
 	            	//P currentP = this.getCurrentParagraph(true);
@@ -1328,7 +1336,6 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             log.debug("Done processing children of " + box.getClass().getName() );
             // contentContext gets its old value back each time recursion finishes,
             // ensuring elements are added at the appropriate level (eg inside tr) 
-
 	    	if (e.getNodeName().equals("ol")
 	    			|| e.getNodeName().equals("ul") ) {
 	    		
