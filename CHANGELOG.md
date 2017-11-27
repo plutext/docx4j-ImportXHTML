@@ -2,6 +2,23 @@ CHANGELOG
 =========
 
 
+Version 3.3.6-1
+===============
+
+Release date
+------------
+
+27 November 2017
+
+
+Changes in Version 3.3.6-1
+--------------------------
+
+Avoid inserting an additional list number where mixed content is
+encountered in a list item
+
+
+
 Version 3.3.6
 =============
 
