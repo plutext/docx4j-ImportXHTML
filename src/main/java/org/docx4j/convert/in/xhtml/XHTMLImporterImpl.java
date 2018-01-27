@@ -260,16 +260,20 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	 */
 	public DocxRenderer getRenderer() {
 		if (renderer==null) {
+		   
+		   String css = null;
 			
 			if (paragraphFormatting==FormattingOption.CLASS_PLUS_OTHER
 					|| paragraphFormatting==FormattingOption.CLASS_TO_STYLE_ONLY ) {
 					// Not strictly necessary in the CLASS_TO_STYLE_ONLY case
 				
-				renderer = new DocxRenderer(stylesToCSS());
+				css = stylesToCSS();
 				
-			} else {			
-				renderer = new DocxRenderer();
 			}
+
+			// calculated dotsPerPoint based on the configured DPI
+			float dotsPerPoint = 20f * UnitsOfMeasurement.DPI / 72;
+			renderer = new DocxRenderer(css, dotsPerPoint);
 			
 		}
 		
@@ -1656,9 +1660,13 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 			((XHTMLImageHandlerDefault)xHTMLImageHandler).setMaxWidth(oldMaxWidth);
 		}
 	}
-	
-	private float dotsToTwip(float dots) {
-		return dots * 4f / 3f; // TODO: Use UnitsOfMeasurement defined DPI
+
+   private float dotsToTwip(float dots) {
+      return dotsToTwip(dots, UnitsOfMeasurement.DPI);
+   }
+
+	private float dotsToTwip(float dots, int dpi) {
+	   return dots * 72 / dpi;
 	}
 	
 	

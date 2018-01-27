@@ -130,7 +130,6 @@ public class ContentControlBindingExtensions {
 		BindingHandler.setHyperlinkStyle("Hyperlink");						
 		startTime = System.currentTimeMillis();
 
-		
 //			AtomicInteger bookmarkId = odh.getNextBookmarkId();
 		AtomicInteger bookmarkId = new AtomicInteger();
 
