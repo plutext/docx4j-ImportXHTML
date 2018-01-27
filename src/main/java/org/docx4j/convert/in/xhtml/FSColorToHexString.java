@@ -28,9 +28,9 @@
 package org.docx4j.convert.in.xhtml;
 
 import org.docx4j.UnitsOfMeasurement;
-import org.docx4j.org.xhtmlrenderer.css.parser.FSColor;
-import org.docx4j.org.xhtmlrenderer.css.parser.FSRGBColor;
-import org.docx4j.org.xhtmlrenderer.css.parser.PropertyValue;
+import org.xhtmlrenderer.css.parser.FSColor;
+import org.xhtmlrenderer.css.parser.FSRGBColor;
+import org.xhtmlrenderer.css.parser.PropertyValue;
 import org.w3c.dom.css.CSSPrimitiveValue;
 
 public class FSColorToHexString {

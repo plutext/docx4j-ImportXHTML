@@ -5,10 +5,10 @@ import java.util.Map;
 
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.jaxb.Context;
-import org.docx4j.org.xhtmlrenderer.css.constants.CSSName;
-import org.docx4j.org.xhtmlrenderer.css.style.FSDerivedValue;
-import org.docx4j.org.xhtmlrenderer.css.style.derived.LengthValue;
-import org.docx4j.org.xhtmlrenderer.layout.Styleable;
+import org.xhtmlrenderer.css.constants.CSSName;
+import org.xhtmlrenderer.css.style.FSDerivedValue;
+import org.xhtmlrenderer.css.style.derived.LengthValue;
+import org.xhtmlrenderer.layout.Styleable;
 import org.docx4j.wml.CTBorder;
 import org.docx4j.wml.PPr;
 import org.docx4j.wml.PPrBase.PBdr;

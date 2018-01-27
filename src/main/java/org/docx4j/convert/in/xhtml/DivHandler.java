@@ -1,6 +1,6 @@
 package org.docx4j.convert.in.xhtml;
 
-import org.docx4j.org.xhtmlrenderer.render.BlockBox;
+import org.xhtmlrenderer.render.BlockBox;
 import org.docx4j.wml.ContentAccessor;
 
 public interface DivHandler {
