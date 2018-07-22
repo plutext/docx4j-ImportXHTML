@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+Version 6.0.0
+=============
+
+Release date
+------------
+
+22 July 2018
+
+
+Changes in Version 6.0.0
+------------------------
+
+None. This release is identical to 3.3.6-1.
+
+Docx4j 6.x will be the last series supporting Java 6.  
+(docx4j 7.x, when released, will require Java 7+) 
+
+This release is numbered 6.0.0 to signify it supports
+Java 6, and to align with docx4j's 6.0 release. 
+
 
 Version 3.3.6-1
 ===============
