@@ -27,15 +27,17 @@
  */
 package org.docx4j.convert.in.xhtml;
 
+import java.util.List;
+
+import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.docx4j.wml.*;
+import org.docx4j.wml.Drawing;
+import org.docx4j.wml.P;
+import org.docx4j.wml.R;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.File;
-import java.util.List;
 
 public class ImageAddTest{
 
@@ -54,7 +56,16 @@ public class ImageAddTest{
 	public void testSizeUnspecified() throws Exception {
 		
 		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "'/></div>");
-		Assert.assertTrue(inline1.getExtent().getCx() == 25400);
+		
+		// DPI is configurable since docx4j 3.3.7
+		if (UnitsOfMeasurement.DPI==96) {
+			Assert.assertTrue(inline1.getExtent().getCx() == 19050); 
+		} else if (UnitsOfMeasurement.DPI==72) {
+			Assert.assertTrue(inline1.getExtent().getCx() == 25400); 
+		} else {
+			System.out.println("Skipping test for DPI " + UnitsOfMeasurement.DPI);
+		}
+		
 	}
 
 	@Test

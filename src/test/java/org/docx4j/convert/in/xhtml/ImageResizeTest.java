@@ -27,18 +27,22 @@
  */
 package org.docx4j.convert.in.xhtml;
 
+import java.io.File;
+import java.util.List;
+
+import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.docx4j.wml.*;
+import org.docx4j.wml.Drawing;
+import org.docx4j.wml.P;
+import org.docx4j.wml.R;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
-import java.util.List;
-
 public class ImageResizeTest{
 
+	
 	// 2x2 pixels
     private final String GIF_IMAGE_DATA = "data:image/gif;base64,R0lGODdhAgACAKEEAAMA//8AAAD/Bv/8ACwAAAAAAgACAAACAww0BQA7";
     private final String PNG_IMAGE_DATA = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAgMAAAAP2OW3AAAADFBMVEUDAP//AAAA/wb//AAD4Tw1AAAACXBIWXMAAAsTAAALEwEAmpwYAAAADElEQVQI12NwYNgAAAF0APHJnpmVAAAAAElFTkSuQmCC";
@@ -52,10 +56,20 @@ public class ImageResizeTest{
 
 	@Test
 	public void testFixedSizeImage() throws Exception {
+
 		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "'/></div>");
 		Inline inline2 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' width='40px' height='20px' /></div>");
-		Assert.assertTrue(inline2.getExtent().getCx() / inline1.getExtent().getCx() == 26);
-		Assert.assertTrue(inline2.getExtent().getCy() / inline1.getExtent().getCy() == 13);
+
+		// DPI is configurable since docx4j 3.3.7
+		if (UnitsOfMeasurement.DPI==96) {
+			Assert.assertTrue(inline2.getExtent().getCx() / inline1.getExtent().getCx() == 35); 
+			Assert.assertTrue(inline2.getExtent().getCy() / inline1.getExtent().getCy() == 17); 
+		} else if (UnitsOfMeasurement.DPI==72) {
+			Assert.assertTrue(inline2.getExtent().getCx() / inline1.getExtent().getCx() == 26); 
+			Assert.assertTrue(inline2.getExtent().getCy() / inline1.getExtent().getCy() == 13); 
+		} else {
+			System.out.println("Skipping test for DPI " + UnitsOfMeasurement.DPI);
+		}
 	}
 
 	@Test
