@@ -13,7 +13,7 @@ Release date
 Changes in Version 6.0.0
 ------------------------
 
-None. This release is identical to 3.3.6-1.
+None. This release is identical to 3.3.6-1 (except some sample code).
 
 Docx4j 6.x will be the last series supporting Java 6.  
 (docx4j 7.x, when released, will require Java 7+) 

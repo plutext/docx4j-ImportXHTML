@@ -39,6 +39,7 @@ import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.io.SaveToZipFile;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.CustomXmlDataStoragePart;
+import org.docx4j.openpackaging.parts.CustomXmlPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import org.docx4j.utils.SingleTraversalUtilVisitorCallback;
 import org.docx4j.utils.TraversalUtilVisitor;
@@ -82,15 +83,16 @@ public class ContentControlsMergeXML281 {
 				
 		// Inject data_file.xml
 		// (this code assumes it is not a StandardisedAnswersPart)
-		CustomXmlDataStoragePart customXmlDataStoragePart 
-			= CustomXmlDataStoragePartSelector.getCustomXmlDataStoragePart(wordMLPackage);
+		CustomXmlPart customXmlDataStoragePart
+			= CustomXmlDataStoragePartSelector.getCustomXmlDataStoragePart(wordMLPackage);		
 		if (customXmlDataStoragePart==null) {
 			System.out.println("Couldn't find CustomXmlDataStoragePart! exiting..");
 			return;			
 		}
 		System.out.println("Getting " + input_XML);
 		FileInputStream fis = new FileInputStream(new File(input_XML));
-		customXmlDataStoragePart.getData().setDocument(fis);
+		customXmlDataStoragePart.setXML(
+				XmlUtils.getNewDocumentBuilder().parse(fis));
 		
 		SaveToZipFile saver = new SaveToZipFile(wordMLPackage);
 		OpenDoPEHandler odh = null;

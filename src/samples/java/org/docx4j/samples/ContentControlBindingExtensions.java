@@ -38,6 +38,7 @@ import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.io.SaveToZipFile;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.CustomXmlDataStoragePart;
+import org.docx4j.openpackaging.parts.CustomXmlPart;
 
 
 /**
@@ -83,12 +84,14 @@ public class ContentControlBindingExtensions {
 		
 		// Find custom xml item id and inject data_file.xml		
 		long startTime = System.currentTimeMillis();
-		CustomXmlDataStoragePart customXmlDataStoragePart 
+		CustomXmlPart customXmlDataStoragePart
 			= CustomXmlDataStoragePartSelector.getCustomXmlDataStoragePart(wordMLPackage);		
 		if (customXmlDataStoragePart==null) {
 			throw new RuntimeException("no xml");
 		}
-		customXmlDataStoragePart.getData().setDocument(new FileInputStream(new File(data)));
+		customXmlDataStoragePart.setXML(
+				XmlUtils.getNewDocumentBuilder().parse(new FileInputStream(new File(data))));
+
 		long endTime = System.currentTimeMillis();
 		timingSummary.append("\nmerge data: " + (endTime-startTime));
 		System.out.println("data merged");
