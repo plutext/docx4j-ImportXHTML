@@ -2266,7 +2266,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		}
 
 		if (bb.getStyle()!=null
-				&& bb.getStyle().valueByName(CSSName.PADDING_LEFT)!=null) {
+				&& bb.getStyle().valueByName(CSSName.PADDING_LEFT) instanceof LengthValue) {
 				
 			LengthValue padding = (LengthValue)bb.getStyle().valueByName(CSSName.PADDING_LEFT);
 			paddingI +=Indent.getTwip(padding.getCSSPrimitiveValue());
@@ -2274,7 +2274,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 //		log.debug("+padding-left: " + totalPadding);
 
 		if (bb.getStyle()!=null
-				&& bb.getStyle().valueByName(CSSName.MARGIN_LEFT)!=null) {
+				&& bb.getStyle().valueByName(CSSName.MARGIN_LEFT) instanceof LengthValue) {
 			
 			LengthValue margin = (LengthValue)bb.getStyle().valueByName(CSSName.MARGIN_LEFT);
 			paddingI +=Indent.getTwip(margin.getCSSPrimitiveValue());
