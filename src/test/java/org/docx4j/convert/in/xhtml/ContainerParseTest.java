@@ -102,4 +102,11 @@ public class ContainerParseTest {
             }
         }
 	}
+
+	@Test
+	public void testCenteredTableContainingParagraph() throws Exception {
+		String html = "<table align=\"center\"><tbody><tr><td><p> </p></td></tr></tbody></table>";
+		List<Object> tConvert = convert(html);
+		Assert.assertTrue(tConvert.size() == 1);
+	}
 }
