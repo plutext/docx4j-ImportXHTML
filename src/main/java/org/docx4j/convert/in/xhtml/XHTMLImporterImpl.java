@@ -37,6 +37,7 @@ import java.io.StringReader;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.Bidi;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -82,6 +83,7 @@ import org.docx4j.org.xhtmlrenderer.render.Box;
 import org.docx4j.org.xhtmlrenderer.render.InlineBox;
 import org.docx4j.org.xhtmlrenderer.resource.XMLResource;
 import org.docx4j.wml.Body;
+import org.docx4j.wml.BooleanDefaultTrue;
 import org.docx4j.wml.CTMarkupRange;
 import org.docx4j.wml.CTSimpleField;
 import org.docx4j.wml.ContentAccessor;
@@ -1484,6 +1486,47 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	return pPr;
     }
     
+    protected boolean isBidi(String pText) {
+    	
+    	if (pText==null
+    			|| pText.trim().length()==0) {
+    		return false;
+    	}
+    	
+		// TODO: default to false
+		if ( !Docx4jProperties.getProperty("Unicode.Bidi.Detection", true)) {
+			return false;
+		}
+		
+		int ltr=0;
+		int rtl=0;
+
+	    Bidi bidi = new Bidi(pText, Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
+//    	System.out.println("count " + bidi.getRunCount());
+	    for (int i=0; i<bidi.getRunCount(); i++) {
+	    	
+	    	int start = bidi.getRunStart(i);
+	    	int end = bidi.getRunLimit(i);
+	    	
+//	    	System.out.println("adding " + i);
+	    	
+	    	if (isEven(bidi.getRunLevel(i) )) {
+	    		ltr += (end-start);
+	    	} else {
+	    		rtl += (end-start);	    		
+	    	}
+	    }
+	    
+	    if (ltr==0) {
+	    	if (rtl>0) {
+	    		return true;
+	    	} else {
+	    		return false; // default to LTR	    		
+	    	}
+	    }
+	    return ((rtl/ltr)>0.5);    	
+    }
+    
     protected void populatePPr(PPr pPr, Styleable blockBox, Map<String, CSSValue> cssMap) {
     	
         if (paragraphFormatting.equals(FormattingOption.IGNORE_CLASS)) {
@@ -1531,7 +1574,16 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
 				addParagraphProperties(pPr, blockBox, cssMap );
 			}        	
-    	}     	
+    	}
+
+        if (blockBox.getElement()==null) {
+        	log.debug("BB getElement is null");        
+        } else if (isBidi(blockBox.getElement().getTextContent())) {
+        	log.debug(".. setting bidi property");
+        	pPr.setBidi(new BooleanDefaultTrue() );
+        }
+    	
+        
     }
     
     /**
@@ -1778,7 +1830,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
                 				|| href.trim().equals("")) {
         		        	
 		                	String theText = inlineBox.getElement().getTextContent();
-		                    addRun(cssClass, cssMap, theText);
+		                    addRuns(cssClass, cssMap, theText);
 		                    
 		                	// bookmark end
 		                	if (markuprange!=null) {
@@ -1867,7 +1919,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
                 	
                 	if (endingText!=null
                 			&& endingText.length()>0) {
-                		addRun(cssClass, cssMap, inlineBox.getText());
+                		addRuns(cssClass, cssMap, inlineBox.getText());
                 	}
                 	
                 	attachmentPointH = null;
@@ -1950,7 +2002,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         	if (cssClass!=null) {
         	 	cssClass=cssClass.trim();
         	}
-            addRun(cssClass, cssMap, theText);
+            addRuns(cssClass, cssMap, theText);
     	            
 //                                    else {
 //                                    	// Get it from the parent element eg p
@@ -1985,7 +2037,58 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	 * @param cssMap
 	 * @param theText
 	 */
-	private void addRun( String cssClass, Map<String, CSSValue> cssMap, String theText) {
+	private void addRuns( String cssClass, Map<String, CSSValue> cssMap, String theText) {
+		
+//    	System.out.println(theText);
+		
+		// TODO: default to false
+		if ( Docx4jProperties.getProperty("Unicode.Bidi.Detection", true)) {
+
+			// Is this p bidi?
+		    Bidi bidi = null;	
+		    Object o = getListForRun();
+		    if (o instanceof P) {
+			    P p = (P)o;
+			    if (p.getPPr()!=null
+			    		&& p.getPPr().getBidi()!=null
+			    		&& p.getPPr().getBidi().isVal()
+			    		) {	
+			    	log.debug("using Bidi.DIRECTION_RIGHT_TO_LEFT");
+			    	bidi = new Bidi(theText, Bidi.DIRECTION_RIGHT_TO_LEFT);
+				} else {
+			    	bidi = new Bidi(theText, Bidi.DIRECTION_LEFT_TO_RIGHT);
+				}
+		    } else {
+		    	// eg P.Hyperlink, eg testRichContentTail
+		    	log.warn("TODO: bidi handling for " + o.getClass().getName());
+		    	bidi = new Bidi(theText, Bidi.DIRECTION_LEFT_TO_RIGHT);		    	
+		    }
+		    
+//	    	System.out.println("count " + bidi.getRunCount());
+		    for (int i=0; i<bidi.getRunCount(); i++) {
+		    	
+		    	int start = bidi.getRunStart(i);
+		    	int end = bidi.getRunLimit(i);
+		    	
+//		    	System.out.println("adding " + i);
+
+				this.addRun(cssClass, cssMap, theText.substring(start, end), 
+						!isEven(bidi.getRunLevel(i) )); // even means left to right
+		    }
+			
+		} else { 
+		// usual case
+			this.addRun(cssClass, cssMap, theText, false);
+		}
+		
+	}
+
+
+	private boolean isEven(int x) {
+		return ((x & 1) == 0 ) ;
+	}
+	
+	private void addRun( String cssClass, Map<String, CSSValue> cssMap, String theText, boolean isRTL) {
 		
 		R run = Context.getWmlObjectFactory().createR();
 		Text text = Context.getWmlObjectFactory().createText();
@@ -2002,8 +2105,12 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         RPr rPr =  Context.getWmlObjectFactory().createRPr();
         run.setRPr(rPr);
         formatRPr(rPr, cssClass, cssMap);
+        
+        if (isRTL) {
+        	rPr.setRtl(new BooleanDefaultTrue());
+        }
 	}
-		
+	
 	private void formatRPr(RPr rPr, String cssClass, Map<String, CSSValue> cssMap) {
 
 		//addRunProperties(rPr, cssMap );  // ?????
