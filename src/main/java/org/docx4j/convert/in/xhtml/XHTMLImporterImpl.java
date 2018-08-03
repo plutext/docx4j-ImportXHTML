@@ -1493,8 +1493,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     		return false;
     	}
     	
-		// TODO: default to false
-		if ( !Docx4jProperties.getProperty("Unicode.Bidi.Detection", true)) {
+		if ( !ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.Bidi.Heuristic", false)) {
 			return false;
 		}
 		
@@ -2041,8 +2040,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		
 //    	System.out.println(theText);
 		
-		// TODO: default to false
-		if ( Docx4jProperties.getProperty("Unicode.Bidi.Detection", true)) {
+		if ( ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.Bidi.Heuristic", false)) {
 
 			// Is this p bidi?
 		    Bidi bidi = null;	
