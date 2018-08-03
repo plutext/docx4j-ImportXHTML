@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+Version 6.0.1
+=============
+
+Release date
+------------
+
+3 August 2018
+
+
+Changes in Version 6.0.1
+------------------------
+
+Depends on docx4j 6.0.1 (since 6.0.0 should be avoided).
+
+docx4j-ImportXHTML.Bidi.Heuristic if set to true in your
+docx4j-ImportXHTML.properties file, will set bidi/rtl
+for RTL text including Arabic and Hebrew. 
+
+
+
 Version 6.0.0
 =============
 

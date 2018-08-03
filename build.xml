@@ -2,11 +2,11 @@
 <project basedir="." default="build" name="docx4j-ImportXHTML">
     <property environment="env"/>
     <property name="debuglevel" value="source,lines,vars"/>
-    <property name="target" value="1.5"/>
-    <property name="source" value="1.5"/>
+    <property name="target" value="1.6"/>
+    <property name="source" value="1.6"/>
 	<property name="dist" value="./dist"/>
 	
-	<property name="version" value="6.0.0"/>
+	<property name="version" value="6.0.1"/>
 
     <property name="src.main.java.dir" value="src/main/java"/>
     
@@ -32,7 +32,7 @@
         <pathelement location="${m2Repository}/org/docx4j/xhtmlrenderer/3.0.0/xhtmlrenderer-3.0.0.jar"/>
         <pathelement location="${m2Repository}/com/lowagie/itext/2.1.7/itext-2.1.7.jar"/>
     	
-        <pathelement location="${m2Repository}/org/docx4j/docx4j/6.0.0/docx4j-6.0.0.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/docx4j/6.0.1/docx4j-6.0.1.jar"/>
         <pathelement location="${m2Repository}/org/plutext/jaxb-svg11/1.0.2/jaxb-svg11-1.0.2.jar"/>
         <pathelement location="${m2Repository}/net/engio/mbassador/1.2.4.2/mbassador-1.2.4.2.jar"/>
         <pathelement location="${m2Repository}/org/slf4j/jcl-over-slf4j/1.7.25/jcl-over-slf4j-1.7.25.jar"/>
