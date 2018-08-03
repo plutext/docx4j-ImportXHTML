@@ -20,6 +20,8 @@ public class BidiTest {
 	
 	@Before
 	public void setup() throws InvalidFormatException {
+		
+		ImportXHTMLProperties.setProperty("docx4j-ImportXHTML.Bidi.Heuristic", true);
 		wordMLPackage = WordprocessingMLPackage.createPackage();
 		XHTMLImporter = new XHTMLImporterImpl(wordMLPackage);
 	}
