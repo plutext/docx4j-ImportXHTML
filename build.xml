@@ -22,8 +22,8 @@
 	<property name="m2Repository" value="../../.m2/repository"/>	
 	
     <!--.NET properties -->
-    <property name="ikvm.dir" value="/Java/ikvm/ikvm-7.3.4830.0"/>
-    <property name="ikvmc" value="${ikvm.dir}/bin/ikvmc.exe"/>
+  <property name="ikvm.dir" value="/Java/ikvm/ikvm-8.1.5717.0"/>
+  <property name="ikvmc" value="${ikvm.dir}/bin/ikvmc.exe"/>
     <property name="docx4j.dll" value="dll/docx4j.dll"/>
 		
     
@@ -153,7 +153,7 @@
         
 		<path id="forIKVM">
 		    <!-- <pathelement location="${dist}/docx4j-ImportXHTML-${version}.jar" />  -->
-			<pathelement location="${m2Repository}/org/docx4j/docx4j-ImportXHTML/6.0.0/docx4j-ImportXHTML-6.0.0.jar" />        
+			<pathelement location="${m2Repository}/org/docx4j/docx4j-ImportXHTML/6.0.1/docx4j-ImportXHTML-6.0.1.jar" />        
 		    
 	        <pathelement location="${m2Repository}/org/docx4j/xhtmlrenderer/3.0.0/xhtmlrenderer-3.0.0.jar"/>
 	        <pathelement location="${m2Repository}/com/lowagie/itext/2.1.7/itext-2.1.7.jar"/>		    		    
@@ -161,8 +161,8 @@
         <pathconvert refid="forIKVM" property="jars" pathsep=" "/>        
 		<exec executable="${ikvmc}">
             <arg value="-out:${dist}/docx4j-ImportXHTML.dll" />
-            <!-- <arg value="-keyfile:Plutext.snk" /> -->
-            <arg value="-version:3.3.1" />
+            <arg value="-keyfile:Plutext.snk" /> <!-- consistent with others -->
+            <arg value="-version:6.0.1.2" />
             <!-- <arg value="-resource:docx4j.properties=..." />  -->
             <arg value="-reference:${docx4j.dll}" />
             <arg value="-reference:dll/slf4j-api.dll" />            
