@@ -6,7 +6,7 @@
     <property name="source" value="1.6"/>
 	<property name="dist" value="./dist"/>
 	
-	<property name="version" value="6.0.1"/>
+	<property name="version" value="6.1.0"/>
 
     <property name="src.main.java.dir" value="src/main/java"/>
     
@@ -32,7 +32,7 @@
         <pathelement location="${m2Repository}/org/docx4j/xhtmlrenderer/3.0.0/xhtmlrenderer-3.0.0.jar"/>
         <pathelement location="${m2Repository}/com/lowagie/itext/2.1.7/itext-2.1.7.jar"/>
     	
-        <pathelement location="${m2Repository}/org/docx4j/docx4j/6.0.1/docx4j-6.0.1.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/docx4j/6.1.0/docx4j-6.1.0.jar"/>
         <pathelement location="${m2Repository}/org/plutext/jaxb-svg11/1.0.2/jaxb-svg11-1.0.2.jar"/>
         <pathelement location="${m2Repository}/net/engio/mbassador/1.2.4.2/mbassador-1.2.4.2.jar"/>
         <pathelement location="${m2Repository}/org/slf4j/jcl-over-slf4j/1.7.25/jcl-over-slf4j-1.7.25.jar"/>
@@ -153,7 +153,7 @@
         
 		<path id="forIKVM">
 		    <!-- <pathelement location="${dist}/docx4j-ImportXHTML-${version}.jar" />  -->
-			<pathelement location="${m2Repository}/org/docx4j/docx4j-ImportXHTML/6.0.1/docx4j-ImportXHTML-6.0.1.jar" />        
+			<pathelement location="${m2Repository}/org/docx4j/docx4j-ImportXHTML/6.1.0/docx4j-ImportXHTML-6.1.0.jar" />        
 		    
 	        <pathelement location="${m2Repository}/org/docx4j/xhtmlrenderer/3.0.0/xhtmlrenderer-3.0.0.jar"/>
 	        <pathelement location="${m2Repository}/com/lowagie/itext/2.1.7/itext-2.1.7.jar"/>		    		    
@@ -162,7 +162,7 @@
 		<exec executable="${ikvmc}">
             <arg value="-out:${dist}/docx4j-ImportXHTML.dll" />
             <arg value="-keyfile:Plutext.snk" /> <!-- consistent with others -->
-            <arg value="-version:6.0.1.2" />
+            <arg value="-version:6.1.0.0" />
             <!-- <arg value="-resource:docx4j.properties=..." />  -->
             <arg value="-reference:${docx4j.dll}" />
             <arg value="-reference:dll/slf4j-api.dll" />            

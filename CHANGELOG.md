@@ -1,6 +1,24 @@
 CHANGELOG
 =========
 
+
+Version 6.1.0
+=============
+
+Release date
+------------
+
+17 December 2018
+
+
+Changes in Version 6.1.0
+------------------------
+
+Depends on docx4j 6.1.0 (6.0.1 would also work).
+
+No substantive changes in this release. Purpose of release is to align version numbers.
+
+
 Version 6.0.1
 =============
 
