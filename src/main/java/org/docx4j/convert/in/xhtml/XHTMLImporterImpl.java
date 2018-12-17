@@ -232,6 +232,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	
 	
 	
+	// Extension point, for example DivToSdt
 	private DivHandler divHandler;
 	
 	public void setDivHandler(DivHandler divHandler) {

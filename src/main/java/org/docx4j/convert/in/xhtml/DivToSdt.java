@@ -23,6 +23,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 
+/**
+ * Optionally convert each div element to an SDT (aka content control).
+ *
+ */
 public class DivToSdt implements DivHandler {
 	
 	public static Logger log = LoggerFactory.getLogger(DivToSdt.class);		
