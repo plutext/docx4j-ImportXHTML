@@ -40,9 +40,12 @@ import org.docx4j.openpackaging.parts.WordprocessingML.NumberingDefinitionsPart;
  * Useful for testing support for specific features.
  *
  */
-public class DocxToXhtmlAndBack extends AbstractSample {
+public class DocxToXhtmlAndBack {
 
 	static String dir;
+	
+	protected static String inputfilepath;	
+	protected static String outputfilepath;
 	
 	// Config for non-command line version
 	static {
@@ -110,4 +113,19 @@ public class DocxToXhtmlAndBack extends AbstractSample {
 		docxOut.save(new java.io.File(dir + "/DocxToXhtmlAndBack.docx") );
 
     }
+    
+	protected static void getInputFilePath(String[] args) throws IllegalArgumentException {
+
+		if (args.length==0) throw new IllegalArgumentException("Input file arg missing");
+
+		inputfilepath = args[0];
+	}
+	
+	protected static void getOutputFilePath(String[] args) throws IllegalArgumentException {
+
+		if (args.length<2) throw new IllegalArgumentException("Output file arg missing");
+
+		outputfilepath = args[1];
+	}	
+    
 }
