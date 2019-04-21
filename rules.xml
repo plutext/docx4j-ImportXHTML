@@ -16,7 +16,7 @@
       </ignoreVersions>
     </rule>
     
-<!-- depends on JDK 7 -->
+<!-- depends on JDK 7
 
 <rule groupId="org.eclipse.persistence" artifactId="org.eclipse.persistence.moxy" comparisonMethod="maven">
       <ignoreVersions>
@@ -77,7 +77,6 @@
       </ignoreVersions>
     </rule>
     
-<!--  these deps latest currently OK 
 
 <rule groupId="org.slf4j" artifactId="jcl-over-slf4j" comparisonMethod="maven">
 .......................... 1.7.21 -> 1.7.25
