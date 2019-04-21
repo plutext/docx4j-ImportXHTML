@@ -2,6 +2,26 @@ CHANGELOG
 =========
 
 
+Version 8.0.0
+=============
+
+Release date
+------------
+
+22 April 2019
+
+
+Changes in Version 8.0.0
+------------------------
+
+Compiled for Java 8; aligning with docx4j 8.0.0 release.
+
+Depends on docx4j 8.0.0.
+
+No substantive changes in this release. Purpose of release is to align version numbers.
+
+
+
 Version 6.1.0
 =============
 
