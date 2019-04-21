@@ -11,7 +11,7 @@
 	<groupId>org.docx4j</groupId>
 	<artifactId>docx4j-ImportXHTML</artifactId>
 	<name>docx4j-ImportXHTML</name>
-	<version>8.0.0-SNAPSHOT</version>
+	<version>8.0.0</version>
 	<description>
 		docx4j-ImportXHTML converts XHTML to OpenXML WordML (docx) using docx4j 
 	</description>
@@ -26,7 +26,8 @@
   	</licenses>
 	<scm>
 	    <developerConnection>scm:git|git@github.com:plutext/docx4j-ImportXHTML.git</developerConnection>
-    </scm>
+      <tag>docx4j-ImportXHTML-8.0.0</tag>
+  </scm>
 	<inceptionYear>2013</inceptionYear>
 	<developers>
 		<developer>
