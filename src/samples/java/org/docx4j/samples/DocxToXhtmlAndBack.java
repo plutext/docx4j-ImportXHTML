@@ -27,10 +27,13 @@ import org.apache.commons.io.FileUtils;
 import org.docx4j.Docx4J;
 import org.docx4j.Docx4jProperties;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
+import org.docx4j.convert.out.ConversionFeatures;
 import org.docx4j.convert.out.html.AbstractHtmlExporter;
 import org.docx4j.convert.out.html.AbstractHtmlExporter.HtmlSettings;
 import org.docx4j.convert.out.html.HTMLExporterXslt;
 import org.docx4j.convert.out.html.HtmlExporterNG2;
+import org.docx4j.convert.out.html.SdtToListSdtTagHandler;
+import org.docx4j.convert.out.html.SdtWriter;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.NumberingDefinitionsPart;
 
@@ -82,6 +85,15 @@ public class DocxToXhtmlAndBack {
     	
     	htmlSettings.setImageDirPath(dir + inputfilepath + "_files");
     	htmlSettings.setImageTargetUri(dir + inputfilepath + "_files");
+    	
+    	// list numbering:  depending on whether you want list numbering hardcoded, or done using <li>.
+		boolean nestLists = true;
+    	if (nestLists) {
+    		SdtWriter.registerTagHandler("HTML_ELEMENT", new SdtToListSdtTagHandler());
+    	} else {
+    		htmlSettings.getFeatures().remove(ConversionFeatures.PP_HTML_COLLECT_LISTS);
+    	} // must do one or the other
+    	
     	
     	String htmlFilePath = dir + "/DocxToXhtmlAndBack.html";
 		OutputStream os = new java.io.FileOutputStream(htmlFilePath);
