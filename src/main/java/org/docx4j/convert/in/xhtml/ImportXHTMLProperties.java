@@ -9,6 +9,45 @@ import org.docx4j.utils.ResourceUtils;
 /**
  * @since 3.1
  */public class ImportXHTMLProperties {
+	 
+	 /* Currently, the following can be specified in docx4j-ImportXHTML.properties:
+	  *
+	  * "docx4j-ImportXHTML.fonts.default.serif", default: "Times New Roman"
+	  * "docx4j-ImportXHTML.fonts.default.sans-serif", default: "Arial"
+	  * "docx4j-ImportXHTML.fonts.default.monospace", default: "Courier New"
+	  * 
+	  * "docx4j-ImportXHTML.Bidi.Heuristic", default: false
+	  * 
+	  * "docx4j-ImportXHTML.Element.Heading.MapToStyle", false
+	  * 
+	  * Note: Via code, you can configure:
+	  * 
+	  * FontHandler.addFontMapping which lets you map a font family, for example "Century Gothic" in:
+	  * 
+	  *    font-family:"Century Gothic", Helvetica, Arial, sans-serif;
+	  * 
+	  * to a w:rFonts object, for example:
+	  * 
+	  *    <w:rFonts w:ascii="Arial Black" w:hAnsi="Arial Black"/>	
+	  *    
+	  * You can set FormattingOption: CLASS_TO_STYLE_ONLY, CLASS_PLUS_OTHER, IGNORE_CLASS
+	  * independently for runs, paragraphs, tables
+	  * 
+	  * CLASS_TO_STYLE_ONLY: a Word style matching a class attribute will
+	  * be used, and nothing else
+	  * 
+	  * CLASS_PLUS_OTHER: a Word style matching a class attribute will
+	  * be used; other css will be translated to direct formatting
+	  * 
+	  * IGNORE_CLASS: css will be translated to direct formatting
+	  * 
+	  * There is also the idea of a CSS white list.  If it is non-null,
+	  * a CSS property will only be honoured if it is on the list.
+	  * Useful where suitable default values aren't being provided via
+	  * @class, or direct values are otherwise providing unwanted results.
+
+     
+	 *      */
 	
 	protected static Logger log = LoggerFactory.getLogger(ImportXHTMLProperties.class);
 	
