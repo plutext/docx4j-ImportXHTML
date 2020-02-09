@@ -40,14 +40,14 @@ public class TraversalSettings implements Cloneable {
 
     private boolean inTableCell;
     
-    private Shape paragraphShape;
+    private Shape paragraphsShape;
 
-    public Shape getParagraphShape() {
-		return paragraphShape;
+    public Shape getParagraphsShape() {
+		return paragraphsShape;
 	}
 
-    public void setParagraphShape(Shape paragraphShape) {
-		this.paragraphShape = paragraphShape;
+    public void setParagraphsShape(Shape paragraphsShape) {
+		this.paragraphsShape = paragraphsShape;
 	}
 
 	public Map<String, CSSValue> getCssMap() {
