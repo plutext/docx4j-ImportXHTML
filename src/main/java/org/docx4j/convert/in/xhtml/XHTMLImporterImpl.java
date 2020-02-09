@@ -826,208 +826,218 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	unsetDefaultFontSize();
     }    
     
-    
     private void traverse(Box box,  Box parent, TableProperties tableProperties) throws Docx4JException {
-        
-    	boolean mustPop = false;
     	
         log.debug(box.getClass().getName() );
         if (box instanceof BlockBox) {
         	        	
-            BlockBox blockBox = ((BlockBox)box);
+            traverseBlockBox( box,   parent,  tableProperties);
+            
+        } else if (box instanceof AnonymousBlockBox) {
+            log.debug("AnonymousBlockBox");            
+        } else {
+        	log.warn(box.getClass().getName());
+        }
+            
+    }
+    
+    private void traverseBlockBox(Box box,  Box parent, TableProperties tableProperties) throws Docx4JException {
 
-            Element e = box.getElement(); 
-            if (e==null) {
-            	// Shouldn't happen
-                log.debug("<NULL>");
-            } else {            
-                log.debug("BB"  + "<" + e.getNodeName() + " " + box.getStyle().toStringMine() );
-                log.debug(box.getStyle().getDisplayMine() );
+    	boolean mustPop = false;
+        BlockBox blockBox = ((BlockBox)box);
+    	
+        Element e = box.getElement(); 
+        if (e==null) {
+        	// Shouldn't happen
+            log.debug("<NULL>");
+        } else {            
+            log.debug("BB"  + "<" + e.getNodeName() + " " + box.getStyle().toStringMine() );
+            log.debug(box.getStyle().getDisplayMine() );
 //                log.debug(box.getElement().getAttribute("class"));            	
-            }
-            
-            // bookmark start?
-            CTMarkupRange markupRangeForID = null;
-            if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableSectionBox) {
-            	// ignore, since <table id = ..
-            	// generates TableBox<table and TableSectionBox<table
-            	// but we only want a single bookmark
-            } else if(box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableBox) {
+        }
+        
+        // bookmark start?
+        CTMarkupRange markupRangeForID = null;
+        if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableSectionBox) {
+        	// ignore, since <table id = ..
+        	// generates TableBox<table and TableSectionBox<table
+        	// but we only want a single bookmark
+        } else if(box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableBox) {
 
-            	// null P, so it bookmark is a P sibling
-            	markupRangeForID = bookmarkHelper.anchorToBookmark(e, bookmarkNamePrefix, 
-                		null, this.contentContextStack.peek());
-            	
-            } else {
-            	
-            	markupRangeForID = bookmarkHelper.anchorToBookmark(e, bookmarkNamePrefix, 
-            		getCurrentParagraph(false), this.contentContextStack.peek());
-            }
+        	// null P, so it bookmark is a P sibling
+        	markupRangeForID = bookmarkHelper.anchorToBookmark(e, bookmarkNamePrefix, 
+            		null, this.contentContextStack.peek());
+        	
+        } else {
+        	
+        	markupRangeForID = bookmarkHelper.anchorToBookmark(e, bookmarkNamePrefix, 
+        		getCurrentParagraph(false), this.contentContextStack.peek());
+        }
+        
+        if (markupRangeForID!=null) {
+            log.debug("Added bookmark for "+ box.getClass().getName()  + "<" + e.getNodeName() + " " + box.getStyle().toStringMine() );
+        }
+        
+        // Don't add a new paragraph if this BlockBox is display: inline
+        if (e!=null) {
             
-            if (markupRangeForID!=null) {
-                log.debug("Added bookmark for "+ box.getClass().getName()  + "<" + e.getNodeName() + " " + box.getStyle().toStringMine() );
-            }
-            
-            // Don't add a new paragraph if this BlockBox is display: inline
-            if (e!=null) {
-                
-            	//Map cssMap = styleReference.getCascadedPropertiesMap(e);
-                Map<String, CSSValue> cssMap = getCascadedProperties(box.getStyle());
+        	//Map cssMap = styleReference.getCascadedPropertiesMap(e);
+            Map<String, CSSValue> cssMap = getCascadedProperties(box.getStyle());
+        	
+        	/* Sometimes, when it is display: inline, the following is not set:
+            	CSSValue cssValue = (CSSValue)cssMap.get("display");
+            	if (cssValue !=null) {
+            		log.debug(cssValue.getCssText() );
+            	}
+            */
+        	// So do it this way ...
+            if (e.getNodeName().equals("div")) {
             	
-            	/* Sometimes, when it is display: inline, the following is not set:
-	            	CSSValue cssValue = (CSSValue)cssMap.get("display");
-	            	if (cssValue !=null) {
-	            		log.debug(cssValue.getCssText() );
-	            	}
-	            */
-            	// So do it this way ...
-                if (e.getNodeName().equals("div")) {
-                	
-                	if (divHandler!=null) {
-                		ContentAccessor ca = divHandler.enter(blockBox, this.contentContextStack.peek());
-                		if (ca!=null) {
-                			pushBlockStack(ca);
-                			mustPop = true;
-                		}
-                	}
-                	
-                	/* consider:
+            	if (divHandler!=null) {
+            		ContentAccessor ca = divHandler.enter(blockBox, this.contentContextStack.peek());
+            		if (ca!=null) {
+            			pushBlockStack(ca);
+            			mustPop = true;
+            		}
+            	}
+            	
+            	/* consider:
+            	 * 
+            	 *     <li><div>ListItem2</div></li>
+            	 * 
+            	 * That div has eg list-style-type: decimal; but display: block; 
+            	 * and won't have written the number yet, so handle this
+            	 * 
+            	 */
+            	if (/* its a block (the inline case is ok; list-item is TBD) */
+            			box.getStyle().getDisplayMine().equals("block")
+            			
+            		/* and we have an inherited definition */
+            			&& this.getCurrentParagraph(false)!=null
+            			&& this.getCurrentParagraph(false).getPPr()!=null 
+            			&& this.getCurrentParagraph(false).getPPr().getNumPr()!=null 
+            			) {
+            		NumPr numPr = this.getCurrentParagraph(false).getPPr().getNumPr();
+                	this.getCurrentParagraph(true).setPPr(this.getPPr(blockBox, cssMap));
+                	this.getCurrentParagraph(false).getPPr().setNumPr(numPr);
+                	/* actually, we should be using the definition found here, 
+                	 * since it could be intended to override! 
                 	 * 
-                	 *     <li><div>ListItem2</div></li>
-                	 * 
-                	 * That div has eg list-style-type: decimal; but display: block; 
-                	 * and won't have written the number yet, so handle this
-                	 * 
-                	 */
-                	if (/* its a block (the inline case is ok; list-item is TBD) */
-                			box.getStyle().getDisplayMine().equals("block")
-                			
-                		/* and we have an inherited definition */
-                			&& this.getCurrentParagraph(false)!=null
-                			&& this.getCurrentParagraph(false).getPPr()!=null 
-                			&& this.getCurrentParagraph(false).getPPr().getNumPr()!=null 
-                			) {
-                		NumPr numPr = this.getCurrentParagraph(false).getPPr().getNumPr();
-                    	this.getCurrentParagraph(true).setPPr(this.getPPr(blockBox, cssMap));
-                    	this.getCurrentParagraph(false).getPPr().setNumPr(numPr);
-                    	/* actually, we should be using the definition found here, 
-                    	 * since it could be intended to override! 
-                    	 * 
-                    	 * But currently we only write a list definition at line ~1100 where isListItem.
-                    	 * so for now we don't support overriding the list definition
-                    	 * */ 
-                	} else {
-                		// usual case
-                    	this.getCurrentParagraph(true).setPPr(this.getPPr(blockBox, cssMap));
-                		
-                	}
-                	
-                } else if (box.getStyle().getDisplayMine().equals("inline") ) {
+                	 * But currently we only write a list definition at line ~1100 where isListItem.
+                	 * so for now we don't support overriding the list definition
+                	 * */ 
+            	} else {
+            		// usual case
+                	this.getCurrentParagraph(true).setPPr(this.getPPr(blockBox, cssMap));
             		
+            	}
+            	
+            } else if (box.getStyle().getDisplayMine().equals("inline") ) {
+        		
 //                	// Don't add a paragraph for this, unless ..
 //                	if (currentP==null) {
 //                		currentP = Context.getWmlObjectFactory().createP();
 //    		            contentContext.getContent().add(currentP);
 //    		            paraStillEmpty = true;
 //                	}            		
-            	} else if (e.getNodeName().equals("ol")
-            			|| e.getNodeName().equals("ul") ) {
-            		
-            		log.info("entering list");
-            		listHelper.pushListStack(blockBox);
-            		
-                	
-            	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableSectionBox) {
-                	// nb, both TableBox and TableSectionBox 
-                	// have node name 'table' (or can have),
-            		// so this else clause is before the TableBox one,
-            		// to avoid a class cast exception
-            		
-            		// eg <tbody color: #000000; background-color: transparent; background-image: none; background-repeat: repeat; background-attachment: scroll; background-position: [0%, 0%]; background-size: [auto, auto]; border-collapse: collapse; -fs-border-spacing-horizontal: 0; -fs-border-spacing-vertical: 0; -fs-font-metric-src: none; -fs-keep-with-inline: auto; -fs-page-width: auto; -fs-page-height: auto; -fs-page-sequence: auto; -fs-pdf-font-embed: auto; -fs-pdf-font-encoding: Cp1252; -fs-page-orientation: auto; -fs-table-paginate: auto; -fs-text-decoration-extent: line; bottom: auto; caption-side: top; clear: none; ; content: normal; counter-increment: none; counter-reset: none; cursor: auto; ; display: table-row-group; empty-cells: show; float: none; font-style: normal; font-variant: normal; font-weight: normal; font-size: medium; line-height: normal; font-family: serif; -fs-table-cell-colspan: 1; -fs-table-cell-rowspan: 1; height: auto; left: auto; letter-spacing: normal; list-style-type: disc; list-style-position: outside; list-style-image: none; max-height: none; max-width: none; min-height: 0; min-width: 0; orphans: 2; ; ; ; overflow: visible; page: auto; page-break-after: auto; page-break-before: auto; page-break-inside: auto; position: static; ; right: auto; src: none; table-layout: auto; text-align: left; text-decoration: none; text-indent: 0; text-transform: none; top: auto; ; vertical-align: middle; visibility: visible; white-space: normal; word-wrap: normal; widows: 2; width: auto; word-spacing: normal; z-index: auto; border-top-color: #000000; border-right-color: #000000; border-bottom-color: #000000; border-left-color: #000000; border-top-style: none; border-right-style: none; border-bottom-style: none; border-left-style: none; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; 
-            		log.debug(".. processing <tbody");
-            		
-            		// Do nothing here for now .. the switch statement below traverses children
-            		
-            		// TODO: give effect to this CSS
+        	} else if (e.getNodeName().equals("ol")
+        			|| e.getNodeName().equals("ul") ) {
+        		
+        		log.info("entering list");
+        		listHelper.pushListStack(blockBox);
+        		
+            	
+        	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableSectionBox) {
+            	// nb, both TableBox and TableSectionBox 
+            	// have node name 'table' (or can have),
+        		// so this else clause is before the TableBox one,
+        		// to avoid a class cast exception
+        		
+        		// eg <tbody color: #000000; background-color: transparent; background-image: none; background-repeat: repeat; background-attachment: scroll; background-position: [0%, 0%]; background-size: [auto, auto]; border-collapse: collapse; -fs-border-spacing-horizontal: 0; -fs-border-spacing-vertical: 0; -fs-font-metric-src: none; -fs-keep-with-inline: auto; -fs-page-width: auto; -fs-page-height: auto; -fs-page-sequence: auto; -fs-pdf-font-embed: auto; -fs-pdf-font-encoding: Cp1252; -fs-page-orientation: auto; -fs-table-paginate: auto; -fs-text-decoration-extent: line; bottom: auto; caption-side: top; clear: none; ; content: normal; counter-increment: none; counter-reset: none; cursor: auto; ; display: table-row-group; empty-cells: show; float: none; font-style: normal; font-variant: normal; font-weight: normal; font-size: medium; line-height: normal; font-family: serif; -fs-table-cell-colspan: 1; -fs-table-cell-rowspan: 1; height: auto; left: auto; letter-spacing: normal; list-style-type: disc; list-style-position: outside; list-style-image: none; max-height: none; max-width: none; min-height: 0; min-width: 0; orphans: 2; ; ; ; overflow: visible; page: auto; page-break-after: auto; page-break-before: auto; page-break-inside: auto; position: static; ; right: auto; src: none; table-layout: auto; text-align: left; text-decoration: none; text-indent: 0; text-transform: none; top: auto; ; vertical-align: middle; visibility: visible; white-space: normal; word-wrap: normal; widows: 2; width: auto; word-spacing: normal; z-index: auto; border-top-color: #000000; border-right-color: #000000; border-bottom-color: #000000; border-left-color: #000000; border-top-style: none; border-right-style: none; border-bottom-style: none; border-left-style: none; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; 
+        		log.debug(".. processing <tbody");
+        		
+        		// Do nothing here for now .. the switch statement below traverses children
+        		
+        		// TODO: give effect to this CSS
 
-            	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableBox)  {
-                	
-            		log.debug(".. processing table");  // what happened to <colgroup><col style="width: 2.47in;" /><col style="width: 2.47in;" /> 
-            		
-            		/*
-            		 * BEWARE: xhtmlrenderer seems to parse tables differently,
-            		 * depending on whether:
-            		 * 
-            		 * (i) the table is contained within a <div>
-            		 * 
-            		 * (ii) the table contains <caption>
-            		 * 
-            		 * See https://github.com/plutext/flyingsaucer/issues/1
-            		 * 
-            		 * Bare table with caption: BlockBox cannot be cast to TableSectionBox in xhtmlrenderer
-            		 * 
-            		 * div/table[count(caption)=1] ... table becomes TableBox, children are CONTENT_BLOCK
-            		 * 
-            		 * div/table[count(caption)=0] ... table becomes TableBox, children are CONTENT_BLOCK
-            		 */
+        	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableBox)  {
+            	
+        		log.debug(".. processing table");  // what happened to <colgroup><col style="width: 2.47in;" /><col style="width: 2.47in;" /> 
+        		
+        		/*
+        		 * BEWARE: xhtmlrenderer seems to parse tables differently,
+        		 * depending on whether:
+        		 * 
+        		 * (i) the table is contained within a <div>
+        		 * 
+        		 * (ii) the table contains <caption>
+        		 * 
+        		 * See https://github.com/plutext/flyingsaucer/issues/1
+        		 * 
+        		 * Bare table with caption: BlockBox cannot be cast to TableSectionBox in xhtmlrenderer
+        		 * 
+        		 * div/table[count(caption)=1] ... table becomes TableBox, children are CONTENT_BLOCK
+        		 * 
+        		 * div/table[count(caption)=0] ... table becomes TableBox, children are CONTENT_BLOCK
+        		 */
 
-            		// eg <table color: #000000; background-color: transparent; background-image: none; background-repeat: repeat; background-attachment: scroll; background-position: [0%, 0%]; background-size: [auto, auto]; 
-            		//           border-collapse: collapse; -fs-border-spacing-horizontal: 2px; -fs-border-spacing-vertical: 2px; -fs-font-metric-src: none; -fs-keep-with-inline: auto; -fs-page-width: auto; -fs-page-height: auto; -fs-page-sequence: auto; -fs-pdf-font-embed: auto; -fs-pdf-font-encoding: Cp1252; -fs-page-orientation: auto; -fs-table-paginate: auto; -fs-text-decoration-extent: line; bottom: auto; caption-side: top; clear: none; ; content: normal; counter-increment: none; counter-reset: none; cursor: auto; ; display: table; empty-cells: show; float: none; font-style: normal; font-variant: normal; font-weight: normal; font-size: medium; line-height: normal; font-family: serif; -fs-table-cell-colspan: 1; -fs-table-cell-rowspan: 1; height: auto; left: auto; letter-spacing: normal; list-style-type: disc; list-style-position: outside; list-style-image: none; max-height: none; max-width: none; min-height: 0; min-width: 0; orphans: 2; ; ; ; overflow: visible; page: auto; page-break-after: auto; page-break-before: auto; page-break-inside: auto; position: relative; ; right: auto; src: none; 
-            		//           table-layout: fixed; text-align: left; text-decoration: none; text-indent: 0; text-transform: none; top: auto; ; vertical-align: baseline; visibility: visible; white-space: normal; word-wrap: normal; widows: 2; width: auto; word-spacing: normal; z-index: auto; border-top-color: #000000; border-right-color: #000000; border-bottom-color: #000000; border-left-color: #000000; border-top-style: solid; border-right-style: solid; border-bottom-style: solid; border-left-style: solid; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0in; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;
-            		
+        		// eg <table color: #000000; background-color: transparent; background-image: none; background-repeat: repeat; background-attachment: scroll; background-position: [0%, 0%]; background-size: [auto, auto]; 
+        		//           border-collapse: collapse; -fs-border-spacing-horizontal: 2px; -fs-border-spacing-vertical: 2px; -fs-font-metric-src: none; -fs-keep-with-inline: auto; -fs-page-width: auto; -fs-page-height: auto; -fs-page-sequence: auto; -fs-pdf-font-embed: auto; -fs-pdf-font-encoding: Cp1252; -fs-page-orientation: auto; -fs-table-paginate: auto; -fs-text-decoration-extent: line; bottom: auto; caption-side: top; clear: none; ; content: normal; counter-increment: none; counter-reset: none; cursor: auto; ; display: table; empty-cells: show; float: none; font-style: normal; font-variant: normal; font-weight: normal; font-size: medium; line-height: normal; font-family: serif; -fs-table-cell-colspan: 1; -fs-table-cell-rowspan: 1; height: auto; left: auto; letter-spacing: normal; list-style-type: disc; list-style-position: outside; list-style-image: none; max-height: none; max-width: none; min-height: 0; min-width: 0; orphans: 2; ; ; ; overflow: visible; page: auto; page-break-after: auto; page-break-before: auto; page-break-inside: auto; position: relative; ; right: auto; src: none; 
+        		//           table-layout: fixed; text-align: left; text-decoration: none; text-indent: 0; text-transform: none; top: auto; ; vertical-align: baseline; visibility: visible; white-space: normal; word-wrap: normal; widows: 2; width: auto; word-spacing: normal; z-index: auto; border-top-color: #000000; border-right-color: #000000; border-bottom-color: #000000; border-left-color: #000000; border-top-style: solid; border-right-style: solid; border-bottom-style: solid; border-left-style: solid; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0in; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;
+        		
 //            		if (this.contentContextStack.peek() instanceof Tr) {
 //            			popStack();
 //            		}
 //            		if (this.contentContextStack.peek() instanceof Tbl) {
 //            			popStack();
 //            		}
-            		
-            		ContentAccessor contentContext = this.contentContextStack.peek();
-            		tableHelper.nestedTableHierarchyFix(contentContext,parent);
-            		
-            		// If we added a p for a div, but its empty, then remove it 
-            		P currentP = getCurrentParagraph(false);
-            		if (currentP!=null
-            				&& currentP.getContent().size()==0) {
-            			// remove it
-            			contentContext.getContent().remove(currentP);
-            		}
-            		
-            		Tbl tbl = Context.getWmlObjectFactory().createTbl();
-            		contentContext.getContent().add(tbl);
-		            pushBlockStack(tbl);
-		            mustPop = true;
-		            
-		            TableBox tableBox = (org.docx4j.org.xhtmlrenderer.newtable.TableBox)box;
-		            
-		    		tableProperties = new TableProperties();
-		    		tableProperties.setTableBox(tableBox);
+        		
+        		ContentAccessor contentContext = this.contentContextStack.peek();
+        		tableHelper.nestedTableHierarchyFix(contentContext,parent);
+        		
+        		// If we added a p for a div, but its empty, then remove it 
+        		P currentP = getCurrentParagraph(false);
+        		if (currentP!=null
+        				&& currentP.getContent().size()==0) {
+        			// remove it
+        			contentContext.getContent().remove(currentP);
+        		}
+        		
+        		Tbl tbl = Context.getWmlObjectFactory().createTbl();
+        		contentContext.getContent().add(tbl);
+	            pushBlockStack(tbl);
+	            mustPop = true;
+	            
+	            TableBox tableBox = (org.docx4j.org.xhtmlrenderer.newtable.TableBox)box;
+	            
+	    		tableProperties = new TableProperties();
+	    		tableProperties.setTableBox(tableBox);
 
 //		    		log.debug("parent " + parent.getClass().getSimpleName());
 //		    		log.debug("parent " + parent.getElement().getNodeName());
-		    		
-		    		/*
-		    		boolean isNested = (parent instanceof TableBox
-		    				|| (parent!=null
-		    					&& parent.getElement()!=null
-		    					&& ( parent.getElement().getNodeName().equals("table")
-		    						 || parent.getElement().getNodeName().equals("td"))));
-		    		// 2017 08 30, could look at block stack instead?
-		    		*/
-		    		
+	    		
+	    		/*
+	    		boolean isNested = (parent instanceof TableBox
+	    				|| (parent!=null
+	    					&& parent.getElement()!=null
+	    					&& ( parent.getElement().getNodeName().equals("table")
+	    						 || parent.getElement().getNodeName().equals("td"))));
+	    		// 2017 08 30, could look at block stack instead?
+	    		*/
+	    		
 //		    		log.debug("is nested? " + isNested);
-		            
-		    		tableHelper.setupTblPr( tableBox,  tbl,  tableProperties);
-		    		tableHelper.setupTblGrid( tableBox,  tbl,  tableProperties);
-		            
-	            	
-            	} else if (e.getNodeName().equals("table") ) {
-            		// but not instanceof org.docx4j.org.xhtmlrenderer.newtable.TableBox
-            		// .. this does happen.  See test/resources/block-level-lots.xhtml
-            		
-            		// TODO: look at whether we can style the table in this case
+	            
+	    		tableHelper.setupTblPr( tableBox,  tbl,  tableProperties);
+	    		tableHelper.setupTblGrid( tableBox,  tbl,  tableProperties);
+	            
+            	
+        	} else if (e.getNodeName().equals("table") ) {
+        		// but not instanceof org.docx4j.org.xhtmlrenderer.newtable.TableBox
+        		// .. this does happen.  See test/resources/block-level-lots.xhtml
+        		
+        		// TODO: look at whether we can style the table in this case
 
-            		log.warn("Encountered non-TableBox table: " + box.getClass().getName() );
+        		log.warn("Encountered non-TableBox table: " + box.getClass().getName() );
 
 //            		if (this.contentContextStack.peek() instanceof Tr) {
 //            			popStack();
@@ -1035,348 +1045,348 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 //            		if (this.contentContextStack.peek() instanceof Tbl) {
 //            			popStack();
 //            		}
-            		
-            		ContentAccessor contentContext = this.contentContextStack.peek();
-            		tableHelper.nestedTableHierarchyFix(contentContext,parent);
-            		
-            		// If we added a p for a div, but its empty, then remove it 
-            		P currentP = getCurrentParagraph(false);
-            		if (currentP!=null
-            				&& currentP.getContent().size()==0) {
-            			// remove it
-            			contentContext.getContent().remove(currentP);
-            		}            		
-            		
-            		Tbl tbl = Context.getWmlObjectFactory().createTbl();
-            		contentContext.getContent().add(tbl);
-		            pushBlockStack(tbl);
-		            mustPop = true;
-		            
-            		
-            	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableRowBox) {
-            		
-            		// eg <tr color: #000000; background-color: transparent; background-image: none; background-repeat: repeat; background-attachment: scroll; background-position: [0%, 0%]; background-size: [auto, auto]; border-collapse: collapse; -fs-border-spacing-horizontal: 0; -fs-border-spacing-vertical: 0; -fs-font-metric-src: none; -fs-keep-with-inline: auto; -fs-page-width: auto; -fs-page-height: auto; -fs-page-sequence: auto; -fs-pdf-font-embed: auto; -fs-pdf-font-encoding: Cp1252; -fs-page-orientation: auto; -fs-table-paginate: auto; -fs-text-decoration-extent: line; bottom: auto; caption-side: top; clear: none; ; content: normal; counter-increment: none; counter-reset: none; cursor: auto; ; display: table-row; empty-cells: show; float: none; font-style: normal; font-variant: normal; font-weight: normal; font-size: medium; line-height: normal; font-family: serif; -fs-table-cell-colspan: 1; -fs-table-cell-rowspan: 1; height: auto; left: auto; letter-spacing: normal; list-style-type: disc; list-style-position: outside; list-style-image: none; max-height: none; max-width: none; min-height: 0; min-width: 0; orphans: 2; ; ; ; overflow: visible; page: auto; page-break-after: auto; page-break-before: auto; page-break-inside: auto; position: static; ; right: auto; src: none; table-layout: auto; text-align: left; text-decoration: none; text-indent: 0; text-transform: none; top: auto; ; vertical-align: top; visibility: visible; white-space: normal; word-wrap: normal; widows: 2; width: auto; word-spacing: normal; z-index: auto; border-top-color: #000000; border-right-color: #000000; border-bottom-color: #000000; border-left-color: #000000; border-top-style: none; border-right-style: none; border-bottom-style: none; border-left-style: none; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;
-            		
-            		// TODO support vertical-align
-            		
-            		log.debug(".. processing <tr");            		
+        		
+        		ContentAccessor contentContext = this.contentContextStack.peek();
+        		tableHelper.nestedTableHierarchyFix(contentContext,parent);
+        		
+        		// If we added a p for a div, but its empty, then remove it 
+        		P currentP = getCurrentParagraph(false);
+        		if (currentP!=null
+        				&& currentP.getContent().size()==0) {
+        			// remove it
+        			contentContext.getContent().remove(currentP);
+        		}            		
+        		
+        		Tbl tbl = Context.getWmlObjectFactory().createTbl();
+        		contentContext.getContent().add(tbl);
+	            pushBlockStack(tbl);
+	            mustPop = true;
+	            
+        		
+        	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableRowBox) {
+        		
+        		// eg <tr color: #000000; background-color: transparent; background-image: none; background-repeat: repeat; background-attachment: scroll; background-position: [0%, 0%]; background-size: [auto, auto]; border-collapse: collapse; -fs-border-spacing-horizontal: 0; -fs-border-spacing-vertical: 0; -fs-font-metric-src: none; -fs-keep-with-inline: auto; -fs-page-width: auto; -fs-page-height: auto; -fs-page-sequence: auto; -fs-pdf-font-embed: auto; -fs-pdf-font-encoding: Cp1252; -fs-page-orientation: auto; -fs-table-paginate: auto; -fs-text-decoration-extent: line; bottom: auto; caption-side: top; clear: none; ; content: normal; counter-increment: none; counter-reset: none; cursor: auto; ; display: table-row; empty-cells: show; float: none; font-style: normal; font-variant: normal; font-weight: normal; font-size: medium; line-height: normal; font-family: serif; -fs-table-cell-colspan: 1; -fs-table-cell-rowspan: 1; height: auto; left: auto; letter-spacing: normal; list-style-type: disc; list-style-position: outside; list-style-image: none; max-height: none; max-width: none; min-height: 0; min-width: 0; orphans: 2; ; ; ; overflow: visible; page: auto; page-break-after: auto; page-break-before: auto; page-break-inside: auto; position: static; ; right: auto; src: none; table-layout: auto; text-align: left; text-decoration: none; text-indent: 0; text-transform: none; top: auto; ; vertical-align: top; visibility: visible; white-space: normal; word-wrap: normal; widows: 2; width: auto; word-spacing: normal; z-index: auto; border-top-color: #000000; border-right-color: #000000; border-bottom-color: #000000; border-left-color: #000000; border-top-style: none; border-right-style: none; border-bottom-style: none; border-left-style: none; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;
+        		
+        		// TODO support vertical-align
+        		
+        		log.debug(".. processing <tr");            		
 
 //            		if (this.contentContextStack.peek() instanceof Tr) {
 //            			this.contentContextStack.pop();
 //            		} 
-            		
-            		Tr tr = Context.getWmlObjectFactory().createTr();
-            		this.contentContextStack.peek().getContent().add(tr);
-		            pushBlockStack(tr);
-		            mustPop = true;
-            		
-		            tableHelper.setupTrPr((org.docx4j.org.xhtmlrenderer.newtable.TableRowBox)box, tr); // does nothing at present
-            		
-            	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableCellBox) {
-            		            		
-            		log.debug(".. processing <td");            		
-            		// eg <td color: #000000; background-color: transparent; background-image: none; background-repeat: repeat; background-attachment: scroll; background-position: [0%, 0%]; background-size: [auto, auto]; border-collapse: collapse; -fs-border-spacing-horizontal: 0; -fs-border-spacing-vertical: 0; -fs-font-metric-src: none; -fs-keep-with-inline: auto; -fs-page-width: auto; -fs-page-height: auto; -fs-page-sequence: auto; -fs-pdf-font-embed: auto; -fs-pdf-font-encoding: Cp1252; -fs-page-orientation: auto; -fs-table-paginate: auto; -fs-text-decoration-extent: line; bottom: auto; caption-side: top; clear: none; ; content: normal; counter-increment: none; counter-reset: none; cursor: auto; ; display: table-row; empty-cells: show; float: none; font-style: normal; font-variant: normal; font-weight: normal; font-size: medium; line-height: normal; font-family: serif; -fs-table-cell-colspan: 1; -fs-table-cell-rowspan: 1; height: auto; left: auto; letter-spacing: normal; list-style-type: disc; list-style-position: outside; list-style-image: none; max-height: none; max-width: none; min-height: 0; min-width: 0; orphans: 2; ; ; ; overflow: visible; page: auto; page-break-after: auto; page-break-before: auto; page-break-inside: auto; position: static; ; right: auto; src: none; table-layout: auto; text-align: left; text-decoration: none; text-indent: 0; text-transform: none; top: auto; ; vertical-align: top; visibility: visible; white-space: normal; word-wrap: normal; widows: 2; width: auto; word-spacing: normal; z-index: auto; border-top-color: #000000; border-right-color: #000000; border-bottom-color: #000000; border-left-color: #000000; border-top-style: none; border-right-style: none; border-bottom-style: none; border-left-style: none; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;
+        		
+        		Tr tr = Context.getWmlObjectFactory().createTr();
+        		this.contentContextStack.peek().getContent().add(tr);
+	            pushBlockStack(tr);
+	            mustPop = true;
+        		
+	            tableHelper.setupTrPr((org.docx4j.org.xhtmlrenderer.newtable.TableRowBox)box, tr); // does nothing at present
+        		
+        	} else if (box instanceof org.docx4j.org.xhtmlrenderer.newtable.TableCellBox) {
+        		            		
+        		log.debug(".. processing <td");            		
+        		// eg <td color: #000000; background-color: transparent; background-image: none; background-repeat: repeat; background-attachment: scroll; background-position: [0%, 0%]; background-size: [auto, auto]; border-collapse: collapse; -fs-border-spacing-horizontal: 0; -fs-border-spacing-vertical: 0; -fs-font-metric-src: none; -fs-keep-with-inline: auto; -fs-page-width: auto; -fs-page-height: auto; -fs-page-sequence: auto; -fs-pdf-font-embed: auto; -fs-pdf-font-encoding: Cp1252; -fs-page-orientation: auto; -fs-table-paginate: auto; -fs-text-decoration-extent: line; bottom: auto; caption-side: top; clear: none; ; content: normal; counter-increment: none; counter-reset: none; cursor: auto; ; display: table-row; empty-cells: show; float: none; font-style: normal; font-variant: normal; font-weight: normal; font-size: medium; line-height: normal; font-family: serif; -fs-table-cell-colspan: 1; -fs-table-cell-rowspan: 1; height: auto; left: auto; letter-spacing: normal; list-style-type: disc; list-style-position: outside; list-style-image: none; max-height: none; max-width: none; min-height: 0; min-width: 0; orphans: 2; ; ; ; overflow: visible; page: auto; page-break-after: auto; page-break-before: auto; page-break-inside: auto; position: static; ; right: auto; src: none; table-layout: auto; text-align: left; text-decoration: none; text-indent: 0; text-transform: none; top: auto; ; vertical-align: top; visibility: visible; white-space: normal; word-wrap: normal; widows: 2; width: auto; word-spacing: normal; z-index: auto; border-top-color: #000000; border-right-color: #000000; border-bottom-color: #000000; border-left-color: #000000; border-top-style: none; border-right-style: none; border-bottom-style: none; border-left-style: none; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;
 
-            		ContentAccessor trContext = contentContextStack.peek();
+        		ContentAccessor trContext = contentContextStack.peek();
 
-            		org.docx4j.org.xhtmlrenderer.newtable.TableCellBox tcb = (org.docx4j.org.xhtmlrenderer.newtable.TableCellBox)box;
-		            
-            		// rowspan support: vertically merged cells are
-            		// represented as a top cell containing the actual content with a vMerge tag with "restart" attribute 
-            		// and a series of dummy cells having a vMerge tag with no (or "continue") attribute.            		
-            		            		
-            		// if current cell is the first real cell in the row, but is not in the leftmost position, then
-            		// search for vertically spanned cells to the left and insert dummy cells before current
-            		if (tcb.getParent().getChild(0) == tcb && tcb.getCol() > 0) {
-            			tableHelper.insertDummyVMergedCells(contentContextStack.peek(), tcb, true);
-            		}
+        		org.docx4j.org.xhtmlrenderer.newtable.TableCellBox tcb = (org.docx4j.org.xhtmlrenderer.newtable.TableCellBox)box;
+	            
+        		// rowspan support: vertically merged cells are
+        		// represented as a top cell containing the actual content with a vMerge tag with "restart" attribute 
+        		// and a series of dummy cells having a vMerge tag with no (or "continue") attribute.            		
+        		            		
+        		// if current cell is the first real cell in the row, but is not in the leftmost position, then
+        		// search for vertically spanned cells to the left and insert dummy cells before current
+        		if (tcb.getParent().getChild(0) == tcb && tcb.getCol() > 0) {
+        			tableHelper.insertDummyVMergedCells(contentContextStack.peek(), tcb, true);
+        		}
+        		
+				Tc tc = Context.getWmlObjectFactory().createTc();
+        		contentContextStack.peek().getContent().add(tc);
+        		pushBlockStack(tc);//.getContent();
+	            mustPop = true;
+
+        		
+	            tableHelper.setupTcPr(tcb, tc, tableProperties);
+        		
+				// search for vertically spanned cells to the right from current, and insert dummy cells after it
+	            tableHelper.insertDummyVMergedCells(trContext, tcb, false);
+
+        	} else if (isListItem(blockBox.getElement())
+        			/*
+        			 *   <li>
+				            <p>Item 2</p>
+				            DON"T TRIGGER THIS LINE
+				        </li>
+        			 */
+        			&& !(blockBox instanceof org.docx4j.org.xhtmlrenderer.render.AnonymousBlockBox)) {
+
+	            // Paragraph level styling
+            	//P currentP = this.getCurrentParagraph(true);
+            	
+            	listHelper.peekListItemStateStack().init(); 
+            	
+                PPr pPr =  Context.getWmlObjectFactory().createPPr();
+                this.getCurrentParagraph(true).setPPr(pPr);
+            	
+                if (paragraphFormatting.equals(FormattingOption.IGNORE_CLASS)) {
+                	
+            		listHelper.addNumbering(this.getCurrentParagraph(true), blockBox.getElement(), cssMap);	                	
+            		addParagraphProperties(pPr, blockBox, cssMap );
             		
-					Tc tc = Context.getWmlObjectFactory().createTc();
-            		contentContextStack.peek().getContent().add(tc);
-            		pushBlockStack(tc);//.getContent();
-		            mustPop = true;
-
-            		
-		            tableHelper.setupTcPr(tcb, tc, tableProperties);
-            		
-					// search for vertically spanned cells to the right from current, and insert dummy cells after it
-		            tableHelper.insertDummyVMergedCells(trContext, tcb, false);
-
-            	} else if (isListItem(blockBox.getElement())
-            			/*
-            			 *   <li>
-					            <p>Item 2</p>
-					            DON"T TRIGGER THIS LINE
-					        </li>
-            			 */
-            			&& !(blockBox instanceof org.docx4j.org.xhtmlrenderer.render.AnonymousBlockBox)) {
-
-		            // Paragraph level styling
-	            	//P currentP = this.getCurrentParagraph(true);
-	            	
-	            	listHelper.peekListItemStateStack().init(); 
-	            	
-	                PPr pPr =  Context.getWmlObjectFactory().createPPr();
-	                this.getCurrentParagraph(true).setPPr(pPr);
-	            	
-	                if (paragraphFormatting.equals(FormattingOption.IGNORE_CLASS)) {
-	                	
-	            		listHelper.addNumbering(this.getCurrentParagraph(true), blockBox.getElement(), cssMap);	                	
-	            		addParagraphProperties(pPr, blockBox, cssMap );
+                } else {
+                	// CLASS_TO_STYLE_ONLY or CLASS_PLUS_OTHER
+	            	if (listHelper.peekListStack().getElement()!=null
+	            			&& listHelper.peekListStack().getElement().getAttribute("class")!=null) {
+	            		// NB Currently, you need to put this @class on the ol|ul at each level of nesting,
+	            		// if you want to use the list style.
+	            		// If you only put it on some levels, well, new list(s) will be created for the others,
+	            		// with imperfect results...
 	            		
-	                } else {
-	                	// CLASS_TO_STYLE_ONLY or CLASS_PLUS_OTHER
-		            	if (listHelper.peekListStack().getElement()!=null
-		            			&& listHelper.peekListStack().getElement().getAttribute("class")!=null) {
-		            		// NB Currently, you need to put this @class on the ol|ul at each level of nesting,
-		            		// if you want to use the list style.
-		            		// If you only put it on some levels, well, new list(s) will be created for the others,
-		            		// with imperfect results...
-		            		
-		            		String cssClass = listHelper.peekListStack().getElement().getAttribute("class").trim();
-		            		log.debug(cssClass);
-		            		if (cssClass.equals("")) {
-		            			// What to do? same thing as if no @class specified
-		            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
-		    	            		listHelper.addNumbering(this.getCurrentParagraph(true), blockBox.getElement(), cssMap);
-		            				addParagraphProperties(pPr, blockBox, cssMap );
-		            			}
-		            			// else its CLASS_TO_STYLE_ONLY,
-		            			// but since we have no @class, do nothing
-		            			
-		            		} else {
-		            			// Usual case...
-		            			
-			            		// Our XHTML export gives a space separated list of class names,
-			            		// reflecting the style hierarchy.  Here, we just want the first one.
-			            		// TODO, replace this with a configurable stylenamehandler.
-			            		int pos = cssClass.indexOf(" ");
-			            		if (pos>-1) {
-			            			cssClass = cssClass.substring(0,  pos);
-			            		}
-			            		
-			            		// if the docx contains this stylename, set it
-			            		Style s = this.stylesByID.get(cssClass);
-			            		if (s==null) {
-			            			log.debug("No docx style for @class='" + cssClass + "'");
-			            			
-			            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
-			    	            		listHelper.addNumbering(this.getCurrentParagraph(true), blockBox.getElement(), cssMap);
-			            				addParagraphProperties(pPr, blockBox, cssMap );
-			            			}
-			            			// else, can't number
-			            			
-			            		} else if (s.getType()!=null && s.getType().equals("numbering")) {
-			            			log.debug("Using list style from @class='" + cssClass + "'");
-			            			
-			            			/* it should contain something like:
-			            			 * 
-			            			 *     <w:pPr>
-										      <w:numPr>
-										        <w:numId w:val="1"/>
-										      </w:numPr>
-										    </w:pPr>
-			            			 *
-			            			 * Use this... 
-			            			 * 
-			            			 * We don't actually set the numbering style on the 
-			            			 * paragraph, because numbering styles aren't used that way
-			            			 * in Word.
-			            			 */
-			            			BigInteger numId = s.getPPr().getNumPr().getNumId().getVal();
-			            			listHelper.setNumbering(pPr, numId);  
-			            				// TODO: @start is ignored in this case (it is handled in addNumbering) 
-			            			
-			            			// Note that we just use the numbering it points to;
-			            			// we don't follow it to its abstract num (which is in fact
-			            			// where the w:styleLink matching our @class should be found).
-			            			
-			            			// TODO: if this list is being used a second time, we should
-			            			// restart numbering??  Is it restarted in the HTML?
-
-				            		// OK, we've applied @class
-			            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
-			            				// now apply ad hoc formatting
-			            				addParagraphProperties(pPr, blockBox, cssMap );
-			            			}			            		
-			            			
-			            		} else {
-			            			log.debug("For docx style for @class='" + cssClass + "', but its not a numbering style ");
-			            			
-			            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
-			            				
-			    	            		listHelper.addNumbering(this.getCurrentParagraph(true), blockBox.getElement(), cssMap);
-			    	            		
-			    	            		// SPECIAL CASE
-			    	            		if (Docx4jProperties.getProperty("docx4j.model.datastorage.BindingTraverser.XHTML.Block.rStyle.Adopt", false)
-					            				&& s.getType()!=null && s.getType().equals("paragraph")) { 	
-			    	            			
-			    	            			log.debug(".. using " + s.getStyleId() );
-			    	            			
-			    	            			PStyle pStyle = Context.getWmlObjectFactory().createPPrBasePStyle();
-			    	            			pStyle.setVal(s.getStyleId());
-			    	            			this.getCurrentParagraph(false).getPPr().setPStyle(pStyle);			    	            			
-			    	            		}
-			            				addParagraphProperties(pPr, blockBox, cssMap );
-			            			}			            			
-			            			
-			            		}
-			            		
-		            		}
-		            	} else {
-		            		// No @class
+	            		String cssClass = listHelper.peekListStack().getElement().getAttribute("class").trim();
+	            		log.debug(cssClass);
+	            		if (cssClass.equals("")) {
+	            			// What to do? same thing as if no @class specified
 	            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
+	    	            		listHelper.addNumbering(this.getCurrentParagraph(true), blockBox.getElement(), cssMap);
 	            				addParagraphProperties(pPr, blockBox, cssMap );
 	            			}
 	            			// else its CLASS_TO_STYLE_ONLY,
 	            			// but since we have no @class, do nothing
-		            	}
-		            	
-	            	} 
-            		
-            	} else if  (e.getNodeName().equals("img")) {
-		            	addImage(blockBox);
+	            			
+	            		} else {
+	            			// Usual case...
+	            			
+		            		// Our XHTML export gives a space separated list of class names,
+		            		// reflecting the style hierarchy.  Here, we just want the first one.
+		            		// TODO, replace this with a configurable stylenamehandler.
+		            		int pos = cssClass.indexOf(" ");
+		            		if (pos>-1) {
+		            			cssClass = cssClass.substring(0,  pos);
+		            		}
+		            		
+		            		// if the docx contains this stylename, set it
+		            		Style s = this.stylesByID.get(cssClass);
+		            		if (s==null) {
+		            			log.debug("No docx style for @class='" + cssClass + "'");
+		            			
+		            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
+		    	            		listHelper.addNumbering(this.getCurrentParagraph(true), blockBox.getElement(), cssMap);
+		            				addParagraphProperties(pPr, blockBox, cssMap );
+		            			}
+		            			// else, can't number
+		            			
+		            		} else if (s.getType()!=null && s.getType().equals("numbering")) {
+		            			log.debug("Using list style from @class='" + cssClass + "'");
+		            			
+		            			/* it should contain something like:
+		            			 * 
+		            			 *     <w:pPr>
+									      <w:numPr>
+									        <w:numId w:val="1"/>
+									      </w:numPr>
+									    </w:pPr>
+		            			 *
+		            			 * Use this... 
+		            			 * 
+		            			 * We don't actually set the numbering style on the 
+		            			 * paragraph, because numbering styles aren't used that way
+		            			 * in Word.
+		            			 */
+		            			BigInteger numId = s.getPPr().getNumPr().getNumId().getVal();
+		            			listHelper.setNumbering(pPr, numId);  
+		            				// TODO: @start is ignored in this case (it is handled in addNumbering) 
+		            			
+		            			// Note that we just use the numbering it points to;
+		            			// we don't follow it to its abstract num (which is in fact
+		            			// where the w:styleLink matching our @class should be found).
+		            			
+		            			// TODO: if this list is being used a second time, we should
+		            			// restart numbering??  Is it restarted in the HTML?
 
-            	} else if  (e.getNodeName().equals("hr")) {
-	            	
-            		this.contentContextStack.peek().getContent().add(
-            				getPforHR());
-		            	
-	            } else {
-	            	
-	            	log.debug("default handling for " + e.getNodeName());
-	            	
-	            	// Paragraph processing.  Generally, we'll create a new P.
-	            	// An exception to that is li/p[1], where we want to use 
-	            	// the p created for the li.
-	            	if (listHelper.getDepth()>0
-	            			&& !listHelper.peekListItemStateStack().haveMergedFirstP) {
-	            		// use existing attachmentPoint
-	            		log.debug("use existing attachmentPoint");
-	            		listHelper.peekListItemStateStack().haveMergedFirstP = true;
+			            		// OK, we've applied @class
+		            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
+		            				// now apply ad hoc formatting
+		            				addParagraphProperties(pPr, blockBox, cssMap );
+		            			}			            		
+		            			
+		            		} else {
+		            			log.debug("For docx style for @class='" + cssClass + "', but its not a numbering style ");
+		            			
+		            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
+		            				
+		    	            		listHelper.addNumbering(this.getCurrentParagraph(true), blockBox.getElement(), cssMap);
+		    	            		
+		    	            		// SPECIAL CASE
+		    	            		if (Docx4jProperties.getProperty("docx4j.model.datastorage.BindingTraverser.XHTML.Block.rStyle.Adopt", false)
+				            				&& s.getType()!=null && s.getType().equals("paragraph")) { 	
+		    	            			
+		    	            			log.debug(".. using " + s.getStyleId() );
+		    	            			
+		    	            			PStyle pStyle = Context.getWmlObjectFactory().createPPrBasePStyle();
+		    	            			pStyle.setVal(s.getStyleId());
+		    	            			this.getCurrentParagraph(false).getPPr().setPStyle(pStyle);			    	            			
+		    	            		}
+		            				addParagraphProperties(pPr, blockBox, cssMap );
+		            			}			            			
+		            			
+		            		}
+		            		
+	            		}
 	            	} else {
-	            		
-	            		log.debug("create new attachmentPoint");
-		            	P currentP = this.getCurrentParagraph(true);
-		                currentP.setPPr(this.getPPr(blockBox, cssMap));
-		                
-		                log.debug(XmlUtils.marshaltoString(currentP));
-		                
-	
-		            	if (e.getNodeName().equals("figcaption")) {
-		            		prepareCaption(e, currentP);
-		            	}
+	            		// No @class
+            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
+            				addParagraphProperties(pPr, blockBox, cssMap );
+            			}
+            			// else its CLASS_TO_STYLE_ONLY,
+            			// but since we have no @class, do nothing
 	            	}
+	            	
+            	} 
+        		
+        	} else if  (e.getNodeName().equals("img")) {
+	            	addImage(blockBox);
+
+        	} else if  (e.getNodeName().equals("hr")) {
+            	
+        		this.contentContextStack.peek().getContent().add(
+        				getPforHR());
+	            	
+            } else {
+            	
+            	log.debug("default handling for " + e.getNodeName());
+            	
+            	// Paragraph processing.  Generally, we'll create a new P.
+            	// An exception to that is li/p[1], where we want to use 
+            	// the p created for the li.
+            	if (listHelper.getDepth()>0
+            			&& !listHelper.peekListItemStateStack().haveMergedFirstP) {
+            		// use existing attachmentPoint
+            		log.debug("use existing attachmentPoint");
+            		listHelper.peekListItemStateStack().haveMergedFirstP = true;
+            	} else {
+            		
+            		log.debug("create new attachmentPoint");
+	            	P currentP = this.getCurrentParagraph(true);
+	                currentP.setPPr(this.getPPr(blockBox, cssMap));
 	                
-	            }
-        	}
-            
-            // the recursive bit:
-            
-        	
-            	log.debug("Processing children of " + box.getElement().getNodeName() );
-	            switch (blockBox.getChildrenContentType()) {
-	                case BlockBox.CONTENT_BLOCK:
-	                	log.debug(".. which are BlockBox.CONTENT_BLOCK");	                	
-	                    for (Object o : ((BlockBox)box).getChildren() ) {
-	                        log.debug("   processing child " + o.getClass().getName() );
-	                    	
-	                        traverse((Box)o,  box, tableProperties);                    
+	                log.debug(XmlUtils.marshaltoString(currentP));
+	                
+
+	            	if (e.getNodeName().equals("figcaption")) {
+	            		prepareCaption(e, currentP);
+	            	}
+            	}
+                
+            }
+    	}
+        
+        // the recursive bit:
+        
+    	
+        	log.debug("Processing children of " + box.getElement().getNodeName() );
+            switch (blockBox.getChildrenContentType()) {
+                case BlockBox.CONTENT_BLOCK:
+                	log.debug(".. which are BlockBox.CONTENT_BLOCK");	                	
+                    for (Object o : ((BlockBox)box).getChildren() ) {
+                        log.debug("   processing child " + o.getClass().getName() );
+                    	
+                        traverse((Box)o,  box, tableProperties);                    
+                        log.debug(".. processed child " + o.getClass().getName() );
+                    }
+                    break;
+                case BlockBox.CONTENT_INLINE:
+                	
+                	log.debug(".. which are BlockBox.CONTENT_INLINE");	                	
+                	
+                    if ( ((BlockBox)box).getInlineContent()!=null) {
+                    	
+                        for (Object o : ((BlockBox)box).getInlineContent() ) {
+//                            log.debug("        " + o.getClass().getName() ); 
+                            if (o instanceof InlineBox ) {
+//                                    && ((InlineBox)o).getElement()!=null // skip these (pseudo-elements?)
+//                                    && ((InlineBox)o).isStartsHere()) {
+                                
+                            	processInlineBox( (InlineBox)o);
+                            		                            	
+                            } else if (o instanceof BlockBox ) {
+                            	
+                                traverse((Box)o, box, tableProperties); // commenting out gets rid of unwanted extra parent elements
+                                //contentContext = tmpContext;
+                            } else {
+                                log.debug("What to do with " + box.getClass().getName() );                        
+                            }
 	                        log.debug(".. processed child " + o.getClass().getName() );
-	                    }
-	                    break;
-	                case BlockBox.CONTENT_INLINE:
-	                	
-	                	log.debug(".. which are BlockBox.CONTENT_INLINE");	                	
-	                	
-	                    if ( ((BlockBox)box).getInlineContent()!=null) {
-	                    	
-	                        for (Object o : ((BlockBox)box).getInlineContent() ) {
-	//                            log.debug("        " + o.getClass().getName() ); 
-	                            if (o instanceof InlineBox ) {
-	//                                    && ((InlineBox)o).getElement()!=null // skip these (pseudo-elements?)
-	//                                    && ((InlineBox)o).isStartsHere()) {
-	                                
-	                            	processInlineBox( (InlineBox)o);
-	                            		                            	
-	                            } else if (o instanceof BlockBox ) {
-	                            	
-	                                traverse((Box)o, box, tableProperties); // commenting out gets rid of unwanted extra parent elements
-	                                //contentContext = tmpContext;
-	                            } else {
-	                                log.debug("What to do with " + box.getClass().getName() );                        
-	                            }
-		                        log.debug(".. processed child " + o.getClass().getName() );
-	                        }
-	                        
-	                        
-                        	if (markuprange!=null) {        		
-                        		getCurrentParagraph(true).getContent().add( markuprange);
-                        		markuprange = null;
-                        	}
+                        }
+                        
+                        
+                    	if (markuprange!=null) {        		
+                    		getCurrentParagraph(true).getContent().add( markuprange);
+                    		markuprange = null;
+                    	}
 //                    		inAlreadyProcessed = false;        		
 
-                        	// Handle case:  <li>plain text
-                        	if (listHelper.getDepth()>0) {
-        	            		listHelper.peekListItemStateStack().haveMergedFirstP = true;
-                        	}
-	                    }
-	                    break;
+                    	// Handle case:  <li>plain text
+                    	if (listHelper.getDepth()>0) {
+    	            		listHelper.peekListItemStateStack().haveMergedFirstP = true;
+                    	}
+                    }
+                    break;
 
-	                case BlockBox.CONTENT_EMPTY:
-	                    break;
-	                    
-	                case BlockBox.CONTENT_UNKNOWN:
-	                	log.warn(".. which are UNKNOWN " );
-	                    break;
-	                    
-	               default:
-	                	log.warn(".. which are ??? " + blockBox.getChildrenContentType() );
-	                	break;
-	            } 
-            
-		    
-            log.debug("Done processing children of " + box.getClass().getName() );
-            // contentContext gets its old value back each time recursion finishes,
-            // ensuring elements are added at the appropriate level (eg inside tr) 
-	    	if (e.getNodeName().equals("ol")
-	    			|| e.getNodeName().equals("ul") ) {
-	    		
-        		log.info(".. exiting list");
-	    		
-        		listHelper.popListStack();
-	    	}    
-            
-            if (this.contentContextStack.peek() instanceof Tc) {
-                // nested tables must end with a <p/> or Word 2010 can't open the docx!
-                // ie:
-                // <w:tc>
-                //   <w:tbl>..</w:tbl>
-                //   <w:p/>                <---------- 
-                // </w:tc>
-            	// This fixes the dodgy table/table case
-            	Tc tc = (Tc)this.contentContextStack.peek();
-            	
-            	if (tc.getContent().size()==0
-            			|| tc.getContent().get(tc.getContent().size()-1) instanceof Tbl) {
-            		tc.getContent().add(
-            				Context.getWmlObjectFactory().createP());
-            	}
-            }
-
-            // new P, except following an image
-        	if  (!e.getNodeName().equals("img")) {
-        		attachmentPointP = null; 
-                if (mustPop) popBlockStack();
+                case BlockBox.CONTENT_EMPTY:
+                    break;
+                    
+                case BlockBox.CONTENT_UNKNOWN:
+                	log.warn(".. which are UNKNOWN " );
+                    break;
+                    
+               default:
+                	log.warn(".. which are ??? " + blockBox.getChildrenContentType() );
+                	break;
+            } 
+        
+	    
+        log.debug("Done processing children of " + box.getClass().getName() );
+        // contentContext gets its old value back each time recursion finishes,
+        // ensuring elements are added at the appropriate level (eg inside tr) 
+    	if (e.getNodeName().equals("ol")
+    			|| e.getNodeName().equals("ul") ) {
+    		
+    		log.info(".. exiting list");
+    		
+    		listHelper.popListStack();
+    	}    
+        
+        if (this.contentContextStack.peek() instanceof Tc) {
+            // nested tables must end with a <p/> or Word 2010 can't open the docx!
+            // ie:
+            // <w:tc>
+            //   <w:tbl>..</w:tbl>
+            //   <w:p/>                <---------- 
+            // </w:tc>
+        	// This fixes the dodgy table/table case
+        	Tc tc = (Tc)this.contentContextStack.peek();
+        	
+        	if (tc.getContent().size()==0
+        			|| tc.getContent().get(tc.getContent().size()-1) instanceof Tbl) {
+        		tc.getContent().add(
+        				Context.getWmlObjectFactory().createP());
         	}
+        }
+
+        // new P, except following an image
+    	if  (!e.getNodeName().equals("img")) {
+    		attachmentPointP = null; 
+            if (mustPop) popBlockStack();
+    	}
+    	
+        if (e.getNodeName().equals("div")) {
+        	if (divHandler!=null) {
+        		divHandler.leave();
+        	}
+        }
+    	
         	
-            if (e.getNodeName().equals("div")) {
-            	if (divHandler!=null) {
-            		divHandler.leave();
-            	}
-            }
-        	
-            	
 //            // An empty tc shouldn't make the table disappear!
 //            // TODO - make more elegant
 //            if (e.getNodeName().equals("table")) {            	
@@ -1384,18 +1394,12 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 //            }
 //
 //            
-        	
-        	// bookmark end
-        	if (markupRangeForID!=null) {
-        		bookmarkHelper.attachBookmarkEnd(markupRangeForID, getCurrentParagraph(false), this.contentContextStack.peek());
-        		markupRangeForID = null;
-        	}
-            
-        } else if (box instanceof AnonymousBlockBox) {
-            log.debug("AnonymousBlockBox");            
-        } else {
-        	log.warn(box.getClass().getName());
-        }
+    	
+    	// bookmark end
+    	if (markupRangeForID!=null) {
+    		bookmarkHelper.attachBookmarkEnd(markupRangeForID, getCurrentParagraph(false), this.contentContextStack.peek());
+    		markupRangeForID = null;
+    	}
     
     }
     
