@@ -21,6 +21,24 @@ public class XHTMLFileToSlide {
 	        String inputfilepath = System.getProperty("user.dir") + "/fragment.html";    	
 	        String baseUrl = "file:///C:/Users/jharrop/git/docx4j-ImportXHTML/";
 
+	        String TXBODY_SHAPE_TEMPLATE =            
+                    "<p:sp xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\">" +
+                    "  <p:nvSpPr>" + 
+                    "    <p:cNvPr id=\"4\" name=\"Title 3\" />" +
+                    "    <p:cNvSpPr>" +
+                    "      <a:spLocks noGrp=\"1\" />" +
+                    "    </p:cNvSpPr>" +
+                    "    <p:nvPr>" +
+                    "      <p:ph type=\"title\" />" +
+                    "    </p:nvPr>" +
+                    "  </p:nvSpPr>" +
+                    "  <p:spPr />" +
+                    "  <p:txBody>" +
+                    "    <a:bodyPr />" +
+                    "    <a:lstStyle />" +
+                    "  </p:txBody>" +
+                    "</p:sp>";
+	        
 	        String stringFromFile = FileUtils.readFileToString(new File(inputfilepath), "UTF-8");
 	        
 	        String content = stringFromFile;
@@ -32,7 +50,10 @@ public class XHTMLFileToSlide {
 					
 					
 			// Process XHTML
-			List<Object> results = XHTMLtoPPTX.convertSingleSlide(content, baseUrl, presentationMLPackage, slidePart);
+			XHTMLtoPPTX converter = new XHTMLtoPPTX(presentationMLPackage, slidePart, content, baseUrl);
+			converter.setTxBodyShapeTemplate(TXBODY_SHAPE_TEMPLATE);
+			List<Object> results = converter.convertSingleSlide();
+			
 			System.out.println("Got results: " + results.size());
 
 			// Add results to slide
