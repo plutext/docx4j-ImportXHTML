@@ -30,13 +30,13 @@ import org.docx4j.utils.ResourceUtils;
 	  * 
 	  *    <w:rFonts w:ascii="Arial Black" w:hAnsi="Arial Black"/>	
 	  *    
-	  * You can set FormattingOption: CLASS_TO_STYLE_ONLY, CLASS_PLUS_OTHER, IGNORE_CLASS
+	  * You can set FormattingOption: CLASS_TO_STYLE_ONLY, CLASS_PLUS_OTHER (the default), IGNORE_CLASS
 	  * independently for runs, paragraphs, tables
 	  * 
 	  * CLASS_TO_STYLE_ONLY: a Word style matching a class attribute will
 	  * be used, and nothing else
 	  * 
-	  * CLASS_PLUS_OTHER: a Word style matching a class attribute will
+	  * CLASS_PLUS_OTHER (the default): a Word style matching a class attribute will
 	  * be used; other css will be translated to direct formatting
 	  * 
 	  * IGNORE_CLASS: css will be translated to direct formatting
