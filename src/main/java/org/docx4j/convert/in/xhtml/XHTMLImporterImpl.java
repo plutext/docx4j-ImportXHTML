@@ -1113,7 +1113,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	            tableHelper.insertDummyVMergedCells(trContext, tcb, false);
 
         	} else if (isListItem(blockBox.getElement())
-        			/*
+        			/*  <li class="ListParagraph Normal DocDefaults " style="display: list-item;text-align: justify;"><span style="">Level 1</span></li>
+
         			 *   <li>
 				            <p>Item 2</p>
 				            DON"T TRIGGER THIS LINE
@@ -1124,6 +1125,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	            // Paragraph level styling
             	//P currentP = this.getCurrentParagraph(true);
             	
+        		// You'll get an NPE here if you have li which isn't in ol|ul
             	listHelper.peekListItemStateStack().init(); 
             	
                 PPr pPr =  Context.getWmlObjectFactory().createPPr();
@@ -1133,7 +1135,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
                 	
             		listHelper.addNumbering(this.getCurrentParagraph(true), blockBox.getElement(), cssMap);	                	
             		addParagraphProperties(pPr, blockBox, cssMap );
-            		
+	                        		
                 } else {
                 	// CLASS_TO_STYLE_ONLY or CLASS_PLUS_OTHER
 	            	if (listHelper.peekListStack().getElement()!=null
