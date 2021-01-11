@@ -41,6 +41,11 @@ public class FSColorToHexString {
             throw new UnsupportedOperationException();
         final FSColor fsColor = ((PropertyValue) cssPrimitiveValue)
                 .getFSColor();
+        return rgbToHex(fsColor);
+	}
+
+	public static String rgbToHex(FSColor fsColor) {
+		
         if (!(fsColor instanceof FSRGBColor))
             throw new UnsupportedOperationException();
     
@@ -49,5 +54,5 @@ public class FSColorToHexString {
         		((FSRGBColor) fsColor).getGreen(), 
         		((FSRGBColor) fsColor).getBlue());		
 	}
-
+	
 }
