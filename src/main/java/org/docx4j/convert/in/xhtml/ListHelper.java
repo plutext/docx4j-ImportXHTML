@@ -349,13 +349,13 @@ public class ListHelper {
 //			log.debug(bb.getElement().getLocalName());
 
 			LengthValue padding = (LengthValue)bb.getStyle().valueByName(CSSName.PADDING_LEFT);
-			PropertyValue val = new PropertyValue(((LengthValue)padding).getCssSacUnitType(), padding.asFloat(), padding.asString()); 
+			PropertyValue val = new PropertyValue(XHTMLImporterImpl.getLengthPrimitiveType(padding), padding.asFloat(), padding.asString()); 
 			totalPadding +=Indent.getTwip(new DomCssValueAdaptor( val));
 
 //			log.debug("+padding-left: " + totalPadding);
 
 			LengthValue margin = (LengthValue)bb.getStyle().valueByName(CSSName.MARGIN_LEFT);
-			val = new PropertyValue(((LengthValue)margin).getCssSacUnitType(), margin.asFloat(), margin.asString()); 
+			val = new PropertyValue(XHTMLImporterImpl.getLengthPrimitiveType(margin), margin.asFloat(), margin.asString()); 
 			totalPadding +=Indent.getTwip(new DomCssValueAdaptor( val));
 
 //			log.debug("+margin-left: " + totalPadding);
@@ -379,11 +379,11 @@ public class ListHelper {
 		
 		int totalPadding = 0;
 		LengthValue padding = (LengthValue)styleable.getStyle().valueByName(CSSName.PADDING_LEFT);
-		PropertyValue val = new PropertyValue(((LengthValue)padding).getCssSacUnitType(), padding.asFloat(), padding.asString()); 
+		PropertyValue val = new PropertyValue(XHTMLImporterImpl.getLengthPrimitiveType(padding), padding.asFloat(), padding.asString()); 
 		totalPadding +=Indent.getTwip(new DomCssValueAdaptor(val));
 
 		LengthValue margin = (LengthValue)styleable.getStyle().valueByName(CSSName.MARGIN_LEFT);
-		val = new PropertyValue(((LengthValue)margin).getCssSacUnitType(), margin.asFloat(), margin.asString()); 
+		val = new PropertyValue(XHTMLImporterImpl.getLengthPrimitiveType(margin), margin.asFloat(), margin.asString()); 
 		totalPadding +=Indent.getTwip(new DomCssValueAdaptor( val));
 
 		totalPadding +=getSelfAndAncestorIndentation();

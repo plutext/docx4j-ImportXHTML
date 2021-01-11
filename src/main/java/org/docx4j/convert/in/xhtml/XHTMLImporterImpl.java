@@ -797,8 +797,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	            	cssMap.put(name.toString(), val2 );            		
 	
 	            } else if (val instanceof LengthValue) {
-	            	
-	    			PropertyValue val2 = new PropertyValue(((LengthValue)val).getCssSacUnitType() , val.asFloat(), val.asString()); 
+
+	    			PropertyValue val2 = new PropertyValue(getLengthPrimitiveType(val) , val.asFloat(), val.asString()); 
 	            	cssMap.put(name.toString(), val2 );
 	            	
 	            } else if (val instanceof NumberValue) {
@@ -848,7 +848,22 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     }
     
 
-    
+    protected static short getLengthPrimitiveType(FSDerivedValue val) {
+    	
+    	if (val instanceof LengthValue) {
+
+        	// Access the private field
+        	short _lengthPrimitiveType = ((LengthValue)val).getCssSacUnitType(); 
+    		try {
+    			return (short)FieldUtils.readField(val, "_lengthPrimitiveType", true);
+    		} catch (Exception e) {
+    			log.error("Couldn't access private field", e);
+        		throw new RuntimeException(e.getMessage(), e);
+    		}
+    	} else {
+    		throw new RuntimeException("Unexpected type " + val.getClass().getName());
+    	}
+    }
     
     /**
      * The Block level elements that our content may go into, ie
@@ -2471,7 +2486,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 				&& bb.getStyle().valueByName(CSSName.PADDING_LEFT) instanceof LengthValue) {
 				
 			LengthValue padding = (LengthValue)bb.getStyle().valueByName(CSSName.PADDING_LEFT);
-			PropertyValue val = new PropertyValue(PropertyValue.VALUE_TYPE_LENGTH, padding.asFloat(), null); 
+			PropertyValue val = new PropertyValue(getLengthPrimitiveType(padding) , padding.asFloat(), padding.asString()); 
 			paddingI +=Indent.getTwip(new DomCssValueAdaptor( val));
 			
 			
@@ -2482,7 +2497,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 				&& bb.getStyle().valueByName(CSSName.MARGIN_LEFT) instanceof LengthValue) {
 			
 			LengthValue margin = (LengthValue)bb.getStyle().valueByName(CSSName.MARGIN_LEFT);
-			PropertyValue val = new PropertyValue(PropertyValue.VALUE_TYPE_LENGTH, margin.asFloat(), null); 
+			PropertyValue val = new PropertyValue(getLengthPrimitiveType(margin) , margin.asFloat(), margin.asString()); 
 			paddingI +=Indent.getTwip(new DomCssValueAdaptor(val));
 		}
 //		log.debug("+margin-left: " + totalPadding);
