@@ -1,10 +1,13 @@
 package org.docx4j.convert.in.xhtml;
 
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 
+import org.apache.commons.lang3.reflect.FieldUtils;
+import org.apache.commons.lang3.reflect.MethodUtils;
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.XmlUtils;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl.TableProperties;
@@ -19,6 +22,7 @@ import org.docx4j.org.xhtmlrenderer.css.style.FSDerivedValue;
 import org.docx4j.org.xhtmlrenderer.css.style.derived.LengthValue;
 import org.docx4j.org.xhtmlrenderer.newtable.TableBox;
 import org.docx4j.org.xhtmlrenderer.newtable.TableCellBox;
+import org.docx4j.org.xhtmlrenderer.newtable.TableSectionBox;
 import org.docx4j.org.xhtmlrenderer.render.Box;
 import org.docx4j.wml.CTBorder;
 import org.docx4j.wml.CTHeight;
@@ -138,13 +142,13 @@ public class TableHelper {
             } 
         	
     		
-        } else if (cssTable.getMargin() !=null
-				&& cssTable.getMargin().left()>0) {
+        } else if (cssTable.getMargin(importer.getRenderer().getLayoutContext()) !=null
+				&& cssTable.getMargin(importer.getRenderer().getLayoutContext()).left()>0) {
         	
-			log.debug("Calculating TblInd from margin.left: " + cssTable.getMargin().left() );
+			log.debug("Calculating TblInd from margin.left: " + cssTable.getMargin(importer.getRenderer().getLayoutContext()).left() );
     		TblWidth tblInd = Context.getWmlObjectFactory().createTblWidth();
     		tblInd.setW( BigInteger.valueOf( Math.round(
-    				cssTable.getMargin().left()
+    				cssTable.getMargin(importer.getRenderer().getLayoutContext()).left()
     				)));
     		tblInd.setType(TblWidth.TYPE_DXA);
 			tblPr.setTblInd(tblInd);
@@ -500,7 +504,23 @@ public class TableHelper {
 
 		for ( int i = tcb.getCol(); i >= 0 && i < numEffCols; i += backwards ? -1 : 1 ) {
 
-			TableCellBox adjCell = tcb.getSection().cellAt(tcb.getRow(), i);
+			
+	    	// Access the private field
+			TableSectionBox tsb = null;
+			try {
+				tsb = (TableSectionBox)MethodUtils.invokeMethod(tcb, true, "getSection");
+//			} catch (IllegalArgumentException e) {
+//				// shouldn't happen
+//				log.error("Couldn't access private field", e);
+			} catch (IllegalAccessException e) {
+				log.error(e.getMessage(), e);
+			} catch (NoSuchMethodException e) {
+				log.error(e.getMessage(), e);
+			} catch (InvocationTargetException e) {
+				log.error(e.getMessage(), e);
+			}
+			
+			TableCellBox adjCell = tsb.cellAt(tcb.getRow(), i);
 
 			if ( adjCell == null ) {
 				// Check your table is OK

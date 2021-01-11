@@ -7,6 +7,7 @@ import java.util.StringTokenizer;
 import org.docx4j.fonts.microsoft.MicrosoftFonts;
 import org.docx4j.fonts.microsoft.MicrosoftFontsRegistry;
 import org.docx4j.jaxb.Context;
+import org.docx4j.org.xhtmlrenderer.css.parser.PropertyValue;
 import org.docx4j.wml.RFonts;
 import org.docx4j.wml.RPr;
 import org.slf4j.Logger;
@@ -69,7 +70,7 @@ public class FontHandler {
 		return fontFamilyToFont.get(cssFontFamily);
 	}
 	
-	protected static void setRFont(CSSValue fontFamily, RPr rpr) {
+	protected static void setRFont(PropertyValue fontFamily, RPr rpr) {
 		
 		if (fontFamily==null) return;
 //		log.debug(fontFamily.getCssText());

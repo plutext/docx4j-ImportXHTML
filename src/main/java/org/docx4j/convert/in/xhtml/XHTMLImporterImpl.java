@@ -49,6 +49,7 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.transform.Source;
 
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.docx4j.Docx4jProperties;
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.XmlUtils;
@@ -70,10 +71,17 @@ import org.docx4j.openpackaging.parts.relationships.Namespaces;
 import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
 import org.docx4j.org.xhtmlrenderer.css.constants.CSSName;
 import org.docx4j.org.xhtmlrenderer.css.constants.IdentValue;
+import org.docx4j.org.xhtmlrenderer.css.parser.PropertyValue;
 import org.docx4j.org.xhtmlrenderer.css.style.CalculatedStyle;
 import org.docx4j.org.xhtmlrenderer.css.style.DerivedValue;
 import org.docx4j.org.xhtmlrenderer.css.style.FSDerivedValue;
+import org.docx4j.org.xhtmlrenderer.css.style.derived.ColorValue;
+import org.docx4j.org.xhtmlrenderer.css.style.derived.CountersValue;
+import org.docx4j.org.xhtmlrenderer.css.style.derived.FunctionValue;
 import org.docx4j.org.xhtmlrenderer.css.style.derived.LengthValue;
+import org.docx4j.org.xhtmlrenderer.css.style.derived.ListValue;
+import org.docx4j.org.xhtmlrenderer.css.style.derived.NumberValue;
+import org.docx4j.org.xhtmlrenderer.css.style.derived.StringValue;
 import org.docx4j.org.xhtmlrenderer.docx.DocxRenderer;
 import org.docx4j.org.xhtmlrenderer.layout.Styleable;
 import org.docx4j.org.xhtmlrenderer.newtable.TableBox;
@@ -109,7 +117,9 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.w3c.dom.css.CSSValue;
+import org.w3c.dom.css.CSSPrimitiveValue;
+//import org.w3c.dom.css.CSSPrimitiveValue;
+//import org.w3c.dom.css.CSSValue;
 import org.xml.sax.InputSource;
 
 /**
@@ -707,16 +717,26 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      * @param cssWhiteList
      * @return
      */
-    public Map<String, CSSValue> getCascadedProperties(CalculatedStyle cs) {
+    public Map<String, PropertyValue> getCascadedProperties(CalculatedStyle cs) {
     	
     	// Similar to renderer.getLayoutContext().getSharedContext().getCss().getCascadedPropertiesMap(e)?
     	
     	// or use getStyle().valueByName directly; see TableHelper for example
 
     	
-    	Map<String, CSSValue> cssMap = new HashMap<String, CSSValue>();
+    	Map<String, PropertyValue> cssMap = new HashMap<String, PropertyValue>();
     	
-    	FSDerivedValue[] derivedValues = cs.getDerivedValues();
+    	// Access the private field
+    	FSDerivedValue[] derivedValues = null;
+		try {
+			derivedValues = (FSDerivedValue[])FieldUtils.readField(cs, "_derivedValuesById", true);
+		} catch (IllegalArgumentException e) {
+			// shouldn't happen
+			log.error("Couldn't access private field", e);
+		} catch (IllegalAccessException e) {
+			log.error("Couldn't access private field", e);
+		}
+
         for (int i = 0; i < derivedValues.length; i++) {
         	        	
             CSSName name = CSSName.getByID(i);
@@ -733,23 +753,76 @@ public class XHTMLImporterImpl implements XHTMLImporter {
                         
             FSDerivedValue val = cs.valueByName(name); // walks parents as necessary to get the value
             
-            if (val != null && val instanceof DerivedValue) {    
+        	// An IdentValue represents a string that you can assign to a CSS property,
+        	// where the string is one of several enumerated values. 
+        	// font-size could be a IdentValue (eg medium) or a LengthValue (eg 12px) 
+            
+            if (val == null) {
             	
-            	cssMap.put(name.toString(), ((DerivedValue)val).getCSSPrimitiveValue() );
+            	log.warn("Skipping " +  name.toString() + " .. (null value)" );            	
             	
-            } else if (val != null && val instanceof IdentValue) {
-            	
-            	cssMap.put(name.toString(), ((IdentValue)val).getCSSPrimitiveValue() );
-
-            } else if (val != null && val instanceof LengthValue) {
-            	
-            	cssMap.put(name.toString(), ((LengthValue)val).getCSSPrimitiveValue() );
-            	
-            } else  if (val!=null ) {
-            	
-//            	log.debug("Skipping " +  name.toString() + " .. " + val.getClass().getName() );
             } else {
-//            	log.debug("Skipping " +  name.toString() + " .. (null value)" );            	
+            	
+            	if (log.isDebugEnabled()) {
+            		log.debug(val.getClass().getName() + ": " + name + " = " + val.asString());
+            	}
+            	
+            	if (val instanceof IdentValue) {
+        	
+					PropertyValue val2 = new PropertyValue( (IdentValue)val ); 
+	//				PropertyValue val2 = new PropertyValue(CSSPrimitiveValue.CSS_IDENT, val.asString(), val.asString()); 
+		        	cssMap.put(name.toString(), val2 );
+	        	
+	            } else if (val instanceof ColorValue) {
+	            	
+	//            	Object o = ((ColorValue)val).asColor();
+	    			PropertyValue val2 = new PropertyValue( ((ColorValue)val).asColor() ); 
+	            	cssMap.put(name.toString(), val2 );            		
+	
+	            } else if (val instanceof LengthValue) {
+	            	
+	    			PropertyValue val2 = new PropertyValue(((LengthValue)val).getCssSacUnitType() , val.asFloat(), val.asString()); 
+	            	cssMap.put(name.toString(), val2 );
+	            	
+	            } else if (val instanceof NumberValue) {
+	            	
+	    			PropertyValue val2 = new PropertyValue(((NumberValue)val).getCssSacUnitType() , val.asFloat(), val.asString()); 
+	            	cssMap.put(name.toString(), val2 );
+	
+	            } else if (val instanceof StringValue) {
+	            	
+	    			PropertyValue val2 = new PropertyValue(((StringValue)val).getCssSacUnitType() , val.asString(), val.asString()); 
+	            	cssMap.put(name.toString(), val2 );
+	
+	            } else if (val instanceof ListValue) {
+	            	
+	    			PropertyValue val2 = new PropertyValue( ((ListValue)val).getValues() ); 
+	            	cssMap.put(name.toString(), val2 );
+	
+	            } else if (val instanceof CountersValue) {
+	            	
+	            	boolean unused = false;
+	    			PropertyValue val2 = new PropertyValue( ((CountersValue)val).getValues(), unused ); 
+	            	cssMap.put(name.toString(), val2 );
+	
+	            } else if (val instanceof FunctionValue) {
+	            	
+	    			PropertyValue val2 = new PropertyValue( ((FunctionValue)val).getFunction() ); 
+	            	cssMap.put(name.toString(), val2 );
+	            	
+	            }  else 
+	            	if (val instanceof DerivedValue) {   
+	            		
+	            	// We should've handled all known types of abstract class DerivedValue above!
+	            	log.warn("TODO handle DerivedValue type " +  val.getClass().getName() 
+	            			+ " with name  " + name + " = " + val.asString());
+	    			PropertyValue val2 = new PropertyValue( ((DerivedValue)val).getCssSacUnitType() , val.asString(), val.asString()); 
+	            	cssMap.put(name.toString(), val2 );
+            	
+	            } else  {
+	            	
+	            	log.warn("TODO Skipping " +  name.toString() + " .. " + val.getClass().getName() );
+	            }
             }
         }
     	
@@ -851,8 +924,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         	// Shouldn't happen
             log.debug("<NULL>");
         } else {            
-            log.debug("BB"  + "<" + e.getNodeName() + " " + box.getStyle().toStringMine() );
-            log.debug(box.getStyle().getDisplayMine() );
+//            log.debug("BB"  + "<" + e.getNodeName() + " " + box.getStyle().toStringMine() );
+            log.debug(box.getStyle().getStringProperty(CSSName.DISPLAY) );
 //                log.debug(box.getElement().getAttribute("class"));            	
         }
         
@@ -875,14 +948,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         }
         
         if (markupRangeForID!=null) {
-            log.debug("Added bookmark for "+ box.getClass().getName()  + "<" + e.getNodeName() + " " + box.getStyle().toStringMine() );
+            log.debug("Added bookmark for "+ box.getClass().getName()  + "<" + e.getNodeName() );//+ " " + box.getStyle().toStringMine() );
         }
         
         // Don't add a new paragraph if this BlockBox is display: inline
         if (e!=null) {
             
         	//Map cssMap = styleReference.getCascadedPropertiesMap(e);
-            Map<String, CSSValue> cssMap = getCascadedProperties(box.getStyle());
+            Map<String, PropertyValue> cssMap = getCascadedProperties(box.getStyle());
         	
         	/* Sometimes, when it is display: inline, the following is not set:
             	CSSValue cssValue = (CSSValue)cssMap.get("display");
@@ -910,7 +983,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             	 * 
             	 */
             	if (/* its a block (the inline case is ok; list-item is TBD) */
-            			box.getStyle().getDisplayMine().equals("block")
+            			box.getStyle().getStringProperty(CSSName.DISPLAY).equals("block")
             			
             		/* and we have an inherited definition */
             			&& this.getCurrentParagraph(false)!=null
@@ -932,7 +1005,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             		
             	}
             	
-            } else if (box.getStyle().getDisplayMine().equals("inline") ) {
+            } else if (box.getStyle().getStringProperty(CSSName.DISPLAY).equals("inline") ) {
         		
 //                	// Don't add a paragraph for this, unless ..
 //                	if (currentP==null) {
@@ -1486,7 +1559,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	simpleField.getContent().add(resultRun);
     }
 
-    protected PPr getPPr(BlockBox blockBox, Map<String, CSSValue> cssMap) {
+    protected PPr getPPr(BlockBox blockBox, Map<String, PropertyValue> cssMap) {
     	
         PPr pPr =  Context.getWmlObjectFactory().createPPr();
         populatePPr(pPr, blockBox, cssMap);
@@ -1533,7 +1606,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	    return ((rtl/ltr)>0.5);    	
     }
     
-    protected void populatePPr(PPr pPr, Styleable blockBox, Map<String, CSSValue> cssMap) {
+    protected void populatePPr(PPr pPr, Styleable blockBox, Map<String, PropertyValue> cssMap) {
     	
         if (paragraphFormatting.equals(FormattingOption.IGNORE_CLASS)) {
     		addParagraphProperties(pPr, blockBox, cssMap );
@@ -1789,7 +1862,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     		
     	} 
         
-        Map<String, CSSValue> cssMap = getCascadedProperties(s.getStyle());
+        Map<String, PropertyValue> cssMap = getCascadedProperties(s.getStyle());
 //        Map cssMap = styleReference.getCascadedPropertiesMap(s.getElement());
         
         
@@ -1956,7 +2029,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 //            }	            
         }
         if (s.getStyle()!=null) {
-            debug +=  " " + s.getStyle().toStringMine();
+//            debug +=  " " + s.getStyle().toStringMine();
         }
         
         
@@ -1968,7 +2041,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     }
 
 	private void processInlineBoxContent(InlineBox inlineBox, Styleable s,
-			Map<String, CSSValue> cssMap) {
+			Map<String, PropertyValue> cssMap) {
 				
         
         // bookmark start?
@@ -1976,7 +2049,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         		getCurrentParagraph(false), this.contentContextStack.peek());
 		
 		
-		if (inlineBox.getTextNode()==null) {
+		if (inlineBox.getText()==null) {
 			
 			if (s == null) {
         		log.debug("Null Styleable" ); 
@@ -1999,9 +2072,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             }
             
         } else  {
-            log.debug( inlineBox.getTextNode().getTextContent() );  // don't use .getText()
+            log.warn( "\n\n"+inlineBox.getText() );  // don't use .getText()
 
-            String theText = inlineBox.getTextNode().getTextContent(); 
+            String theText = inlineBox.getText(); 
             log.debug("Processing " + theText);
             
             String cssClass = getClassAttribute(s.getElement());
@@ -2043,7 +2116,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	 * @param cssMap
 	 * @param theText
 	 */
-	private void addRuns( String cssClass, Map<String, CSSValue> cssMap, String theText) {
+	private void addRuns( String cssClass, Map<String, PropertyValue> cssMap, String theText) {
 		
 //    	System.out.println(theText);
 		
@@ -2093,7 +2166,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		return ((x & 1) == 0 ) ;
 	}
 	
-	private void addRun( String cssClass, Map<String, CSSValue> cssMap, String theText, boolean isRTL) {
+	private void addRun( String cssClass, Map<String, PropertyValue> cssMap, String theText, boolean isRTL) {
 		
 		R run = Context.getWmlObjectFactory().createR();
 		Text text = Context.getWmlObjectFactory().createText();
@@ -2116,7 +2189,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         }
 	}
 	
-	private void formatRPr(RPr rPr, String cssClass, Map<String, CSSValue> cssMap) {
+	private void formatRPr(RPr rPr, String cssClass, Map<String, PropertyValue> cssMap) {
 
 		//addRunProperties(rPr, cssMap );  // ?????
 		
@@ -2158,7 +2231,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	} 
 				
 		// Font is handled separately.  TODO: review this
-		CSSValue fontFamily = cssMap.get("font-family");
+        PropertyValue fontFamily = cssMap.get("font-family");
 		FontHandler.setRFont(fontFamily, rPr );
 
 	}
@@ -2170,7 +2243,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     }
     
 	
-    private void addParagraphProperties(PPr pPr, Styleable styleable, Map<String, CSSValue> cssMap) {
+    private void addParagraphProperties(PPr pPr, Styleable styleable, Map<String, PropertyValue> cssMap) {
     	// NB, not invoked in CLASS_TO_STYLE_ONLY case
     	
 //    	log.debug("BEFORE " + XmlUtils.marshaltoString(pPr, true, true));
@@ -2178,16 +2251,16 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         for (Object o : cssMap.keySet()) {
         	
         	String cssName = (String)o;
-        	CSSValue cssValue = (CSSValue)cssMap.get(cssName);
+        	PropertyValue cssValue = cssMap.get(cssName);
         	
-        	Property p = PropertyFactory.createPropertyFromCssName(cssName, cssValue);
+        	Property p = PropertyFactory.createPropertyFromCssName(cssName, new DomCssValueAdaptor(cssValue));
         	
         	if (p!=null) {
 	        	if (p instanceof AbstractParagraphProperty) {        		
 	        		((AbstractParagraphProperty)p).set(pPr);
 	        	} else {
 	        	    // try specific method
-	        	    p = PropertyFactory.createPropertyFromCssNameForPPr(cssName, cssValue);
+	        	    p = PropertyFactory.createPropertyFromCssNameForPPr(cssName,  new DomCssValueAdaptor(cssValue));
 	        	    if (p!=null) {
 	        	        if (p instanceof AbstractParagraphProperty) {               
 	        	            ((AbstractParagraphProperty)p).set(pPr);
@@ -2381,7 +2454,10 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 				&& bb.getStyle().valueByName(CSSName.PADDING_LEFT) instanceof LengthValue) {
 				
 			LengthValue padding = (LengthValue)bb.getStyle().valueByName(CSSName.PADDING_LEFT);
-			paddingI +=Indent.getTwip(padding.getCSSPrimitiveValue());
+			PropertyValue val = new PropertyValue(PropertyValue.VALUE_TYPE_LENGTH, padding.asFloat(), null); 
+			paddingI +=Indent.getTwip(new DomCssValueAdaptor( val));
+			
+			
 		}
 //		log.debug("+padding-left: " + totalPadding);
 
@@ -2389,7 +2465,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 				&& bb.getStyle().valueByName(CSSName.MARGIN_LEFT) instanceof LengthValue) {
 			
 			LengthValue margin = (LengthValue)bb.getStyle().valueByName(CSSName.MARGIN_LEFT);
-			paddingI +=Indent.getTwip(margin.getCSSPrimitiveValue());
+			PropertyValue val = new PropertyValue(PropertyValue.VALUE_TYPE_LENGTH, margin.asFloat(), null); 
+			paddingI +=Indent.getTwip(new DomCssValueAdaptor(val));
 		}
 //		log.debug("+margin-left: " + totalPadding);
 		
@@ -2417,9 +2494,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         for (Object o : cssMap.keySet()) {
         	
         	String cssName = (String)o;
-        	CSSValue cssValue = (CSSValue)cssMap.get(cssName);
+        	PropertyValue cssValue = (PropertyValue)cssMap.get(cssName);
         	
-        	Property runProp = PropertyFactory.createPropertyFromCssName(cssName, cssValue);
+        	Property runProp = PropertyFactory.createPropertyFromCssName(cssName, new DomCssValueAdaptor(cssValue));
         	
         	if (runProp!=null) {
 	        	if (runProp instanceof AbstractRunProperty) {  
