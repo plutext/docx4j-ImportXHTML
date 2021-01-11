@@ -768,10 +768,27 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             	}
             	
             	if (val instanceof IdentValue) {
-        	
-					PropertyValue val2 = new PropertyValue( (IdentValue)val ); 
-	//				PropertyValue val2 = new PropertyValue(CSSPrimitiveValue.CSS_IDENT, val.asString(), val.asString()); 
-		        	cssMap.put(name.toString(), val2 );
+
+		        	// Workaround for docx4j < 8.3, which doesn't handle start|end
+		        	if (name.toString().equals("text-align")
+		        			&& (val.asString().equals("start")
+		        					|| val.asString().equals("end"))) {
+		        		
+						PropertyValue val2; 
+		        		if (val.asString().equals("start")) {
+		        			// Not bidi aware; assume ltr
+		        			val2 = new PropertyValue(CSSPrimitiveValue.CSS_IDENT, "left", "left"); 
+		        		} else {
+		        			val2 = new PropertyValue(CSSPrimitiveValue.CSS_IDENT, "right", "right"); 		        			
+		        		}
+			        	cssMap.put(name.toString(), val2 );
+		        		
+		        	} else {
+            		
+						PropertyValue val2 = new PropertyValue( (IdentValue)val ); 
+		//				PropertyValue val2 = new PropertyValue(CSSPrimitiveValue.CSS_IDENT, val.asString(), val.asString()); 
+			        	cssMap.put(name.toString(), val2 );
+		        	}
 	        	
 	            } else if (val instanceof ColorValue) {
 	            	
