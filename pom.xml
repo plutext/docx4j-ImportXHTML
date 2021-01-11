@@ -11,7 +11,7 @@
 	<groupId>org.docx4j</groupId>
 	<artifactId>docx4j-ImportXHTML</artifactId>
 	<name>docx4j-ImportXHTML</name>
-	<version>8.0.1-SNAPSHOT</version>
+	<version>8.2.9-SNAPSHOT</version>
 	<description>
 		docx4j-ImportXHTML converts XHTML to OpenXML WordML (docx) using docx4j 
 	</description>
@@ -21,7 +21,7 @@
 	    <name>LGPL v2.1</name>
 	    <url>http://www.gnu.org/licenses/lgpl-2.1.html</url>
 	    <distribution>repo</distribution>
-	    <comments>The same license as Flying Saucer.  See legals/NOTICE for details.</comments>
+	    <comments>The same license as https://github.com/danfickle/openhtmltopdf.  See legals/NOTICE for details.</comments>
 	  </license>
   	</licenses>
 	<scm>
@@ -317,26 +317,24 @@
 	</reporting>
 	
 	<dependencies>
-	
-		<dependency>
-			<groupId>org.docx4j</groupId>
-			<artifactId>xhtmlrenderer</artifactId><!--  supports xhtml import -->
-			<version>3.0.0</version>
-			<!-- currently itext is required (fonts for width calculations)
-				<exclusions>
-					<exclusion>
-						<groupId>com.lowagie</groupId>
-						<artifactId>itext</artifactId>
-					</exclusion>
-				</exclusions>
-				 -->
-		</dependency>
 
+		<dependency>
+			<groupId>com.openhtmltopdf</groupId>
+			<artifactId>openhtmltopdf-core</artifactId>
+			<version>1.0.6</version>
+		</dependency>
+		<dependency>
+			<groupId>com.openhtmltopdf</groupId>
+			<artifactId>openhtmltopdf-pdfbox</artifactId>
+			<version>1.0.6</version>
+		</dependency>
+ 
+ 
 		<!--  you should use the RI here if you are using eg Java 13, even if compliance is set in your project to 1.8 -->
 		<dependency>
 		  <groupId>org.docx4j</groupId>
-		  <artifactId>docx4j-JAXB-Internal</artifactId>
-			<version>8.1.4</version>
+		  <artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
+			<version>11.2.9-SNAPSHOT</version>
 			<!--  <scope>test</scope>-->
 		</dependency>
 	 	
@@ -364,7 +362,7 @@
 		<dependency>
 			<groupId>org.docx4j</groupId>
 			<artifactId>docx4j-samples-resources</artifactId>
-			<version>8.1.4</version>
+			<version>11.2.9-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
