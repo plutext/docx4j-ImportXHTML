@@ -1,6 +1,6 @@
 package org.docx4j.convert.in.xhtml;
 
-import org.docx4j.org.xhtmlrenderer.css.parser.FSRGBColor;
+import com.openhtmltopdf.css.parser.FSRGBColor;
 import org.w3c.dom.css.CSSPrimitiveValue;
 import org.w3c.dom.css.RGBColor;
 

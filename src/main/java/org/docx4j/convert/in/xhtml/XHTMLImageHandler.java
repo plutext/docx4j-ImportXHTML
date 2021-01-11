@@ -1,7 +1,7 @@
 package org.docx4j.convert.in.xhtml;
 
+import org.docx4j.convert.in.xhtml.renderer.Docx4jUserAgent;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.docx4j.org.xhtmlrenderer.docx.Docx4jUserAgent;
 import org.docx4j.wml.P;
 import org.w3c.dom.Element;
 

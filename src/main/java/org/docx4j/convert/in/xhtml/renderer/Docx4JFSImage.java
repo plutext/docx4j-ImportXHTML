@@ -17,13 +17,44 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  * }}}
  */
-package org.docx4j.org.xhtmlrenderer.docx;
+package org.docx4j.convert.in.xhtml.renderer;
 
-import org.docx4j.org.xhtmlrenderer.extend.ReplacedElement;
-import org.docx4j.org.xhtmlrenderer.render.BlockBox;
-import org.docx4j.org.xhtmlrenderer.render.RenderingContext;
 
-public interface Docx4jReplacedElement extends ReplacedElement
-{
-    public void paint(RenderingContext c, Docx4jDocxOutputDevice outputDevice, BlockBox box);
+//import com.openhtmltopdf.extend.FSImage;
+//import com.lowagie.text.Image;
+
+public class Docx4JFSImage { 
+//    implements FSImage, Cloneable {
+    
+    byte[] image;
+    public byte[] getBytes() {
+        return image;
+    }
+    
+    public Docx4JFSImage(byte[] bytes) {
+        image = bytes;
+    }
+
+//    public int getWidth() {
+//        throw new NotImplementedException();
+//    }
+//
+//    public int getHeight() {
+//        throw new NotImplementedException();
+//    }
+//
+//    public void scale(int width, int height) {
+//        throw new NotImplementedException();
+//    }
+//
+//    public Image getImage() {
+//        throw new NotImplementedException();
+//    }
+//
+//    public Object clone() {
+//        throw new NotImplementedException();
+//    }
+    
+    
+
 }

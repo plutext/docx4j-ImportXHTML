@@ -17,11 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  * }}}
  */
-package org.docx4j.org.xhtmlrenderer.docx;
+package org.docx4j.convert.in.xhtml.renderer;
 
-import org.docx4j.org.xhtmlrenderer.extend.OutputDevice;
-import org.docx4j.org.xhtmlrenderer.pdfboxout.PdfBoxTextRenderer;
-import org.docx4j.org.xhtmlrenderer.render.JustificationInfo;
+import com.openhtmltopdf.extend.OutputDevice;
+import com.openhtmltopdf.pdfboxout.PdfBoxTextRenderer;
+import com.openhtmltopdf.render.JustificationInfo;
 
 public class Docx4jTextRenderer extends PdfBoxTextRenderer {
 

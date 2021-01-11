@@ -69,21 +69,21 @@ import org.docx4j.openpackaging.parts.PresentationML.SlideLayoutPart;
 import org.docx4j.openpackaging.parts.PresentationML.SlidePart;
 import org.docx4j.openpackaging.parts.relationships.Namespaces;
 import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
-import org.docx4j.org.xhtmlrenderer.css.constants.CSSName;
-import org.docx4j.org.xhtmlrenderer.css.constants.IdentValue;
-import org.docx4j.org.xhtmlrenderer.css.style.CalculatedStyle;
-import org.docx4j.org.xhtmlrenderer.css.style.DerivedValue;
-import org.docx4j.org.xhtmlrenderer.css.style.FSDerivedValue;
-import org.docx4j.org.xhtmlrenderer.docx.DocxRenderer;
-import org.docx4j.org.xhtmlrenderer.newtable.TableBox;
-import org.docx4j.org.xhtmlrenderer.newtable.TableCellBox;
-import org.docx4j.org.xhtmlrenderer.newtable.TableRowBox;
-import org.docx4j.org.xhtmlrenderer.newtable.TableSectionBox;
-import org.docx4j.org.xhtmlrenderer.render.AnonymousBlockBox;
-import org.docx4j.org.xhtmlrenderer.render.BlockBox;
-import org.docx4j.org.xhtmlrenderer.render.Box;
-import org.docx4j.org.xhtmlrenderer.render.InlineBox;
-import org.docx4j.org.xhtmlrenderer.resource.XMLResource;
+import com.openhtmltopdf.css.constants.CSSName;
+import com.openhtmltopdf.css.constants.IdentValue;
+import com.openhtmltopdf.css.style.CalculatedStyle;
+import com.openhtmltopdf.css.style.DerivedValue;
+import com.openhtmltopdf.css.style.FSDerivedValue;
+import com.openhtmltopdf.docx.DocxRenderer;
+import com.openhtmltopdf.newtable.TableBox;
+import com.openhtmltopdf.newtable.TableCellBox;
+import com.openhtmltopdf.newtable.TableRowBox;
+import com.openhtmltopdf.newtable.TableSectionBox;
+import com.openhtmltopdf.render.AnonymousBlockBox;
+import com.openhtmltopdf.render.BlockBox;
+import com.openhtmltopdf.render.Box;
+import com.openhtmltopdf.render.InlineBox;
+import com.openhtmltopdf.resource.XMLResource;
 import org.docx4j.relationships.Relationship;
 import org.pptx4j.pml.CTGraphicalObjectFrame;
 import org.pptx4j.pml.CTGraphicalObjectFrameNonVisual;
@@ -319,7 +319,7 @@ public class XHTMLtoPPTX {
 			            DON"T TRIGGER THIS LINE
 			        </li>
     			 */
-    			&& !(blockBox instanceof org.docx4j.org.xhtmlrenderer.render.AnonymousBlockBox)) {
+    			&& !(blockBox instanceof com.openhtmltopdf.render.AnonymousBlockBox)) {
         	
         		localResult = processParagraph(blockBox, settings);
         		

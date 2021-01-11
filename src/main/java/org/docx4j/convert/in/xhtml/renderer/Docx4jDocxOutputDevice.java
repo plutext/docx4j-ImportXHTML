@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  * }}}
  */
-package org.docx4j.org.xhtmlrenderer.docx;
+package org.docx4j.convert.in.xhtml.renderer;
 
 import java.awt.Paint;
 import java.awt.Rectangle;
@@ -27,16 +27,16 @@ import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.util.List;
 
-import org.docx4j.org.xhtmlrenderer.css.parser.FSColor;
-import org.docx4j.org.xhtmlrenderer.extend.FSImage;
-import org.docx4j.org.xhtmlrenderer.extend.OutputDeviceGraphicsDrawer;
-import org.docx4j.org.xhtmlrenderer.extend.StructureType;
-import org.docx4j.org.xhtmlrenderer.render.AbstractOutputDevice;
-import org.docx4j.org.xhtmlrenderer.render.BlockBox;
-import org.docx4j.org.xhtmlrenderer.render.Box;
-import org.docx4j.org.xhtmlrenderer.render.FSFont;
-import org.docx4j.org.xhtmlrenderer.render.InlineText;
-import org.docx4j.org.xhtmlrenderer.render.RenderingContext;
+import com.openhtmltopdf.css.parser.FSColor;
+import com.openhtmltopdf.extend.FSImage;
+import com.openhtmltopdf.extend.OutputDeviceGraphicsDrawer;
+import com.openhtmltopdf.extend.StructureType;
+import com.openhtmltopdf.render.AbstractOutputDevice;
+import com.openhtmltopdf.render.BlockBox;
+import com.openhtmltopdf.render.Box;
+import com.openhtmltopdf.render.FSFont;
+import com.openhtmltopdf.render.InlineText;
+import com.openhtmltopdf.render.RenderingContext;
 
 public class Docx4jDocxOutputDevice extends AbstractOutputDevice {
 

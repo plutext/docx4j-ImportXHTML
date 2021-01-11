@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 import org.docx4j.XmlUtils;
 import org.docx4j.model.sdt.QueryString;
-import org.docx4j.org.xhtmlrenderer.render.BlockBox;
+import com.openhtmltopdf.render.BlockBox;
 import org.docx4j.wml.Body;
 import org.docx4j.wml.CTSdtCell;
 import org.docx4j.wml.CTSdtContentCell;

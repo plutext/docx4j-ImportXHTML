@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  * }}}
  */
-package org.docx4j.org.xhtmlrenderer.docx;
+package org.docx4j.convert.in.xhtml.renderer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,13 +25,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.docx4j.org.xhtmlrenderer.extend.FSImage;
-import org.docx4j.org.xhtmlrenderer.extend.ReplacedElement;
-import org.docx4j.org.xhtmlrenderer.extend.ReplacedElementFactory;
-import org.docx4j.org.xhtmlrenderer.extend.UserAgentCallback;
-import org.docx4j.org.xhtmlrenderer.layout.LayoutContext;
-import org.docx4j.org.xhtmlrenderer.render.BlockBox;
-//import org.docx4j.org.xhtmlrenderer.simple.extend.FormSubmissionListener;
+import com.openhtmltopdf.extend.FSImage;
+import com.openhtmltopdf.extend.ReplacedElement;
+import com.openhtmltopdf.extend.ReplacedElementFactory;
+import com.openhtmltopdf.extend.UserAgentCallback;
+import com.openhtmltopdf.layout.LayoutContext;
+import com.openhtmltopdf.render.BlockBox;
+//import com.openhtmltopdf.simple.extend.FormSubmissionListener;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 

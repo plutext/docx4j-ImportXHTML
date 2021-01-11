@@ -4,12 +4,12 @@ import java.text.MessageFormat;
 import java.util.HashMap;
 
 import org.apache.commons.codec.binary.Base64;
+import org.docx4j.convert.in.xhtml.renderer.Docx4JFSImage;
+import org.docx4j.convert.in.xhtml.renderer.Docx4jUserAgent;
 import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.jaxb.Context;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
-import org.docx4j.org.xhtmlrenderer.docx.Docx4JFSImage;
-import org.docx4j.org.xhtmlrenderer.docx.Docx4jUserAgent;
 import org.docx4j.wml.CTTblCellMar;
 import org.docx4j.wml.CTTblPrBase;
 import org.docx4j.wml.P;

@@ -40,7 +40,7 @@ import org.docx4j.dml.CTTextSpacing;
 import org.docx4j.dml.CTTextSpacingPercent;
 import org.docx4j.dml.STTextAutonumberScheme;
 import org.docx4j.dml.TextFont;
-import org.docx4j.org.xhtmlrenderer.render.BlockBox;
+import com.openhtmltopdf.render.BlockBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;

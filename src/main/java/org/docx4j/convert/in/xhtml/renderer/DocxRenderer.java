@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  * }}}
  */
-package org.docx4j.org.xhtmlrenderer.docx;
+package org.docx4j.convert.in.xhtml.renderer;
 
 import java.awt.Rectangle;
 import java.util.EnumMap;
@@ -25,30 +25,28 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.docx4j.org.xhtmlrenderer.bidi.SimpleBidiReorderer;
-import org.docx4j.org.xhtmlrenderer.context.StyleReference;
-import org.docx4j.org.xhtmlrenderer.css.sheet.StylesheetInfo;
-import org.docx4j.org.xhtmlrenderer.extend.FSCacheEx;
-import org.docx4j.org.xhtmlrenderer.extend.FSCacheValue;
-import org.docx4j.org.xhtmlrenderer.extend.FSDOMMutator;
-import org.docx4j.org.xhtmlrenderer.extend.NamespaceHandler;
-import org.docx4j.org.xhtmlrenderer.extend.UserInterface;
-import org.docx4j.org.xhtmlrenderer.layout.BoxBuilder;
-import org.docx4j.org.xhtmlrenderer.layout.Layer;
-import org.docx4j.org.xhtmlrenderer.layout.LayoutContext;
-import org.docx4j.org.xhtmlrenderer.layout.SharedContext;
-import org.docx4j.org.xhtmlrenderer.pdfboxout.PdfBoxFontContext;
-import org.docx4j.org.xhtmlrenderer.pdfboxout.PdfBoxFontResolver;
-import org.docx4j.org.xhtmlrenderer.pdfboxout.PdfBoxTextRenderer;
-import org.docx4j.org.xhtmlrenderer.pdfboxout.PdfRendererBuilder.CacheStore;
-import org.docx4j.org.xhtmlrenderer.pdfboxout.PdfRendererBuilder.PdfAConformance;
-//import org.docx4j.org.xhtmlrenderer.pdf.ITextFontContext;
-//import org.docx4j.org.xhtmlrenderer.pdf.ITextFontResolver;
-import org.docx4j.org.xhtmlrenderer.render.BlockBox;
-import org.docx4j.org.xhtmlrenderer.render.PageBox;
-import org.docx4j.org.xhtmlrenderer.render.ViewportBox;
-import org.docx4j.org.xhtmlrenderer.simple.extend.XhtmlNamespaceHandler;
-import org.docx4j.org.xhtmlrenderer.util.Configuration;
+import com.openhtmltopdf.bidi.SimpleBidiReorderer;
+import com.openhtmltopdf.context.StyleReference;
+import com.openhtmltopdf.css.sheet.StylesheetInfo;
+import com.openhtmltopdf.extend.FSCacheEx;
+import com.openhtmltopdf.extend.FSCacheValue;
+import com.openhtmltopdf.extend.FSDOMMutator;
+import com.openhtmltopdf.extend.NamespaceHandler;
+import com.openhtmltopdf.extend.UserInterface;
+import com.openhtmltopdf.layout.BoxBuilder;
+import com.openhtmltopdf.layout.Layer;
+import com.openhtmltopdf.layout.LayoutContext;
+import com.openhtmltopdf.layout.SharedContext;
+import com.openhtmltopdf.pdfboxout.PdfBoxFontContext;
+import com.openhtmltopdf.pdfboxout.PdfBoxFontResolver;
+import com.openhtmltopdf.pdfboxout.PdfBoxTextRenderer;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder.CacheStore;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder.PdfAConformance;
+import com.openhtmltopdf.render.BlockBox;
+import com.openhtmltopdf.render.PageBox;
+import com.openhtmltopdf.render.ViewportBox;
+import com.openhtmltopdf.simple.extend.XhtmlNamespaceHandler;
+import com.openhtmltopdf.util.Configuration;
 import org.w3c.dom.CharacterData;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -170,7 +168,7 @@ public class DocxRenderer {
 	}
 
     private static StylesheetInfo[] readCSS(String css) {
-        // adapted from org.docx4j.org.xhtmlrenderer.simple.extend.XhtmlCssOnlyNamespaceHandler
+        // adapted from com.openhtmltopdf.simple.extend.XhtmlCssOnlyNamespaceHandler
         
         String media = "all";
         StylesheetInfo info = new StylesheetInfo();
