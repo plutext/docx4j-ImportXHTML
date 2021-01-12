@@ -30,7 +30,6 @@ package org.docx4j.samples;
 import java.io.File;
 import java.io.OutputStream;
 
-import org.docx4j.Docx4jProperties;
 import org.docx4j.XmlUtils;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
 import org.docx4j.convert.out.html.AbstractHtmlExporter;
@@ -48,13 +47,11 @@ import org.docx4j.openpackaging.parts.WordprocessingML.NumberingDefinitionsPart;
 public class ConvertInXHTMLDocument {
 
     public static void main(String[] args) throws Exception {
-
-    	Docx4jProperties.setProperty("docx4j.Convert.Out.HTML.OutputMethodXML", true);
-    	
+        
     	// The input would generally be an XHTML document,
     	// but for convenience, this sample can convert a 
     	// docx to XHTML first (ie round trip).
-        String inputfilepath = System.getProperty("user.dir") + "/sample-docs/docx/sample-docxv2.docx";
+        String inputfilepath = System.getProperty("user.dir") + "/sample-docs/word/sample-docx.docx";
 
         
         // Create an empty docx package
@@ -77,7 +74,6 @@ public class ConvertInXHTMLDocument {
 			//Round trip docx -> XHTML -> docx
 			WordprocessingMLPackage docx = WordprocessingMLPackage.load( new File(inputfilepath));	    	
 			AbstractHtmlExporter exporter = new HtmlExporterNG2();
-			
 			
 			// Use file system, so there is somewhere to save images (if any)
 			OutputStream os = new java.io.FileOutputStream(inputfilepath + ".html");	
