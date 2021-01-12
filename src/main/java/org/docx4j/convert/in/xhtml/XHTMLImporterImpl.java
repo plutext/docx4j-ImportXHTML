@@ -1842,6 +1842,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	
     private void  processInlineBox( InlineBox inlineBox) {
     	
+    	if (inlineBox.getPseudoElementOrClass()!=null) {
+    		log.debug("Ignoring Pseudo");
+    		return;
+    	}
+    	
         // Doesn't extend box
         Styleable s = inlineBox;
         
@@ -2080,8 +2085,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         CTMarkupRange markupRangeForID = bookmarkHelper.anchorToBookmark(inlineBox.getElement(), bookmarkNamePrefix, 
         		getCurrentParagraph(false), this.contentContextStack.peek());
 		
-		
-		if (inlineBox.getText()==null) {
+        if (s!=null && s.getElement()!=null && s.getElement().getNodeName().equals("br") ) {
+            
+            R run = Context.getWmlObjectFactory().createR();
+            getListForRun().getContent().add(run);                
+       		run.getContent().add(Context.getWmlObjectFactory().createBr());
+        	
+        } else if (inlineBox.getText()==null) {
+        	// Doesn't happen anymore, now we're using openhtmltopdf?
 			
 			if (s == null) {
         		log.debug("Null Styleable" ); 
@@ -2089,13 +2100,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         		log.debug("Null element " ); 
 			} else if (s.getElement().getNodeName() == null) {
         		log.debug("Null element nodename " ); 
-			} else if (s.getElement().getNodeName().equals("br") ) {
-                
-                R run = Context.getWmlObjectFactory().createR();
-                getListForRun().getContent().add(run);                
-           		run.getContent().add(Context.getWmlObjectFactory().createBr());
-            	
-            } else {
+			} else {
             	log.debug("InlineBox has no TextNode, so skipping" );
             	
             	// TODO .. a span in a span or a?
