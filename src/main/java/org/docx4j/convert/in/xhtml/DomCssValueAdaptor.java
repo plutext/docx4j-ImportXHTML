@@ -11,7 +11,7 @@ import org.w3c.dom.css.Rect;
 public class DomCssValueAdaptor implements org.w3c.dom.css.CSSPrimitiveValue {
 
 	
-	DomCssValueAdaptor(PropertyValue val) {
+	public DomCssValueAdaptor(PropertyValue val) {
 		
 		this.val = val;
 		

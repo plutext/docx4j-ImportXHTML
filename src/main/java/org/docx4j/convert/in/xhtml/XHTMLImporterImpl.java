@@ -710,13 +710,6 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         return imports.getContent();    	
     }
     
-    /**
-     * Property values (CSSPrimitiveValue) by name.
-     * 
-     * @param cs
-     * @param cssWhiteList
-     * @return
-     */
     public Map<String, PropertyValue> getCascadedProperties(CalculatedStyle cs) {
     	
     	// Similar to renderer.getLayoutContext().getSharedContext().getCss().getCascadedPropertiesMap(e)?
@@ -848,7 +841,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     }
     
 
-    protected static short getLengthPrimitiveType(FSDerivedValue val) {
+    public static short getLengthPrimitiveType(FSDerivedValue val) {
     	
     	if (val instanceof LengthValue) {
 
