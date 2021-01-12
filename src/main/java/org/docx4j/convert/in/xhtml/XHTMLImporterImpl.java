@@ -2091,7 +2091,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             getListForRun().getContent().add(run);                
        		run.getContent().add(Context.getWmlObjectFactory().createBr());
         	
-        } else if (inlineBox.getText()==null) {
+        } else if (inlineBox.getText()==null 
+        		|| inlineBox.getText().length()==0
+        		) {
         	// Doesn't happen anymore, now we're using openhtmltopdf?
 			
 			if (s == null) {
