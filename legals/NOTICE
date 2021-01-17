@@ -4,14 +4,21 @@ Copyright Plutext Pty Ltd
 docx4j XHTML Import contains code previously contained in files published as part of the docx4j project,
 at https://github.com/plutext/docx4j/tree/master/src/main/java/org/docx4j/convert/in/xhtml
    
-docx4j XHTML Import relies on Flying Saucer, which is licensed under the GNU Lesser General
+docx4j XHTML Import relies on openhtmltopdf, which is licensed under the GNU Lesser General
 Public License (LGPL); you can redistribute it and/or modify it under the terms
 of the GNU Lesser General Public License as published by the Free Software
 Foundation, either version 2.1 of the License, or (at your option) any later version.
 See further https://github.com/plutext/flyingsaucer/blob/master/LICENSE
 
-docx4j XHTML Import also relies on iText 2.1.7, for width calculations. iText 2.1.7 is available 
-under MPL or LGPL (v2 or any later version).  See for example 
-http://sourceforge.net/p/itext/code/5890/tree/tags/iText_2_1_7/src/core/com/lowagie/text/pdf/PdfWriter.java
+docx4j XHTML Import also relies on:
 
++- com.openhtmltopdf:openhtmltopdf-core
++- com.openhtmltopdf:openhtmltopdf-pdfbox
+|  +- org.apache.pdfbox:pdfbox
+|  |  +- org.apache.pdfbox:fontbox
+|  |  \- commons-logging:commons-logging
+|  +- org.apache.pdfbox:xmpbox
+|  \- de.rototor.pdfbox:graphics2d
+
+together with docx4j and its dependencies.
  	
