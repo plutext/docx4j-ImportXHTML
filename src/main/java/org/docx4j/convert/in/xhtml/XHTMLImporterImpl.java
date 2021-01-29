@@ -2496,6 +2496,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		if (bb.getStyle()!=null
 				&& bb.getStyle().valueByName(CSSName.MARGIN_LEFT) instanceof LengthValue) {
 			
+			// margin-left: auto is an IdentValue
+			
 			LengthValue margin = (LengthValue)bb.getStyle().valueByName(CSSName.MARGIN_LEFT);
 			PropertyValue val = new PropertyValue(getLengthPrimitiveType(margin) , margin.asFloat(), margin.asString()); 
 			paddingI +=Indent.getTwip(new DomCssValueAdaptor(val));

@@ -41,6 +41,7 @@ import org.docx4j.model.properties.paragraph.Indent;
 import org.docx4j.openpackaging.exceptions.InvalidOperationException;
 import org.docx4j.openpackaging.parts.WordprocessingML.NumberingDefinitionsPart;
 import com.openhtmltopdf.css.constants.CSSName;
+import com.openhtmltopdf.css.constants.IdentValue;
 import com.openhtmltopdf.css.parser.PropertyValue;
 import com.openhtmltopdf.css.style.derived.LengthValue;
 import com.openhtmltopdf.layout.Styleable;
@@ -354,9 +355,15 @@ public class ListHelper {
 
 //			log.debug("+padding-left: " + totalPadding);
 
-			LengthValue margin = (LengthValue)bb.getStyle().valueByName(CSSName.MARGIN_LEFT);
-			val = new PropertyValue(XHTMLImporterImpl.getLengthPrimitiveType(margin), margin.asFloat(), margin.asString()); 
-			totalPadding +=Indent.getTwip(new DomCssValueAdaptor( val));
+			Object marginObj = bb.getStyle().valueByName(CSSName.MARGIN_LEFT);
+			if (marginObj instanceof LengthValue) {
+				LengthValue margin = (LengthValue)marginObj;
+				val = new PropertyValue(XHTMLImporterImpl.getLengthPrimitiveType(margin), margin.asFloat(), margin.asString()); 
+				totalPadding +=Indent.getTwip(new DomCssValueAdaptor( val));
+			} else if (marginObj instanceof IdentValue) {
+				// eg margin-left: auto (effect is like justification, see https://www.hongkiat.com/blog/css-margin-auto/
+				log.debug("Ignoring MARGIN_LEFT " +  ((IdentValue)marginObj).asString());
+			}
 
 //			log.debug("+margin-left: " + totalPadding);
 			
@@ -382,9 +389,15 @@ public class ListHelper {
 		PropertyValue val = new PropertyValue(XHTMLImporterImpl.getLengthPrimitiveType(padding), padding.asFloat(), padding.asString()); 
 		totalPadding +=Indent.getTwip(new DomCssValueAdaptor(val));
 
-		LengthValue margin = (LengthValue)styleable.getStyle().valueByName(CSSName.MARGIN_LEFT);
-		val = new PropertyValue(XHTMLImporterImpl.getLengthPrimitiveType(margin), margin.asFloat(), margin.asString()); 
-		totalPadding +=Indent.getTwip(new DomCssValueAdaptor( val));
+		Object marginObj = styleable.getStyle().valueByName(CSSName.MARGIN_LEFT);
+		if (marginObj instanceof LengthValue) {
+			LengthValue margin = (LengthValue)marginObj;
+			val = new PropertyValue(XHTMLImporterImpl.getLengthPrimitiveType(margin), margin.asFloat(), margin.asString()); 
+			totalPadding +=Indent.getTwip(new DomCssValueAdaptor( val));
+		} else if (marginObj instanceof IdentValue) {
+			// eg margin-left: auto (effect is like justification, see https://www.hongkiat.com/blog/css-margin-auto/
+			log.debug("Ignoring MARGIN_LEFT " +  ((IdentValue)marginObj).asString());
+		}
 
 		totalPadding +=getSelfAndAncestorIndentation();
 
