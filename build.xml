@@ -1,25 +1,30 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project basedir="." default="build" name="docx4j-ImportXHTML">
+<project basedir="." default="release" name="docx4j-ImportXHTML">
     <property environment="env"/>
-    <property name="debuglevel" value="source,lines,vars"/>
-    <property name="target" value="1.6"/>
-    <property name="source" value="1.6"/>
-	<property name="dist" value="./dist"/>
 	
-	<property name="version" value="6.1.0"/>
-
-    <property name="src.main.java.dir" value="src/main/java"/>
+	<property name="importxhtml-version" value="8.2.0"/>
+	
+	<property name="release.dir" value="docx4j-ImportXHTML-${importxhtml-version}"/>
     
     <!-- 
-		org.docx4j:docx4j-ImportXHTML:jar:3.3.0
-		+- org.docx4j:xhtmlrenderer:jar:3.0.0
-		|  \- com.lowagie:itext:jar:2.1.7
-		+- org.docx4j:docx4j and its deps
-		+- org.slf4j:slf4j-api:jar:1.7.5
-		\- junit:junit:jar:4.8.2
+		org.docx4j:docx4j-ImportXHTML:jar:8.2.0
+		
+		+- com.openhtmltopdf:openhtmltopdf-core:jar:1.0.6
+		+- com.openhtmltopdf:openhtmltopdf-pdfbox:jar:1.0.6
+		|  +- org.apache.pdfbox:pdfbox:jar:2.0.22
+		|  |  +- org.apache.pdfbox:fontbox:jar:2.0.22
+		|  |  \- commons-logging:commons-logging:jar:1.2
+		|  +- org.apache.pdfbox:xmpbox:jar:2.0.22
+		|  \- de.rototor.pdfbox:graphics2d:jar:0.30
+		
+		+- org.docx4j:docx4j-JAXB-ReferenceImpl:jar:8.2.8
+		+- org.slf4j:slf4j-api:jar:1.7.26
+		+- ch.qos.logback:logback-classic:jar:1.2.3
+		|  \- ch.qos.logback:logback-core:jar:1.2.3
+		+- org.docx4j:docx4j-samples-resources:jar:8.2.8
      -->
 	
-	<property name="m2Repository" value="../../.m2/repository"/>	
+	<property name="m2Repository" value="/home/jharrop/.m2/repository"/>
 	
     <!--.NET properties -->
   <property name="ikvm.dir" value="/Java/ikvm/ikvm-8.1.5717.0"/>
@@ -27,112 +32,97 @@
     <property name="docx4j.dll" value="dll/docx4j.dll"/>
 		
     
-    <path id="Maven Dependencies.libraryclasspath">
-        
-        <pathelement location="${m2Repository}/org/docx4j/xhtmlrenderer/3.0.0/xhtmlrenderer-3.0.0.jar"/>
-        <pathelement location="${m2Repository}/com/lowagie/itext/2.1.7/itext-2.1.7.jar"/>
+    <path id="deps_other.libraryclasspath">
+        <pathelement location="${m2Repository}/com/openhtmltopdf/openhtmltopdf-core/1.0.6/openhtmltopdf-core-1.0.6.jar"/>
+        <pathelement location="${m2Repository}/com/openhtmltopdf/openhtmltopdf-pdfbox/1.0.6/openhtmltopdf-pdfbox-1.0.6.jar"/>
+        <pathelement location="${m2Repository}/org/apache/pdfbox/pdfbox/2.0.22/pdfbox-2.0.22.jar"/>
+        <pathelement location="${m2Repository}/org/apache/pdfbox/fontbox/2.0.22/fontbox-2.0.22.jar"/>
+        <pathelement location="${m2Repository}/commons-logging/commons-logging/1.2/commons-logging-1.2.jar"/>
+        <pathelement location="${m2Repository}/org/apache/pdfbox/xmpbox/2.0.22/xmpbox-2.0.22.jar"/>
+        <pathelement location="${m2Repository}/de/rototor/pdfbox/graphics2d/0.30/graphics2d-0.30.jar"/>
+	</path>
     	
-        <pathelement location="${m2Repository}/org/docx4j/docx4j/6.1.0/docx4j-6.1.0.jar"/>
+    <path id="docx4j.libraryclasspath">
+        <pathelement location="${m2Repository}/org/docx4j/docx4j-JAXB-ReferenceImpl/8.2.8/docx4j-JAXB-ReferenceImpl-8.2.8.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/docx4j-core/8.2.8/docx4j-core-8.2.8.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/docx4j-openxml-objects/8.2.8/docx4j-openxml-objects-8.2.8.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/docx4j-openxml-objects-pml/8.2.8/docx4j-openxml-objects-pml-8.2.8.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/docx4j-openxml-objects-sml/8.2.8/docx4j-openxml-objects-sml-8.2.8.jar"/>
         <pathelement location="${m2Repository}/org/plutext/jaxb-svg11/1.0.2/jaxb-svg11-1.0.2.jar"/>
-        <pathelement location="${m2Repository}/net/engio/mbassador/1.2.4.2/mbassador-1.2.4.2.jar"/>
-        <pathelement location="${m2Repository}/org/slf4j/jcl-over-slf4j/1.7.25/jcl-over-slf4j-1.7.25.jar"/>
-        <pathelement location="${m2Repository}/org/slf4j/slf4j-log4j12/1.7.25/slf4j-log4j12-1.7.25.jar"/>
-        <pathelement location="${m2Repository}/log4j/log4j/1.2.17/log4j-1.2.17.jar"/>
-        <pathelement location="${m2Repository}/org/apache/commons/commons-lang3/3.5/commons-lang3-3.5.jar"/>
-        <pathelement location="${m2Repository}/org/apache/commons/commons-compress/1.12/commons-compress-1.12.jar"/>
-        <pathelement location="${m2Repository}/commons-codec/commons-codec/1.11/commons-codec-1.11.jar"/>
-        <pathelement location="${m2Repository}/commons-io/commons-io/2.5/commons-io-2.5.jar"/>
-        <pathelement location="${m2Repository}/org/apache/httpcomponents/httpclient/4.5.6/httpclient-4.5.6.jar"/>
-        <pathelement location="${m2Repository}/org/apache/httpcomponents/httpcore/4.4.10/httpcore-4.4.10.jar"/>
-        <pathelement location="${m2Repository}/com/fasterxml/jackson/core/jackson-core/2.7.9/jackson-core-2.7.9.jar"/>
-        <pathelement location="${m2Repository}/com/fasterxml/jackson/core/jackson-databind/2.7.9.4/jackson-databind-2.7.9.4.jar"/>
-        <pathelement location="${m2Repository}/com/fasterxml/jackson/core/jackson-annotations/2.7.0/jackson-annotations-2.7.0.jar"/>
+        <pathelement location="${m2Repository}/net/engio/mbassador/1.3.2/mbassador-1.3.2.jar"/>
+        <pathelement location="${m2Repository}/org/slf4j/jcl-over-slf4j/1.7.26/jcl-over-slf4j-1.7.26.jar"/>
+        <pathelement location="${m2Repository}/org/apache/commons/commons-lang3/3.9/commons-lang3-3.9.jar"/>
+        <pathelement location="${m2Repository}/org/apache/commons/commons-compress/1.18/commons-compress-1.18.jar"/>
+        <pathelement location="${m2Repository}/commons-codec/commons-codec/1.12/commons-codec-1.12.jar"/>
+        <pathelement location="${m2Repository}/commons-io/commons-io/2.6/commons-io-2.6.jar"/>
+        <pathelement location="${m2Repository}/org/apache/httpcomponents/httpclient/4.5.8/httpclient-4.5.8.jar"/>
+        <pathelement location="${m2Repository}/org/apache/httpcomponents/httpcore/4.4.11/httpcore-4.4.11.jar"/>
+        <pathelement location="${m2Repository}/com/fasterxml/jackson/core/jackson-core/2.9.9/jackson-core-2.9.9.jar"/>
+        <pathelement location="${m2Repository}/com/fasterxml/jackson/core/jackson-databind/2.9.9/jackson-databind-2.9.9.jar"/>
+        <pathelement location="${m2Repository}/com/fasterxml/jackson/core/jackson-annotations/2.9.0/jackson-annotations-2.9.0.jar"/>
         <pathelement location="${m2Repository}/org/apache/xmlgraphics/xmlgraphics-commons/2.3/xmlgraphics-commons-2.3.jar"/>
-        <pathelement location="${m2Repository}/org/apache/avalon/framework/avalon-framework-api/4.3.1/avalon-framework-api-4.3.1.jar"/>
-        <pathelement location="${m2Repository}/org/apache/avalon/framework/avalon-framework-impl/4.3.1/avalon-framework-impl-4.3.1.jar"/>
-        <pathelement location="${m2Repository}/xalan/xalan/2.7.2/xalan-2.7.2.jar"/>
-        <pathelement location="${m2Repository}/xalan/serializer/2.7.2/serializer-2.7.2.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/org/apache/xalan-metainf/8.0.0/xalan-metainf-8.0.0.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/org/apache/xalan-interpretive/8.0.0/xalan-interpretive-8.0.0.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/org/apache/xalan-serializer/8.0.0/xalan-serializer-8.0.0.jar"/>
         <pathelement location="${m2Repository}/net/arnx/wmf2svg/0.9.8/wmf2svg-0.9.8.jar"/>
         <pathelement location="${m2Repository}/org/antlr/antlr-runtime/3.5.2/antlr-runtime-3.5.2.jar"/>
         <pathelement location="${m2Repository}/org/antlr/stringtemplate/3.2.1/stringtemplate-3.2.1.jar"/>
         <pathelement location="${m2Repository}/antlr/antlr/2.7.7/antlr-2.7.7.jar"/>
-        <pathelement location="${m2Repository}/com/google/guava/guava/20.0/guava-20.0.jar"/>
-        <pathelement location="${m2Repository}/com/thedeanda/lorem/2.1/lorem-2.1.jar"/>
-        <pathelement location="${m2Repository}/org/slf4j/slf4j-api/1.7.25/slf4j-api-1.7.25.jar"/>
-        <pathelement location="${m2Repository}/junit/junit/4.12/junit-4.12.jar"/>
-        <pathelement location="${m2Repository}/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"/>
-
+        <pathelement location="${m2Repository}/org/checkerframework/checker-qual/2.8.1/checker-qual-2.8.1.jar"/>
+        <pathelement location="${m2Repository}/com/google/errorprone/error_prone_annotations/2.3.3/error_prone_annotations-2.3.3.jar"/>
+        <pathelement location="${m2Repository}/org/glassfish/jaxb/jaxb-runtime/2.3.2/jaxb-runtime-2.3.2.jar"/>
+        <pathelement location="${m2Repository}/jakarta/xml/bind/jakarta.xml.bind-api/2.3.2/jakarta.xml.bind-api-2.3.2.jar"/>
+        <pathelement location="${m2Repository}/org/glassfish/jaxb/txw2/2.3.2/txw2-2.3.2.jar"/>
+        <pathelement location="${m2Repository}/com/sun/istack/istack-commons-runtime/3.0.8/istack-commons-runtime-3.0.8.jar"/>
+        <pathelement location="${m2Repository}/org/jvnet/staxex/stax-ex/1.8.1/stax-ex-1.8.1.jar"/>
+        <pathelement location="${m2Repository}/com/sun/xml/fastinfoset/FastInfoset/1.2.16/FastInfoset-1.2.16.jar"/>
+        <pathelement location="${m2Repository}/jakarta/activation/jakarta.activation-api/1.2.1/jakarta.activation-api-1.2.1.jar"/>
     </path>
-    <path id="docx4j-ImportXHTML.classpath">
-        <pathelement location="bin"/>
-        <path refid="Maven Dependencies.libraryclasspath"/>
+    	
+    <path id="deps_conf.libraryclasspath">
+        <pathelement location="${m2Repository}/org/slf4j/slf4j-api/1.7.26/slf4j-api-1.7.26.jar"/>
+        <pathelement location="${m2Repository}/ch/qos/logback/logback-classic/1.2.3/logback-classic-1.2.3.jar"/>
+    	
+        <pathelement location="${m2Repository}/ch/qos/logback/logback-core/1.2.3/logback-core-1.2.3.jar"/>
+        <!--<pathelement location="${m2Repository}/org/docx4j/docx4j-samples-resources/8.2.8/docx4j-samples-resources-8.2.8.jar"/>-->
     </path>
+	
     
+    <target name="release"   >
+				
+		<delete dir="${release.dir}"/>
+		<mkdir dir="${release.dir}"/>
 
-    <target name="init">
-        <mkdir dir="bin"/>
-        <copy includeemptydirs="false" todir="bin">
-            <fileset dir="src/main/java">
-                <exclude name="**/*.java"/>
-            </fileset>
-        </copy>
-        <copy includeemptydirs="false" todir="bin">
-            <fileset dir="src/main/resources">
-                <exclude name="**/*.java"/>
-            </fileset>
-        </copy>
-        <copy includeemptydirs="false" todir="bin">
-            <fileset dir="src/test/java">
-                <exclude name="**/*.java"/>
-            </fileset>
-        </copy>
-        <copy includeemptydirs="false" todir="bin">
-            <fileset dir="src/samples/java">
-                <exclude name="**/*.java"/>
-            </fileset>
-        </copy>
-    </target>
-    <target name="clean">
-        <delete dir="bin"/>
-        <delete dir="${dist}"/>
-        </target>
-    <target depends="clean" name="cleanall"/>
-    <target depends="build-subprojects,build-project" name="build"/>
-    <target name="build-subprojects"/>
-    
-    <target depends="init" name="build-project">
-        <echo message="${ant.project.name}: ${ant.file}"/>
-        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}" encoding="utf-8">
-        	<!--  that @encoding setting is critical to retain bullet chars in ListHelper, at least on Win 7 -->
-            <src path="src/main/java"/>
-            <classpath refid="docx4j-ImportXHTML.classpath"/>
-        </javac>
-        <!-- 
-        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
-            <src path="src/test/java"/>
-            <classpath refid="docx4j-ImportXHTML.classpath"/>
-        </javac>
-        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
-            <src path="src/samples/java"/>
-            <classpath refid="docx4j-ImportXHTML.classpath"/>
-        </javac>
-         -->
-    </target>
-    
-    <target name="dist"  depends="clean, build-project" >
-				
-        <mkdir dir="${dist}"/>
-				
-		<jar destfile="${dist}/docx4j-ImportXHTML-${version}.jar" basedir="./bin"/>		
+		<!-- docx4j-ImportXHTML itself, as built by maven -->
+		<copy file="${m2Repository}/org/docx4j/docx4j-ImportXHTML/${importxhtml-version}/docx4j-ImportXHTML-${importxhtml-version}.jar" todir="${release.dir}"/>
 		
-		<!-- copy all the jar files! -->
-		<copy todir="${dist}" flatten="true">
+		<copy file="CHANGELOG.md" todir="${release.dir}"/>
+
+		<!-- dependencies, except docx4j and its deps -->
+		<mkdir dir="${release.dir}/dependencies"/>
+		<copy includeemptydirs="false" todir="${release.dir}/dependencies" flatten="true">
 			<!-- requires Ant 1.7.0 -->
 			<path>
-			    <path refid="Maven Dependencies.libraryclasspath"/>
+				<path refid="deps_other.libraryclasspath"/>
+				<path refid="deps_conf.libraryclasspath"/>
 			</path>
-		</copy>		
-    	 <delete file="${dist}/JAXBNamespacePrefixMapper-2.2.4.jar" />			
+		</copy>
+
+		<!-- documentation 
+		<mkdir dir="${release.dir}/documentation"/>
+		<copy file="docs/Docx4j_GettingStarted.pdf" todir="${release.dir}/documentation" />
+		-->
+		<!-- legals -->
+		<mkdir dir="${release.dir}/legals"/>
+		<copy includeemptydirs="false" todir="${release.dir}/legals">
+			<fileset dir="legals" />
+		</copy>
+
+		<!--  zip it up -->
+		<zip destfile="${release.dir}.zip" basedir="${release.dir}"/>
+
+		<delete dir="${release.dir}"/>
+    	
     </target>  
     
    
@@ -148,7 +138,7 @@
     </target>
 
 	<!--  first, create docx4j.dll -->
-    <target name="dist.NET" depends="checkForIKVM,dist" if="IKVMAvailable" description="Build docx4j ImportXHTML .NET DLL files">
+    <target name="dist.NET" depends="checkForIKVM" if="IKVMAvailable" description="Build docx4j ImportXHTML .NET DLL files">
         <echo>Building DLL</echo>
         
 		<path id="forIKVM">

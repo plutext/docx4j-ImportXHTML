@@ -28,9 +28,9 @@
 package org.docx4j.convert.in.xhtml;
 
 import org.docx4j.UnitsOfMeasurement;
-import org.docx4j.org.xhtmlrenderer.css.parser.FSColor;
-import org.docx4j.org.xhtmlrenderer.css.parser.FSRGBColor;
-import org.docx4j.org.xhtmlrenderer.css.parser.PropertyValue;
+import com.openhtmltopdf.css.parser.FSColor;
+import com.openhtmltopdf.css.parser.FSRGBColor;
+import com.openhtmltopdf.css.parser.PropertyValue;
 import org.w3c.dom.css.CSSPrimitiveValue;
 
 public class FSColorToHexString {
@@ -41,6 +41,11 @@ public class FSColorToHexString {
             throw new UnsupportedOperationException();
         final FSColor fsColor = ((PropertyValue) cssPrimitiveValue)
                 .getFSColor();
+        return rgbToHex(fsColor);
+	}
+
+	public static String rgbToHex(FSColor fsColor) {
+		
         if (!(fsColor instanceof FSRGBColor))
             throw new UnsupportedOperationException();
     
@@ -49,5 +54,5 @@ public class FSColorToHexString {
         		((FSRGBColor) fsColor).getGreen(), 
         		((FSRGBColor) fsColor).getBlue());		
 	}
-
+	
 }

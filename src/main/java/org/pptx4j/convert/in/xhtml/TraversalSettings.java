@@ -32,9 +32,11 @@ import java.util.Map;
 import org.pptx4j.pml.Shape;
 import org.w3c.dom.css.CSSValue;
 
+import com.openhtmltopdf.css.parser.PropertyValue;
+
 public class TraversalSettings implements Cloneable {
     
-    private Map<String, CSSValue> cssMap;
+    private Map<String, PropertyValue> cssMap ;
     
     private String hyperlink;
 
@@ -50,11 +52,11 @@ public class TraversalSettings implements Cloneable {
 		this.paragraphsShape = paragraphsShape;
 	}
 
-	public Map<String, CSSValue> getCssMap() {
+	public Map<String, PropertyValue> getCssMap() {
         return cssMap;
     }
 
-    public void setCssMap(Map<String, CSSValue> cssMap) {
+    public void setCssMap(Map<String, PropertyValue> cssMap) {
         this.cssMap = cssMap;
     }
 

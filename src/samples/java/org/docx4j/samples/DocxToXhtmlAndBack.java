@@ -66,8 +66,7 @@ public class DocxToXhtmlAndBack {
     	
     	// Images: provide correct baseURL
     	String baseURL = "file:///bvols/@git/repos/docx4j-ImportXHTML/sample-docs/docx/sample-docxv2.docx_files";    	
-    	
-    	Docx4jProperties.setProperty("docx4j.Convert.Out.HTML.OutputMethodXML", true);
+//    	Docx4jProperties.setProperty("docx4j.Convert.Out.HTML.OutputMethodXML", true);
     	
     	
 		try {
@@ -121,7 +120,7 @@ public class DocxToXhtmlAndBack {
         XHTMLImporter.setHyperlinkStyle("Hyperlink");
 					
 		docxOut.getMainDocumentPart().getContent().addAll( 
-				XHTMLImporter.convert(stringFromFile, null) );
+				XHTMLImporter.convert(stringFromFile, baseURL) );
 				
 		docxOut.save(new java.io.File(dir + "/DocxToXhtmlAndBack.docx") );
 

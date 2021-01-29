@@ -30,6 +30,7 @@ package org.pptx4j.convert.in.xhtml;
 import java.util.LinkedList;
 import java.util.Map;
 
+import org.docx4j.convert.in.xhtml.DomCssValueAdaptor;
 import org.docx4j.dml.CTRegularTextRun;
 import org.docx4j.dml.CTTextAutonumberBullet;
 import org.docx4j.dml.CTTextCharBullet;
@@ -40,7 +41,9 @@ import org.docx4j.dml.CTTextSpacing;
 import org.docx4j.dml.CTTextSpacingPercent;
 import org.docx4j.dml.STTextAutonumberScheme;
 import org.docx4j.dml.TextFont;
-import org.docx4j.org.xhtmlrenderer.render.BlockBox;
+
+import com.openhtmltopdf.css.parser.PropertyValue;
+import com.openhtmltopdf.render.BlockBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
@@ -175,7 +178,7 @@ public class ListHelper {
 	}
 
 
-	void addNumbering(CTTextParagraph textparagraph, Element e, Map<String, CSSValue> cssMap) {
+	void addNumbering(CTTextParagraph textparagraph, Element e, Map<String, PropertyValue> map) {
 		
 		log.debug("add");
 		
@@ -214,7 +217,7 @@ public class ListHelper {
 		                textspacingpercent.setVal( 110000 );
 		                
         String listStyleType = null;
-        CSSValue cssVal = cssMap.get("list-style-type" );
+        CSSValue cssVal = new DomCssValueAdaptor(map.get("list-style-type" ));
         if (cssVal==null) {
         	log.debug("No list-style-type found in css for element " + e.getTagName());		                
         } else {

@@ -38,7 +38,11 @@ import java.util.Map;
 
 import javax.xml.bind.JAXBException;
 
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.docx4j.XmlUtils;
+import org.docx4j.convert.in.xhtml.DomCssValueAdaptor;
+import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
+import org.docx4j.convert.in.xhtml.renderer.DocxRenderer;
 //import org.docx4j.convert.in.xhtml.FormattingOption;
 import org.docx4j.dml.CTGraphicalObjectFrameLocking;
 import org.docx4j.dml.CTHyperlink;
@@ -69,21 +73,28 @@ import org.docx4j.openpackaging.parts.PresentationML.SlideLayoutPart;
 import org.docx4j.openpackaging.parts.PresentationML.SlidePart;
 import org.docx4j.openpackaging.parts.relationships.Namespaces;
 import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
-import org.docx4j.org.xhtmlrenderer.css.constants.CSSName;
-import org.docx4j.org.xhtmlrenderer.css.constants.IdentValue;
-import org.docx4j.org.xhtmlrenderer.css.style.CalculatedStyle;
-import org.docx4j.org.xhtmlrenderer.css.style.DerivedValue;
-import org.docx4j.org.xhtmlrenderer.css.style.FSDerivedValue;
-import org.docx4j.org.xhtmlrenderer.docx.DocxRenderer;
-import org.docx4j.org.xhtmlrenderer.newtable.TableBox;
-import org.docx4j.org.xhtmlrenderer.newtable.TableCellBox;
-import org.docx4j.org.xhtmlrenderer.newtable.TableRowBox;
-import org.docx4j.org.xhtmlrenderer.newtable.TableSectionBox;
-import org.docx4j.org.xhtmlrenderer.render.AnonymousBlockBox;
-import org.docx4j.org.xhtmlrenderer.render.BlockBox;
-import org.docx4j.org.xhtmlrenderer.render.Box;
-import org.docx4j.org.xhtmlrenderer.render.InlineBox;
-import org.docx4j.org.xhtmlrenderer.resource.XMLResource;
+import com.openhtmltopdf.css.constants.CSSName;
+import com.openhtmltopdf.css.constants.IdentValue;
+import com.openhtmltopdf.css.parser.PropertyValue;
+import com.openhtmltopdf.css.style.CalculatedStyle;
+import com.openhtmltopdf.css.style.DerivedValue;
+import com.openhtmltopdf.css.style.FSDerivedValue;
+import com.openhtmltopdf.css.style.derived.ColorValue;
+import com.openhtmltopdf.css.style.derived.CountersValue;
+import com.openhtmltopdf.css.style.derived.FunctionValue;
+import com.openhtmltopdf.css.style.derived.LengthValue;
+import com.openhtmltopdf.css.style.derived.ListValue;
+import com.openhtmltopdf.css.style.derived.NumberValue;
+import com.openhtmltopdf.css.style.derived.StringValue;
+import com.openhtmltopdf.newtable.TableBox;
+import com.openhtmltopdf.newtable.TableCellBox;
+import com.openhtmltopdf.newtable.TableRowBox;
+import com.openhtmltopdf.newtable.TableSectionBox;
+import com.openhtmltopdf.render.AnonymousBlockBox;
+import com.openhtmltopdf.render.BlockBox;
+import com.openhtmltopdf.render.Box;
+import com.openhtmltopdf.render.InlineBox;
+import com.openhtmltopdf.resource.XMLResource;
 import org.docx4j.relationships.Relationship;
 import org.pptx4j.pml.CTGraphicalObjectFrame;
 import org.pptx4j.pml.CTGraphicalObjectFrameNonVisual;
@@ -92,6 +103,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.css.CSSPrimitiveValue;
 import org.w3c.dom.css.CSSValue;
 import org.xml.sax.InputSource;
 
@@ -205,7 +217,7 @@ public class XHTMLtoPPTX {
     
     private List<Object> traverseChildren(BlockBox blockBox, TraversalSettings settings) throws Docx4JException, JAXBException {
 
-        log.debug("traverseChildren for BB"  + "<" + blockBox.getElement().getNodeName() + " " + blockBox.getStyle().toStringMine() + "\n\r" );
+        log.debug("traverseChildren for BB"  + "<" + blockBox.getElement().getNodeName() + " " + blockBox.getStyle().toString() + "\n\r" );
     	
         List<Object> converted = new ArrayList<Object>();
         
@@ -301,8 +313,8 @@ public class XHTMLtoPPTX {
             log.debug("<NULL>");
             return new ArrayList<Object>();
         } else {            
-            log.debug("BB"  + "<" + e.getNodeName() + " " + blockBox.getStyle().toStringMine() );
-            log.debug(blockBox.getStyle().getDisplayMine() );
+            log.debug("BB"  + "<" + e.getNodeName() + " " + blockBox.getStyle().toString() );
+            log.debug(blockBox.getStyle().getStringProperty(CSSName.DISPLAY)  );
 //                log.debug(box.getElement().getAttribute("class"));            	
         }
         	
@@ -319,7 +331,7 @@ public class XHTMLtoPPTX {
 			            DON"T TRIGGER THIS LINE
 			        </li>
     			 */
-    			&& !(blockBox instanceof org.docx4j.org.xhtmlrenderer.render.AnonymousBlockBox)) {
+    			&& !(blockBox instanceof com.openhtmltopdf.render.AnonymousBlockBox)) {
         	
         		localResult = processParagraph(blockBox, settings);
         		
@@ -428,7 +440,9 @@ public class XHTMLtoPPTX {
             }
         }
         
-        if (inlineBox.getTextNode() == null) {
+        if (inlineBox.getText() == null
+        		|| inlineBox.getText().length()==0 ) {
+//        if (inlineBox.getTextNode() == null) {
             return processEmptyTextNode(inlineBox, settings);
         } else  {
             return processRegularTextNode(inlineBox, settings);
@@ -464,7 +478,7 @@ public class XHTMLtoPPTX {
     private CTRegularTextRun processRegularTextNode(InlineBox inlineBox, TraversalSettings settings) {
         settings.setCssMap(getCascadedProperties(inlineBox.getStyle()));
         CTRegularTextRun run = DML_OBJECT_FACTORY.createCTRegularTextRun();
-        run.setT(inlineBox.getTextNode().getTextContent());
+        run.setT(inlineBox.getText());
         run.setRPr(createRunProperties(settings));
         return run;
     }
@@ -478,9 +492,9 @@ public class XHTMLtoPPTX {
         return rPr;
     }
     
-    private void addStylingProperties(CTTextCharacterProperties rPr, Map<String, CSSValue> cssMap) {
-        for (String cssName : cssMap.keySet()) {
-            Property p = PropertyFactory.createPropertyFromCssName(cssName, cssMap.get(cssName));
+    private void addStylingProperties(CTTextCharacterProperties rPr, Map<String, PropertyValue> map) {
+        for (String cssName : map.keySet()) {
+            Property p = PropertyFactory.createPropertyFromCssName(cssName, new DomCssValueAdaptor(map.get(cssName)));
             if (p != null) {
                 if (p instanceof AbstractRunProperty) {             
                     ((AbstractRunProperty)p).set(rPr);
@@ -510,37 +524,127 @@ public class XHTMLtoPPTX {
         return rel;
     }
     
-    private Map<String, CSSValue> getCascadedProperties(CalculatedStyle cs) {
-        
-        Map<String, CSSValue> cssMap = new HashMap<String, CSSValue>();
-        
-        FSDerivedValue[] derivedValues = cs.getDerivedValues();
+    
+    public Map<String, PropertyValue> getCascadedProperties(CalculatedStyle cs) {
+    	
+    	// Similar to renderer.getLayoutContext().getSharedContext().getCss().getCascadedPropertiesMap(e)?
+    	
+    	// or use getStyle().valueByName directly; see TableHelper for example
+
+    	
+    	Map<String, PropertyValue> cssMap = new HashMap<String, PropertyValue>();
+    	
+    	// Access the private field
+    	FSDerivedValue[] derivedValues = null;
+		try {
+			derivedValues = (FSDerivedValue[])FieldUtils.readField(cs, "_derivedValuesById", true);
+		} catch (IllegalArgumentException e) {
+			// shouldn't happen
+			log.error("Couldn't access private field", e);
+		} catch (IllegalAccessException e) {
+			log.error("Couldn't access private field", e);
+		}
+
         for (int i = 0; i < derivedValues.length; i++) {
-                        
+        	        	
             CSSName name = CSSName.getByID(i);
             
             if (name.toString().startsWith("-fs")) continue;
-                        
+                                    
             FSDerivedValue val = cs.valueByName(name); // walks parents as necessary to get the value
             
-            if (val != null && val instanceof DerivedValue) {    
-                
-                cssMap.put(name.toString(), ((DerivedValue)val).getCSSPrimitiveValue() );
-                
-            } else if (val != null && val instanceof IdentValue) {
-                
-                cssMap.put(name.toString(), ((IdentValue)val).getCSSPrimitiveValue() );
-
-            } else  if (val!=null ) {
-                
-                log.debug("Skipping " +  name.toString() + " .. " + val.getClass().getName() );
+        	// An IdentValue represents a string that you can assign to a CSS property,
+        	// where the string is one of several enumerated values. 
+        	// font-size could be a IdentValue (eg medium) or a LengthValue (eg 12px) 
+            
+            if (val == null) {
+            	
+            	log.warn("Skipping " +  name.toString() + " .. (null value)" );            	
+            	
             } else {
-                log.debug("Skipping " +  name.toString() + " .. (null value)" );                
+            	
+            	if (log.isDebugEnabled()) {
+            		log.debug(val.getClass().getName() + ": " + name + " = " + val.asString());
+            	}
+            	
+            	if (val instanceof IdentValue) {
+
+		        	// Workaround for docx4j < 8.3, which doesn't handle start|end
+		        	if (name.toString().equals("text-align")
+		        			&& (val.asString().equals("start")
+		        					|| val.asString().equals("end"))) {
+		        		
+						PropertyValue val2; 
+		        		if (val.asString().equals("start")) {
+		        			// Not bidi aware; assume ltr
+		        			val2 = new PropertyValue(CSSPrimitiveValue.CSS_IDENT, "left", "left"); 
+		        		} else {
+		        			val2 = new PropertyValue(CSSPrimitiveValue.CSS_IDENT, "right", "right"); 		        			
+		        		}
+			        	cssMap.put(name.toString(), val2 );
+		        		
+		        	} else {
+            		
+						PropertyValue val2 = new PropertyValue( (IdentValue)val ); 
+		//				PropertyValue val2 = new PropertyValue(CSSPrimitiveValue.CSS_IDENT, val.asString(), val.asString()); 
+			        	cssMap.put(name.toString(), val2 );
+		        	}
+	        	
+	            } else if (val instanceof ColorValue) {
+	            	
+	//            	Object o = ((ColorValue)val).asColor();
+	    			PropertyValue val2 = new PropertyValue( ((ColorValue)val).asColor() ); 
+	            	cssMap.put(name.toString(), val2 );            		
+	
+	            } else if (val instanceof LengthValue) {
+
+	    			PropertyValue val2 = new PropertyValue(XHTMLImporterImpl.getLengthPrimitiveType(val) , val.asFloat(), val.asString()); 
+	            	cssMap.put(name.toString(), val2 );
+	            	
+	            } else if (val instanceof NumberValue) {
+	            	
+	    			PropertyValue val2 = new PropertyValue(((NumberValue)val).getCssSacUnitType() , val.asFloat(), val.asString()); 
+	            	cssMap.put(name.toString(), val2 );
+	
+	            } else if (val instanceof StringValue) {
+	            	
+	    			PropertyValue val2 = new PropertyValue(((StringValue)val).getCssSacUnitType() , val.asString(), val.asString()); 
+	            	cssMap.put(name.toString(), val2 );
+	
+	            } else if (val instanceof ListValue) {
+	            	
+	    			PropertyValue val2 = new PropertyValue( ((ListValue)val).getValues() ); 
+	            	cssMap.put(name.toString(), val2 );
+	
+	            } else if (val instanceof CountersValue) {
+	            	
+	            	boolean unused = false;
+	    			PropertyValue val2 = new PropertyValue( ((CountersValue)val).getValues(), unused ); 
+	            	cssMap.put(name.toString(), val2 );
+	
+	            } else if (val instanceof FunctionValue) {
+	            	
+	    			PropertyValue val2 = new PropertyValue( ((FunctionValue)val).getFunction() ); 
+	            	cssMap.put(name.toString(), val2 );
+	            	
+	            }  else 
+	            	if (val instanceof DerivedValue) {   
+	            		
+	            	// We should've handled all known types of abstract class DerivedValue above!
+	            	log.warn("TODO handle DerivedValue type " +  val.getClass().getName() 
+	            			+ " with name  " + name + " = " + val.asString());
+	    			PropertyValue val2 = new PropertyValue( ((DerivedValue)val).getCssSacUnitType() , val.asString(), val.asString()); 
+	            	cssMap.put(name.toString(), val2 );
+            	
+	            } else  {
+	            	
+	            	log.warn("TODO Skipping " +  name.toString() + " .. " + val.getClass().getName() );
+	            }
             }
         }
-        
+    	
         return cssMap;
-        
+    	
     }
     
     private boolean isLineBreak(InlineBox inlineBox) {

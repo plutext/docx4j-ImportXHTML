@@ -2,6 +2,24 @@ CHANGELOG
 =========
 
 
+Version 8.2.0
+=============
+
+Release date
+------------
+
+13 January 2020
+
+
+Changes in Version 8.2.0
+------------------------
+
+Migrated from FlyingSaucer to https://github.com/danfickle/openhtmltopdf which uses pdfbox, not old iText
+
+
+
+
+
 Version 8.0.0
 =============
 
