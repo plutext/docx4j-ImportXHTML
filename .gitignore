@@ -5,3 +5,7 @@
 
 /bin-testOutput/
 /openhtmltopdf_2021.txt
+
+#IntelliJ IDEA files
+.idea
+*.iml

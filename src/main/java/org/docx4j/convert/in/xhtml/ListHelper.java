@@ -72,6 +72,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.css.CSSPrimitiveValue;
 import org.w3c.dom.css.CSSValue;
 
+
+import static org.docx4j.com.google.common.base.Strings.isNullOrEmpty;
+
 public class ListHelper {
 
 	public static Logger log = LoggerFactory.getLogger(ListHelper.class);
@@ -548,10 +551,11 @@ public class ListHelper {
 
 			NumberFormat specified = getNumberFormatFromCSSListStyleType(
 					cssMap.get("list-style-type" ).getCssText());
-			
+			final String valueAttribute = e.getAttribute("value");
 			if (peekListItemStateStack().isFirstItem // and level already exists,
 					|| numfmtExisting ==null
-					|| numfmtExisting.getVal()!=specified  ) {
+					|| numfmtExisting.getVal()!=specified
+					|| !isNullOrEmpty(valueAttribute)) {
 
 				// can't re-use..
 				
@@ -600,7 +604,7 @@ public class ListHelper {
 				int ilvl = lvl.getIlvl().intValue();
 				log.debug("concrete list points at abstract " + getConcreteList().getAbstractNumId().getVal().longValue());
 				long newNumId = ndp.restart(getConcreteList().getNumId().longValue(), ilvl,
-			    		/* restart at */ 1);
+			    		/* restart at */ isNullOrEmpty(valueAttribute)?1:Integer.parseInt(valueAttribute));
 				// retrieve it
 				ListNumberingDefinition listDef = ndp.getInstanceListDefinitions().get(""+newNumId);
 

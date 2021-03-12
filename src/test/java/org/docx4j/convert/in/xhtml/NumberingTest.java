@@ -58,6 +58,9 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+
+import static org.junit.Assert.assertEquals;
+
 public class NumberingTest {
 
 	private WordprocessingMLPackage wordMLPackage;
@@ -475,7 +478,31 @@ public class NumberingTest {
     	assertTrue( p.getPPr().getInd()==null);
     	
 	}
-	
+
+	@Test public void testListItemValueOverridden() throws Docx4JException {
+		this.addNumberingPart(wordMLPackage.getMainDocumentPart());
+		this.addStylesPart(wordMLPackage.getMainDocumentPart());
+		String xhtml= "<div>" +
+				"<ol>"
+				+"<li>Item 1</li>"
+				+"<li value=\"1\">Second item with 1 as number</li>"
+				+"<li>Item 2</li>"
+				+"<li value=\"2\">Second item with 2 as number</li>"
+				+"</ol>"+
+				"</div>";
+		List<Object> results = convert( xhtml, FormattingOption.CLASS_PLUS_OTHER);
+		wordMLPackage.getMainDocumentPart().getContent().addAll(results);
+		final P item1 = (P) results.get(0);
+		final P secondItem1 = (P) results.get(1);
+		final P item2 = (P) results.get(2);
+		final P secondItem2 = (P) results.get(3);
+		assertEquals(BigInteger.valueOf(2L),item1.getPPr().getNumPr().getNumId().getVal());
+		assertEquals(BigInteger.valueOf(3L),secondItem1.getPPr().getNumPr().getNumId().getVal());
+		assertEquals(BigInteger.valueOf(3L),item2.getPPr().getNumPr().getNumId().getVal());
+		assertEquals(BigInteger.valueOf(4L),secondItem2.getPPr().getNumPr().getNumId().getVal());
+	}
+
+
 	// ===============================================================================
 	// machinery / helpers
 	
@@ -929,7 +956,6 @@ public class NumberingTest {
 
 		return numbering;
 		}	
-	
 
 
 }
