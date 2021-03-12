@@ -492,7 +492,6 @@ public class NumberingTest {
 				"</div>";
 		List<Object> results = convert( xhtml, FormattingOption.CLASS_PLUS_OTHER);
 		wordMLPackage.getMainDocumentPart().getContent().addAll(results);
-		System.out.println(XmlUtils.marshaltoString(wordMLPackage.getMainDocumentPart().getJaxbElement(), true, true));
 		final P item1 = (P) results.get(0);
 		final P secondItem1 = (P) results.get(1);
 		final P item2 = (P) results.get(2);
