@@ -33,12 +33,12 @@
 		
     
     <path id="deps_other.libraryclasspath">
-        <pathelement location="${m2Repository}/com/openhtmltopdf/openhtmltopdf-core/1.0.6/openhtmltopdf-core-1.0.6.jar"/>
-        <pathelement location="${m2Repository}/com/openhtmltopdf/openhtmltopdf-pdfbox/1.0.6/openhtmltopdf-pdfbox-1.0.6.jar"/>
-        <pathelement location="${m2Repository}/org/apache/pdfbox/pdfbox/2.0.22/pdfbox-2.0.22.jar"/>
-        <pathelement location="${m2Repository}/org/apache/pdfbox/fontbox/2.0.22/fontbox-2.0.22.jar"/>
+        <pathelement location="${m2Repository}/com/openhtmltopdf/openhtmltopdf-core/1.0.8/openhtmltopdf-core-1.0.8.jar"/>
+        <pathelement location="${m2Repository}/com/openhtmltopdf/openhtmltopdf-pdfbox/1.0.8/openhtmltopdf-pdfbox-1.0.8.jar"/>
+        <pathelement location="${m2Repository}/org/apache/pdfbox/pdfbox/2.0.23/pdfbox-2.0.23.jar"/>
+        <pathelement location="${m2Repository}/org/apache/pdfbox/fontbox/2.0.23/fontbox-2.0.23.jar"/>
         <pathelement location="${m2Repository}/commons-logging/commons-logging/1.2/commons-logging-1.2.jar"/>
-        <pathelement location="${m2Repository}/org/apache/pdfbox/xmpbox/2.0.22/xmpbox-2.0.22.jar"/>
+        <pathelement location="${m2Repository}/org/apache/pdfbox/xmpbox/2.0.23/xmpbox-2.0.23.jar"/>
         <pathelement location="${m2Repository}/de/rototor/pdfbox/graphics2d/0.30/graphics2d-0.30.jar"/>
 	</path>
     	

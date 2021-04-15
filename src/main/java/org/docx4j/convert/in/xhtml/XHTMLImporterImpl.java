@@ -49,7 +49,6 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.transform.Source;
 
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.docx4j.Docx4jProperties;
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.XmlUtils;
@@ -70,26 +69,6 @@ import org.docx4j.openpackaging.parts.WordprocessingML.NumberingDefinitionsPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.StyleDefinitionsPart;
 import org.docx4j.openpackaging.parts.relationships.Namespaces;
 import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
-import com.openhtmltopdf.css.constants.CSSName;
-import com.openhtmltopdf.css.constants.IdentValue;
-import com.openhtmltopdf.css.parser.PropertyValue;
-import com.openhtmltopdf.css.style.CalculatedStyle;
-import com.openhtmltopdf.css.style.DerivedValue;
-import com.openhtmltopdf.css.style.FSDerivedValue;
-import com.openhtmltopdf.css.style.derived.ColorValue;
-import com.openhtmltopdf.css.style.derived.CountersValue;
-import com.openhtmltopdf.css.style.derived.FunctionValue;
-import com.openhtmltopdf.css.style.derived.LengthValue;
-import com.openhtmltopdf.css.style.derived.ListValue;
-import com.openhtmltopdf.css.style.derived.NumberValue;
-import com.openhtmltopdf.css.style.derived.StringValue;
-import com.openhtmltopdf.layout.Styleable;
-import com.openhtmltopdf.newtable.TableBox;
-import com.openhtmltopdf.render.AnonymousBlockBox;
-import com.openhtmltopdf.render.BlockBox;
-import com.openhtmltopdf.render.Box;
-import com.openhtmltopdf.render.InlineBox;
-import com.openhtmltopdf.resource.XMLResource;
 import org.docx4j.wml.Body;
 import org.docx4j.wml.BooleanDefaultTrue;
 import org.docx4j.wml.CTMarkupRange;
@@ -121,6 +100,27 @@ import org.w3c.dom.css.CSSPrimitiveValue;
 //import org.w3c.dom.css.CSSPrimitiveValue;
 //import org.w3c.dom.css.CSSValue;
 import org.xml.sax.InputSource;
+
+import com.openhtmltopdf.css.constants.CSSName;
+import com.openhtmltopdf.css.constants.IdentValue;
+import com.openhtmltopdf.css.parser.PropertyValue;
+import com.openhtmltopdf.css.style.CalculatedStyle;
+import com.openhtmltopdf.css.style.DerivedValue;
+import com.openhtmltopdf.css.style.FSDerivedValue;
+import com.openhtmltopdf.css.style.derived.ColorValue;
+import com.openhtmltopdf.css.style.derived.CountersValue;
+import com.openhtmltopdf.css.style.derived.FunctionValue;
+import com.openhtmltopdf.css.style.derived.LengthValue;
+import com.openhtmltopdf.css.style.derived.ListValue;
+import com.openhtmltopdf.css.style.derived.NumberValue;
+import com.openhtmltopdf.css.style.derived.StringValue;
+import com.openhtmltopdf.layout.Styleable;
+import com.openhtmltopdf.newtable.TableBox;
+import com.openhtmltopdf.render.AnonymousBlockBox;
+import com.openhtmltopdf.render.BlockBox;
+import com.openhtmltopdf.render.Box;
+import com.openhtmltopdf.render.InlineBox;
+import com.openhtmltopdf.resource.XMLResource;
 
 /**
  * Convert XHTML + CSS to WordML content.  Can convert an entire document, 
@@ -719,17 +719,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	
     	Map<String, PropertyValue> cssMap = new HashMap<String, PropertyValue>();
     	
-    	// Access the private field
-    	FSDerivedValue[] derivedValues = null;
-		try {
-			derivedValues = (FSDerivedValue[])FieldUtils.readField(cs, "_derivedValuesById", true);
-		} catch (IllegalArgumentException e) {
-			// shouldn't happen
-			log.error("Couldn't access private field", e);
-		} catch (IllegalAccessException e) {
-			log.error("Couldn't access private field", e);
-		}
-
+    	
+    	FSDerivedValue[] derivedValues = cs.getderivedValuesById();
         for (int i = 0; i < derivedValues.length; i++) {
         	        	
             CSSName name = CSSName.getByID(i);
@@ -844,15 +835,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     public static short getLengthPrimitiveType(FSDerivedValue val) {
     	
     	if (val instanceof LengthValue) {
-
-        	// Access the private field
-        	short _lengthPrimitiveType = ((LengthValue)val).getCssSacUnitType(); 
-    		try {
-    			return (short)FieldUtils.readField(val, "_lengthPrimitiveType", true);
-    		} catch (Exception e) {
-    			log.error("Couldn't access private field", e);
-        		throw new RuntimeException(e.getMessage(), e);
-    		}
+    		return ((LengthValue) val).getLengthPrimitiveType();
     	} else {
     		throw new RuntimeException("Unexpected type " + val.getClass().getName());
     	}

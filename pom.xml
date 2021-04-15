@@ -299,7 +299,7 @@
 		<dependency>
 			<groupId>com.openhtmltopdf</groupId>
 			<artifactId>openhtmltopdf-core</artifactId>
-			<version>1.0.6</version>
+			<version>1.0.8</version>
 		</dependency>
 		<dependency>
 			<groupId>com.openhtmltopdf</groupId>

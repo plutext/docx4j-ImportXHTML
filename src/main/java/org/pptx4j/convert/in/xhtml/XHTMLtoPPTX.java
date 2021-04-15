@@ -38,7 +38,6 @@ import java.util.Map;
 
 import javax.xml.bind.JAXBException;
 
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.docx4j.XmlUtils;
 import org.docx4j.convert.in.xhtml.DomCssValueAdaptor;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
@@ -534,17 +533,7 @@ public class XHTMLtoPPTX {
     	
     	Map<String, PropertyValue> cssMap = new HashMap<String, PropertyValue>();
     	
-    	// Access the private field
-    	FSDerivedValue[] derivedValues = null;
-		try {
-			derivedValues = (FSDerivedValue[])FieldUtils.readField(cs, "_derivedValuesById", true);
-		} catch (IllegalArgumentException e) {
-			// shouldn't happen
-			log.error("Couldn't access private field", e);
-		} catch (IllegalAccessException e) {
-			log.error("Couldn't access private field", e);
-		}
-
+    	FSDerivedValue[] derivedValues = cs.getderivedValuesById();
         for (int i = 0; i < derivedValues.length; i++) {
         	        	
             CSSName name = CSSName.getByID(i);

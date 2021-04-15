@@ -1,29 +1,15 @@
 package org.docx4j.convert.in.xhtml;
 
-import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 
-import org.apache.commons.lang3.reflect.FieldUtils;
-import org.apache.commons.lang3.reflect.MethodUtils;
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.XmlUtils;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl.TableProperties;
 import org.docx4j.jaxb.Context;
 import org.docx4j.model.properties.table.tr.TrHeight;
-import com.openhtmltopdf.css.constants.CSSName;
-import com.openhtmltopdf.css.constants.IdentValue;
-import com.openhtmltopdf.css.parser.FSColor;
-import com.openhtmltopdf.css.parser.FSRGBColor;
-import com.openhtmltopdf.css.style.CalculatedStyle;
-import com.openhtmltopdf.css.style.FSDerivedValue;
-import com.openhtmltopdf.css.style.derived.LengthValue;
-import com.openhtmltopdf.newtable.TableBox;
-import com.openhtmltopdf.newtable.TableCellBox;
-import com.openhtmltopdf.newtable.TableSectionBox;
-import com.openhtmltopdf.render.Box;
 import org.docx4j.wml.CTBorder;
 import org.docx4j.wml.CTHeight;
 import org.docx4j.wml.CTShd;
@@ -53,6 +39,18 @@ import org.docx4j.wml.TrPr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
+
+import com.openhtmltopdf.css.constants.CSSName;
+import com.openhtmltopdf.css.constants.IdentValue;
+import com.openhtmltopdf.css.parser.FSColor;
+import com.openhtmltopdf.css.parser.FSRGBColor;
+import com.openhtmltopdf.css.style.CalculatedStyle;
+import com.openhtmltopdf.css.style.FSDerivedValue;
+import com.openhtmltopdf.css.style.derived.LengthValue;
+import com.openhtmltopdf.newtable.TableBox;
+import com.openhtmltopdf.newtable.TableCellBox;
+import com.openhtmltopdf.newtable.TableSectionBox;
+import com.openhtmltopdf.render.Box;
 
 public class TableHelper {
 	
@@ -504,22 +502,7 @@ public class TableHelper {
 
 		for ( int i = tcb.getCol(); i >= 0 && i < numEffCols; i += backwards ? -1 : 1 ) {
 
-			
-	    	// Access the private field
-			TableSectionBox tsb = null;
-			try {
-				tsb = (TableSectionBox)MethodUtils.invokeMethod(tcb, true, "getSection");
-//			} catch (IllegalArgumentException e) {
-//				// shouldn't happen
-//				log.error("Couldn't access private field", e);
-			} catch (IllegalAccessException e) {
-				log.error(e.getMessage(), e);
-			} catch (NoSuchMethodException e) {
-				log.error(e.getMessage(), e);
-			} catch (InvocationTargetException e) {
-				log.error(e.getMessage(), e);
-			}
-			
+			TableSectionBox tsb = tcb.getSection();
 			TableCellBox adjCell = tsb.cellAt(tcb.getRow(), i);
 
 			if ( adjCell == null ) {
