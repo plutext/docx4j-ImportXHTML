@@ -336,13 +336,6 @@
 			<version>1.2.3</version>
 		</dependency>
 
-		<!--  logging config files; docx4j.properties -->
-		<dependency>
-			<groupId>org.docx4j</groupId>
-			<artifactId>docx4j-samples-resources</artifactId>
-			<version>8.2.8</version>
-		</dependency>
-
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
