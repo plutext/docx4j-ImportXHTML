@@ -2,7 +2,7 @@
 <project basedir="." default="release" name="docx4j-ImportXHTML">
     <property environment="env"/>
 	
-	<property name="importxhtml-version" value="8.2.0"/>
+	<property name="importxhtml-version" value="8.2.1"/>
 	
 	<property name="release.dir" value="docx4j-ImportXHTML-${importxhtml-version}"/>
     
@@ -43,11 +43,11 @@
 	</path>
     	
     <path id="docx4j.libraryclasspath">
-        <pathelement location="${m2Repository}/org/docx4j/docx4j-JAXB-ReferenceImpl/8.2.8/docx4j-JAXB-ReferenceImpl-8.2.8.jar"/>
-        <pathelement location="${m2Repository}/org/docx4j/docx4j-core/8.2.8/docx4j-core-8.2.8.jar"/>
-        <pathelement location="${m2Repository}/org/docx4j/docx4j-openxml-objects/8.2.8/docx4j-openxml-objects-8.2.8.jar"/>
-        <pathelement location="${m2Repository}/org/docx4j/docx4j-openxml-objects-pml/8.2.8/docx4j-openxml-objects-pml-8.2.8.jar"/>
-        <pathelement location="${m2Repository}/org/docx4j/docx4j-openxml-objects-sml/8.2.8/docx4j-openxml-objects-sml-8.2.8.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/docx4j-JAXB-ReferenceImpl/8.2.9/docx4j-JAXB-ReferenceImpl-8.2.9.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/docx4j-core/8.2.9/docx4j-core-8.2.9.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/docx4j-openxml-objects/8.2.9/docx4j-openxml-objects-8.2.9.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/docx4j-openxml-objects-pml/8.2.9/docx4j-openxml-objects-pml-8.2.9.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/docx4j-openxml-objects-sml/8.2.9/docx4j-openxml-objects-sml-8.2.9.jar"/>
         <pathelement location="${m2Repository}/org/plutext/jaxb-svg11/1.0.2/jaxb-svg11-1.0.2.jar"/>
         <pathelement location="${m2Repository}/net/engio/mbassador/1.3.2/mbassador-1.3.2.jar"/>
         <pathelement location="${m2Repository}/org/slf4j/jcl-over-slf4j/1.7.26/jcl-over-slf4j-1.7.26.jar"/>
@@ -84,7 +84,7 @@
         <pathelement location="${m2Repository}/ch/qos/logback/logback-classic/1.2.3/logback-classic-1.2.3.jar"/>
     	
         <pathelement location="${m2Repository}/ch/qos/logback/logback-core/1.2.3/logback-core-1.2.3.jar"/>
-        <!--<pathelement location="${m2Repository}/org/docx4j/docx4j-samples-resources/8.2.8/docx4j-samples-resources-8.2.8.jar"/>-->
+        <!--<pathelement location="${m2Repository}/org/docx4j/docx4j-samples-resources/8.2.9/docx4j-samples-resources-8.2.9.jar"/>-->
     </path>
 	
     

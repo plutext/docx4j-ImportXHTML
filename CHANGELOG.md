@@ -2,13 +2,29 @@ CHANGELOG
 =========
 
 
+Version 8.2.1
+=============
+
+Release date
+------------
+
+15 April 2021
+
+
+Changes in Version 8.2.1
+------------------------
+
+Use openhtmltopdf 1.0.8, reflection no longer necessary
+
+
+
 Version 8.2.0
 =============
 
 Release date
 ------------
 
-13 January 2020
+13 January 2021
 
 
 Changes in Version 8.2.0

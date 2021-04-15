@@ -304,7 +304,7 @@
 		<dependency>
 			<groupId>com.openhtmltopdf</groupId>
 			<artifactId>openhtmltopdf-pdfbox</artifactId>
-			<version>1.0.6</version>
+			<version>1.0.8</version>
 		</dependency>
  
  
@@ -312,7 +312,7 @@
 		<dependency>
 		  <groupId>org.docx4j</groupId>
 		  <artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
-			<version>8.2.8</version>
+			<version>8.2.9</version>
 			<!--  <scope>test</scope>-->
 		</dependency>
 	 	
