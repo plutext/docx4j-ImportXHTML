@@ -382,7 +382,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	 */
 	@Deprecated
 	public static void setCssWhiteList(Set<String> cssWhiteList) {
-		cssWhiteList = cssWhiteList;
+		XHTMLImporterImpl.cssWhiteList = cssWhiteList;
 	}
 	private static Set<String> cssWhiteList = null;
 
