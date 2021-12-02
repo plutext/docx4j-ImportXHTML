@@ -602,26 +602,26 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         return imports.getContent();    	
     }
     
-    /**
-     * @param source
-     * @param baseUrl
-     * @param wordMLPackage
-     * @return
-     * @throws IOException
-     */
-    public List<Object> convert(Source source,  String baseUrl) throws Docx4JException {
-    	    	
-        renderer = getRenderer();
-                
-        Document dom = XMLResource.load(source).getDocument();        
-        renderer.setDocument(dom, baseUrl);
-
-        renderer.layout();
-                    
-        traverse(renderer.getRootBox(),  null);
-        
-        return imports.getContent();    	
-    }
+//    /**
+//     * @param source
+//     * @param baseUrl
+//     * @param wordMLPackage
+//     * @return
+//     * @throws IOException
+//     */
+//    public List<Object> convert(Source source,  String baseUrl) throws Docx4JException {
+//    	    	
+//        renderer = getRenderer();
+//                
+//        Document dom = XMLResource.load(source).getDocument();        
+//        renderer.setDocument(dom, baseUrl);
+//
+//        renderer.layout();
+//                    
+//        traverse(renderer.getRootBox(),  null);
+//        
+//        return imports.getContent();    	
+//    }
     
     //public List<Object> convert(XMLEventReader reader) throws IOException {
     //public List<Object> convert(XMLStreamReader reader) throws IOException {
@@ -1369,7 +1369,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	
         	log.debug("Processing children of " + box.getElement().getNodeName() );
             switch (blockBox.getChildrenContentType()) {
-                case BlockBox.CONTENT_BLOCK:
+                case BLOCK:
                 	log.debug(".. which are BlockBox.CONTENT_BLOCK");	                	
                     for (Object o : ((BlockBox)box).getChildren() ) {
                         log.debug("   processing child " + o.getClass().getName() );
@@ -1378,7 +1378,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
                         log.debug(".. processed child " + o.getClass().getName() );
                     }
                     break;
-                case BlockBox.CONTENT_INLINE:
+                case INLINE:
                 	
                 	log.debug(".. which are BlockBox.CONTENT_INLINE");	                	
                 	
@@ -1416,10 +1416,10 @@ public class XHTMLImporterImpl implements XHTMLImporter {
                     }
                     break;
 
-                case BlockBox.CONTENT_EMPTY:
+                case EMPTY:
                     break;
                     
-                case BlockBox.CONTENT_UNKNOWN:
+                case UNKNOWN:
                 	log.warn(".. which are UNKNOWN " );
                     break;
                     

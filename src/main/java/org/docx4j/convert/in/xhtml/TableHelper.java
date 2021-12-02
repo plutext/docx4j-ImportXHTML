@@ -256,15 +256,29 @@ public class TableHelper {
 	     * So in Word, we want to use STHeightRule.AT_LEAST (rather than EXACT) so contents don't
 	     * get cut off. 
 	     * 
+	     * 2021 11 03: openhtmltopdf produces something like 1114 for a single line of text.
+	     * 
 	     */	    
 	    int height = trBox.getHeight(); // 100px = 2000 so looks like 1/20 of a pixel! 
 	    if (height == 0) { 
 		    // do nothing; equivalent per spec to STHeightRule.AUTO
 	    } else {
-	    		    	
+
+    		log.debug("trBox.getHeight(): " + height);
+	    	
+	    	
 	    	// Since we don't have a CSSValue we can use, do it manually
 	    	TrHeight thr = new TrHeight(); // uses STHeightRule.AT_LEAST
 	    	thr.set(trPr);
+	    	/* Per https://github.com/danfickle/openhtmltopdf/blob/4a475a91563f7f0c8c1d81029b1726e4ff112093/openhtmltopdf-pdfbox/src/main/java/com/openhtmltopdf/pdfboxout/PdfBoxFastOutputDevice.java#L76
+			    //   PDF points are defined as 1/72 inch.
+			    //   CSS pixels are defined as 1/96 inch.
+			    //   PDF text units are defined as 1/1000 of a PDF point.
+			    //   OpenHTMLtoPDF dots are defined as 1/20 of a CSS pixel.
+			    //   Therefore dots per point is 20 * 96/72 or about 26.66.
+			    //   Dividing by _dotsPerPoint will convert OpenHTMLtoPDF dots to PDF points.
+     * 	    	 * 
+	    	 */
 			int twip = UnitsOfMeasurement.pxToTwip(height/20);
 			((CTHeight)thr.getObject()).setVal(BigInteger.valueOf(twip));	    	
 	    }	    
