@@ -2,6 +2,21 @@ CHANGELOG
 =========
 
 
+Version 8.3.2
+=============
+
+Release date
+------------
+
+2 Dec 2021
+
+
+Changes in Version 8.3.2
+------------------------
+
+Use openhtmltopdf 1.0.10; use docx4j 8.3.2
+
+
 Version 8.2.1
 =============
 
