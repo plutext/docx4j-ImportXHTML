@@ -42,7 +42,7 @@ import org.junit.Test;
 
 public class ImageResizeTest{
 
-	
+
 	// 2x2 pixels
     private final String GIF_IMAGE_DATA = "data:image/gif;base64,R0lGODdhAgACAKEEAAMA//8AAAD/Bv/8ACwAAAAAAgACAAACAww0BQA7";
     private final String PNG_IMAGE_DATA = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAgMAAAAP2OW3AAAADFBMVEUDAP//AAAA/wb//AAD4Tw1AAAACXBIWXMAAAsTAAALEwEAmpwYAAAADElEQVQI12NwYNgAAAF0APHJnpmVAAAAAElFTkSuQmCC";
@@ -62,11 +62,11 @@ public class ImageResizeTest{
 
 		// DPI is configurable since docx4j 3.3.7
 		if (UnitsOfMeasurement.DPI==96) {
-			Assert.assertTrue(inline2.getExtent().getCx() / inline1.getExtent().getCx() == 35); 
-			Assert.assertTrue(inline2.getExtent().getCy() / inline1.getExtent().getCy() == 17); 
+			Assert.assertTrue(inline2.getExtent().getCx() / inline1.getExtent().getCx() == 20);
+			Assert.assertTrue(inline2.getExtent().getCy() / inline1.getExtent().getCy() == 10);
 		} else if (UnitsOfMeasurement.DPI==72) {
-			Assert.assertTrue(inline2.getExtent().getCx() / inline1.getExtent().getCx() == 26); 
-			Assert.assertTrue(inline2.getExtent().getCy() / inline1.getExtent().getCy() == 13); 
+			Assert.assertTrue(inline2.getExtent().getCx() / inline1.getExtent().getCx() == 26);
+			Assert.assertTrue(inline2.getExtent().getCy() / inline1.getExtent().getCy() == 13);
 		} else {
 			System.out.println("Skipping test for DPI " + UnitsOfMeasurement.DPI);
 		}
@@ -83,25 +83,25 @@ public class ImageResizeTest{
 	@Test
 	public void testScaling() throws Exception {
 		Inline inline = getInline("<div><img src='" + PNG_IMAGE_DATA + "' style='width: 50px'/></div>");
-		Assert.assertTrue(  Math.round(inline.getExtent().getCx()/10) 
+		Assert.assertTrue(  Math.round(inline.getExtent().getCx()/10)
 				== Math.round(inline.getExtent().getCy()/10)); // +/- a few EMU
 	}
 
 	public void testHeightWidthInPx() throws Exception {
-		
-		String PNG_IMAGE_DATA = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAgMAAAAP2OW3AAAADFBMVEUDAP//AAAA/wb//AAD4Tw1AAAACXBIWXMAAAsTAAALEwEAmpwYAAAADElEQVQI12NwYNgAAAF0APHJnpmVAAAAAElFTkSuQmCC";		
+
+		String PNG_IMAGE_DATA = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAgMAAAAP2OW3AAAADFBMVEUDAP//AAAA/wb//AAD4Tw1AAAACXBIWXMAAAsTAAALEwEAmpwYAAAADElEQVQI12NwYNgAAAF0APHJnpmVAAAAAElFTkSuQmCC";
 		String html= "<div>" +
 					"<p><img src='" + PNG_IMAGE_DATA + "' width='40px' height='20px' /></p>" +
 					"<p><img src='" + PNG_IMAGE_DATA + "' style='width:40px; height:20px' /></p>" +
 				"</div>";
-        XHTMLImporterImpl XHTMLImporter = new XHTMLImporterImpl(wordMLPackage);		
+        XHTMLImporterImpl XHTMLImporter = new XHTMLImporterImpl(wordMLPackage);
 		List<Object> convert = XHTMLImporter.convert(html, null);
 		wordMLPackage.getMainDocumentPart().getContent().addAll(convert);
 		wordMLPackage.save(new File(System.getProperty("user.dir") + "/px.docx") );
 	}
-	
+
 	private Inline getInline(String html) throws Exception{
-        XHTMLImporterImpl XHTMLImporter = new XHTMLImporterImpl(wordMLPackage);		
+        XHTMLImporterImpl XHTMLImporter = new XHTMLImporterImpl(wordMLPackage);
 		List<Object> convert = XHTMLImporter.convert(html, null);
 		return ((Inline)((Drawing)((R)((P)convert.get(0)).getContent().get(0)).getContent().get(0)).getAnchorOrInline().get(0));
 	}
