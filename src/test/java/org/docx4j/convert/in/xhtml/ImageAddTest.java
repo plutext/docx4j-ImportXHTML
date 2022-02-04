@@ -54,71 +54,71 @@ public class ImageAddTest{
 
 	@Test
 	public void testSizeUnspecified() throws Exception {
-		
+
 		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "'/></div>");
-		
+
 		// DPI is configurable since docx4j 3.3.7
 		if (UnitsOfMeasurement.DPI==96) {
-			Assert.assertTrue(inline1.getExtent().getCx() == 19050); 
+			Assert.assertTrue(inline1.getExtent().getCx() == 19050);
 		} else if (UnitsOfMeasurement.DPI==72) {
-			Assert.assertTrue(inline1.getExtent().getCx() == 25400); 
+			Assert.assertTrue(inline1.getExtent().getCx() == 25400);
 		} else {
 			System.out.println("Skipping test for DPI " + UnitsOfMeasurement.DPI);
 		}
-		
+
 	}
 
 	@Test
 	public void testSize20px() throws Exception {
-		
+
 		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' width='20px' height='20px' /></div>");
-		Assert.assertTrue(inline1.getExtent().getCx() == 338667);
+		Assert.assertTrue(inline1.getExtent().getCx() == 190500);
 	}
 
 	@Test
 	public void testSize20NoUnits() throws Exception {
-//		// values in dots are 20x as expected		
+//		// values in dots are 20x as expected
 		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' width='20' height='20' /></div>");
-		Assert.assertTrue(inline1.getExtent().getCx() == 338667);
+		Assert.assertTrue(inline1.getExtent().getCx() == 190500);
 	}
-	
+
 	@Test
 	public void testSize20pt() throws Exception {
-		
+
 		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' width='20pt' height='20pt' /></div>");
-		Assert.assertTrue(inline1.getExtent().getCx() == 451273);
+		Assert.assertTrue(inline1.getExtent().getCx() == 253841);
 	}
-	
+
 	@Test
 	public void testSizeNoHeight() throws Exception {
-		
+
 		Inline inline = getInline("<div><img src='" + PNG_IMAGE_DATA + "' width='20pt'  /></div>");
-		Assert.assertTrue(  Math.round(inline.getExtent().getCx()/10) 
+		Assert.assertTrue(  Math.round(inline.getExtent().getCx()/10)
 				== Math.round(inline.getExtent().getCy()/10)); // +/- a few EMU
 	}
-	
+
 	@Test
 	public void testSizeNoWidth() throws Exception {
-		
+
 		Inline inline = getInline("<div><img src='" + PNG_IMAGE_DATA + "' height='20pt'  /></div>");
-		Assert.assertTrue(  Math.round(inline.getExtent().getCx()/10) 
+		Assert.assertTrue(  Math.round(inline.getExtent().getCx()/10)
 				== Math.round(inline.getExtent().getCy()/10)); // +/- a few EMU
 	}
-	
-	
-	
+
+
+
 	@Test
 	public void testSizeSpecifiedPxPlusCSS() throws Exception {
-		
+
 		// box.getHeight() and  box.getWidth() include padding
-		
+
 		Inline inline2 = getInline("<div><img style='padding-top:10px;padding-left:10px;' src='" + PNG_IMAGE_DATA + "' width='20px' height='10px' /></div>");
-		Assert.assertTrue(inline2.getExtent().getCx() == 338667);		
+		Assert.assertTrue(inline2.getExtent().getCx() == 190500);
 		//Assert.assertTrue(inline2.getExtent().getCx() / inline2.getExtent().getCy() == 2);
 	}
-	
+
 	private Inline getInline(String html) throws Exception {
-        XHTMLImporterImpl XHTMLImporter = new XHTMLImporterImpl(wordMLPackage);		
+        XHTMLImporterImpl XHTMLImporter = new XHTMLImporterImpl(wordMLPackage);
 		List<Object> convert = XHTMLImporter.convert(html, null);
 		return ((Inline)((Drawing)((R)((P)convert.get(0)).getContent().get(0)).getContent().get(0)).getAnchorOrInline().get(0));
 	}

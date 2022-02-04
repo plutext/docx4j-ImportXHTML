@@ -1797,7 +1797,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	}
 	
 	private float dotsToTwip(float dots) {
-		return dots * 4f / 3f; // TODO: Use UnitsOfMeasurement defined DPI
+		return dots * 3f / 4f; // TODO: Use UnitsOfMeasurement defined DPI
 	}
 	
 	
