@@ -69,24 +69,43 @@ public class ImageAddTest{
 	}
 
 	@Test
+	public void testSize96px() throws Exception {
+		
+		String html = "<div><img src='" + PNG_IMAGE_DATA + "' width='96px' height='96px' /></div>";
+		System.out.println(html);
+		Inline inline1 = getInline(html);
+		Assert.assertTrue(inline1.getExtent().getCx() == 914400*96/UnitsOfMeasurement.DPI);
+	}
+
+	@Test
+	public void testSize1inch() throws Exception {
+		
+		String html = "<div><img src='" + PNG_IMAGE_DATA + "' style='width:1in;height:1in' /></div>";
+		System.out.println(html);
+		Inline inline1 = getInline(html);
+		Assert.assertTrue(inline1.getExtent().getCx() == 914400*96/UnitsOfMeasurement.DPI);
+	}
+	
+	@Test
 	public void testSize20px() throws Exception {
 
 		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' width='20px' height='20px' /></div>");
-		Assert.assertTrue(inline1.getExtent().getCx() == 190500);
+		Assert.assertTrue(inline1.getExtent().getCx() == 190500*96/UnitsOfMeasurement.DPI);
 	}
 
 	@Test
 	public void testSize20NoUnits() throws Exception {
 //		// values in dots are 20x as expected
 		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' width='20' height='20' /></div>");
-		Assert.assertTrue(inline1.getExtent().getCx() == 190500);
+		Assert.assertTrue(inline1.getExtent().getCx() == 190500*96/UnitsOfMeasurement.DPI);
 	}
 
 	@Test
 	public void testSize20pt() throws Exception {
 
 		Inline inline1 = getInline("<div><img src='" + PNG_IMAGE_DATA + "' width='20pt' height='20pt' /></div>");
-		Assert.assertTrue(inline1.getExtent().getCx() == 253841);
+		System.out.println(inline1.getExtent().getCx());
+		Assert.assertTrue(inline1.getExtent().getCx() == Math.round(253841*96f/UnitsOfMeasurement.DPI)); 
 	}
 
 	@Test
@@ -113,7 +132,7 @@ public class ImageAddTest{
 		// box.getHeight() and  box.getWidth() include padding
 
 		Inline inline2 = getInline("<div><img style='padding-top:10px;padding-left:10px;' src='" + PNG_IMAGE_DATA + "' width='20px' height='10px' /></div>");
-		Assert.assertTrue(inline2.getExtent().getCx() == 190500);
+		Assert.assertTrue(inline2.getExtent().getCx() == 190500*96/UnitsOfMeasurement.DPI);
 		//Assert.assertTrue(inline2.getExtent().getCx() / inline2.getExtent().getCy() == 2);
 	}
 

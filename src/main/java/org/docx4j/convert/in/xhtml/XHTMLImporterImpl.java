@@ -1740,17 +1740,26 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	private void addImage(BlockBox box) {
 		
 		/*
-			DocxRenderer {
-			    
-			    // These two defaults combine to produce an effective resolution of 96 px to the inch
-			    private static final float DEFAULT_DOTS_PER_POINT = 20f * 4f / 3f;
-			    private static final int DEFAULT_DOTS_PER_PIXEL = 20;
-			    
-			    // DPI is then set = 72 * dotsPerPoint 
-			    // TODO reconcile that with com.openhtmltopdf.layout.SharedContext
+			com.openhtmltopdf.layout.SharedContext
+		     * 
+				 * @deprecated Belongs in Java2D renderer.
+			    private final static float DEFAULT_DPI = 72;
+				
+			     * @deprecated Belongs in Java2D renderer.
+			    private final static int DEFAULT_DOTS_PER_PIXEL = 1;
+							    
+			     * Used to adjust fonts, ems, points, into screen resolution.
+			     * Internal program dots per inch.
+			    private float dpi;
 			
-			TODO: UnitsOfMeasurement defines DPI.  We should pass that to DocxRenderer!
-       	*/
+			     * Internal program dots per pixel.
+			    private int dotsPerPixel = DEFAULT_DOTS_PER_PIXEL;
+			    
+			     * dpi in a more usable way
+			     * Internal program dots per mm (probably a fraction).
+			    private float mmPerDot;			     * 
+		
+   	*/
 		
 		// System.out.println(box.getStyle().toStringMine() );
 		// max-height: none; max-width: none; min-height: 0; min-width: 0;
@@ -1797,7 +1806,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	}
 	
 	private float dotsToTwip(float dots) {
-		return dots * 3f / 4f; // TODO: Use UnitsOfMeasurement defined DPI
+		return dots * 72f/(UnitsOfMeasurement.DPI); 
+		// Java2D DPI/
 	}
 	
 	
