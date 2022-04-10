@@ -11,10 +11,17 @@
 	<groupId>org.docx4j</groupId>
 	<artifactId>docx4j-ImportXHTML</artifactId>
 	<name>docx4j-ImportXHTML</name>
-	<version>8.3.3-SNAPSHOT</version>
+	<version>11.4.0-SNAPSHOT</version>
 	<description>
 		docx4j-ImportXHTML converts XHTML to OpenXML WordML (docx) using docx4j 
 	</description>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<version.docx4j>11.4.5</version.docx4j>
+		<version.logback-classic>1.3.0-alpha14</version.logback-classic>
+	</properties>
+
 	<url>http://www.docx4java.org/</url>
 	<licenses>
 	  <license>
@@ -54,9 +61,6 @@
 		<!--  others listed in CHANGELOG.md, to be added here -->
 	</contributors>
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
 	  	
 	<build>
 		<sourceDirectory>src/main/java</sourceDirectory>
@@ -308,13 +312,24 @@
 		</dependency>
  
  
-		<!--  you should use the RI here if you are using eg Java 13, even if compliance is set in your project to 1.8 -->
 		<dependency>
-		  <groupId>org.docx4j</groupId>
-		  <artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
-			<version>8.3.2</version>
-			<!--  <scope>test</scope>-->
+            <groupId>org.docx4j</groupId>
+            <artifactId>docx4j-core</artifactId>
+			<version>${version.docx4j}</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.docx4j</groupId>
+			<artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
+			<version>${version.docx4j}</version>
+			<scope>test</scope>
+		</dependency>
+ 
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+  			<version>2.0.0-alpha6</version>
+  		</dependency>
 	 	
 		<!-- sample docx4j.properties specifies this --> 
 		<dependency>
@@ -331,24 +346,11 @@
 		   -->
 		</dependency>
 
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-			<version>1.7.26</version>
-		</dependency>
 		
-<!-- 		
-		<dependency>
-		  <groupId>org.slf4j</groupId>
-		  <artifactId>slf4j-log4j12</artifactId>
-		  <version>1.7.5</version>
-		</dependency>		
- -->
-
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
-			<version>1.2.3</version>
+			<version>${version.logback-classic}</version>
 		</dependency>
 
 		<dependency>

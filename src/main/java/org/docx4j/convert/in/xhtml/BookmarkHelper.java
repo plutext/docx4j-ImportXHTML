@@ -4,7 +4,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 
 import org.docx4j.TraversalUtil;
 import org.docx4j.XmlUtils;

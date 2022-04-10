@@ -24,7 +24,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBContext;
 
 import org.docx4j.XmlUtils;
 import org.docx4j.model.datastorage.BindingHandler;

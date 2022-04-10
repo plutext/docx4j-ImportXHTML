@@ -2,6 +2,32 @@ CHANGELOG
 =========
 
 
+Version 11.4.0  (jakarta.xml.bind; parity with 8.3.2)
+==============
+￼
+Release date
+------------
+￼
+11 April 2022
+￼
+￼
+Contributors to this release
+----------------------------
+￼
+Jason Harrop
+￼
+￼
+Changes in Version 11.4.0 
+-------------------------
+
+Parity with 8.3.2￼
+
+Uses jakarta.xml.bind, rather than javax.xml.bind (hence the 11.4.x numbering); if you have existing code which imports javax.xml.bind, you'll need to search/replace across your code base, replacing javax.xml.bind  with jakarta.xml.bind
+
+From hereon, changes will generally be made to this branch first.  
+
+
+
 Version 8.3.2
 =============
 

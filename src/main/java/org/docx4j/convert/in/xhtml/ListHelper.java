@@ -31,7 +31,7 @@ import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.Map;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.XmlUtils;

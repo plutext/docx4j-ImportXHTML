@@ -25,7 +25,7 @@ import java.io.FileInputStream;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBContext;
 
 import org.docx4j.XmlUtils;
 import org.docx4j.dml.CTBlip;
