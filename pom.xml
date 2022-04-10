@@ -88,7 +88,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.0</version>
+				<version>3.8.1</version>
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
@@ -316,6 +316,21 @@
 			<!--  <scope>test</scope>-->
 		</dependency>
 	 	
+		<!-- sample docx4j.properties specifies this --> 
+		<dependency>
+		  <groupId>xerces</groupId>
+		  <artifactId>xercesImpl</artifactId>
+		  <version>2.12.0</version>
+		  <!-- 
+		  <exclusions>
+		  	<exclusion>
+			  <groupId>xml-apis</groupId>
+			  <artifactId>xml-apis</artifactId>
+		  	</exclusion>
+		  </exclusions>
+		   -->
+		</dependency>
+
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
