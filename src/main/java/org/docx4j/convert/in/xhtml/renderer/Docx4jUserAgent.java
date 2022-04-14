@@ -23,14 +23,8 @@ package org.docx4j.convert.in.xhtml.renderer;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.util.logging.Level;
 
-import com.openhtmltopdf.extend.FSImage;
-import com.openhtmltopdf.layout.SharedContext;
-import com.openhtmltopdf.resource.ImageResource;
 import com.openhtmltopdf.swing.NaiveUserAgent;
-import com.openhtmltopdf.util.XRLog;
 
 //import com.lowagie.text.Image;
 //import com.lowagie.text.Rectangle;
