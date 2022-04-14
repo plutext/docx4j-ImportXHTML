@@ -124,20 +124,20 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 				}
 
 
+				long docPrId = wordMLPackage.getDrawingPropsIdTracker().generateId();
 				
 				Inline inline=null;
 				if (cx == null && cy == null) {
 					
 					if (maxWidth>0) {
 						log.debug("image maxWidth:" + maxWidth + ", table style: " + tableStyle);
-						System.out.println("image maxWidth:" + maxWidth);
                         long excessWidth = getTblCellMargins(tableStyle);
                         if(excessWidth > 0) {
                             log.debug("table style margins subtracted (twips): " + excessWidth);
                         }
-                        inline = imagePart.createImageInline(null, e.getAttribute("alt"), 0, 1, false, maxWidth - (int)excessWidth);
+                        inline = imagePart.createImageInline(null, e.getAttribute("alt"), docPrId, 1, false, maxWidth - (int)excessWidth);
                     } else {
-						inline = imagePart.createImageInline(null, e.getAttribute("alt"), 0, 1, false);
+						inline = imagePart.createImageInline(null, e.getAttribute("alt"), docPrId, 1, false);
 					}
 				} else {
 					
@@ -152,7 +152,8 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 								(cx / imagePart.getImageInfo().getSize().getWidthPx());
 						
 					}
-					inline = imagePart.createImageInline(null, e.getAttribute("alt"), 0, 1, cx, cy, false);
+					inline = imagePart.createImageInline(null, e.getAttribute("alt"), 
+							docPrId, 1, cx, cy, false);
 					
 					/*
 					 * That sets text wrapping distance from text to 0.
