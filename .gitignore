@@ -3,6 +3,11 @@
 /dist/
 .directory
 
+.settings/
+.idea
+.project
+.classpath
+
 /bin-testOutput/
 /openhtmltopdf_2021.txt
 /release-zips
