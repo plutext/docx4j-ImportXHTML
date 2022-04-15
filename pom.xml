@@ -9,18 +9,37 @@
   </parent>
 	
 	<groupId>org.docx4j</groupId>
-	<artifactId>docx4j-ImportXHTML</artifactId>
-	<name>docx4j-ImportXHTML</name>
-	<version>11.4.0-SNAPSHOT</version>
+	<artifactId>docx4j-ImportXHTML-parent</artifactId>
+	<version>${revision}</version>
+	
+	<properties>
+		<revision>11.4.6-SNAPSHOT</revision>
+		<version.docx4j>11.4.6-SNAPSHOT</version.docx4j>
+		<packaging.type>jar</packaging.type>
+	    <!-- <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> -->
+	    <!-- github server corresponds to entry in ~/.m2/settings.xml -->
+	    <github.global.server>github</github.global.server>
+		<version.logback-classic>1.3.0-alpha14</version.logback-classic>
+		<version.maven-jar-plugin>2.3.1</version.maven-jar-plugin>
+		<version.maven-bundle-plugin>5.1.2</version.maven-bundle-plugin>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+    <packaging>pom</packaging>
+
+	<name>docx4j-ImportXHTML parent</name>
+
+    <modules>
+        <module>docx4j-ImportXHTML-core</module>
+        <module>docx4j-ImportXHTML-samples</module>        
+    </modules>
+
+
+
 	<description>
 		docx4j-ImportXHTML converts XHTML to OpenXML WordML (docx) using docx4j 
-	</description>
+	</description> 
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<version.docx4j>11.4.6-SNAPSHOT</version.docx4j>
-		<version.logback-classic>1.3.0-alpha14</version.logback-classic>
-	</properties>
 
 	<url>http://www.docx4java.org/</url>
 	<licenses>
@@ -63,32 +82,60 @@
 
 	  	
 	<build>
-		<sourceDirectory>src/main/java</sourceDirectory>
-		<testSourceDirectory>src/test/java</testSourceDirectory>
-		<outputDirectory>bin</outputDirectory> <!--  bin-mvn -->
-		<testOutputDirectory>bin-testOutput</testOutputDirectory>
+
+	<pluginManagement>
+		<plugins>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>2.5.3</version>
+				<configuration>
+					<mavenExecutorId>forked-path</mavenExecutorId>
+					<useReleaseProfile>false</useReleaseProfile>
+					<arguments>${arguments} -Psonatype-oss-release</arguments>
+					<!-- run the install step again, to get META-INFO without -SNAPSHOT -->
+					<preparationGoals>clean install</preparationGoals>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.1.0</version>
+			</plugin>
+
+			<plugin>
+				<groupId>org.eclipse.m2e</groupId>
+				<artifactId>lifecycle-mapping</artifactId>
+				<version>1.0.0</version>
+				<configuration>
+					<lifecycleMappingMetadata>
+						<pluginExecutions>
+							<pluginExecution>
+								<pluginExecutionFilter>
+									<groupId>org.codehaus.mojo</groupId>
+									<artifactId>flatten-maven-plugin</artifactId>
+									<versionRange>[1.0.0,)</versionRange>
+									<goals>
+										<goal>flatten</goal>
+										<goal>clean</goal>
+									</goals>
+								</pluginExecutionFilter>
+								<action>
+									<ignore />
+								</action>
+							</pluginExecution>
+						</pluginExecutions>
+					</lifecycleMappingMetadata>
+				</configuration>
+			</plugin>
+		</plugins>
+	</pluginManagement>    
+
+
+
 		<plugins>
 		
-		
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>build-helper-maven-plugin</artifactId>
-				<version>1.3</version>
-				<executions>
-					<execution>
-						<id>add-source</id>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>add-source</goal>
-						</goals>
-						<configuration>
-							<sources>
-								<source>src/samples/java</source>
-							</sources>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -102,62 +149,46 @@
 				<artifactId>maven-dependency-plugin</artifactId>
 			</plugin>
 
-	     <plugin>
-	        <groupId>org.apache.maven.plugins</groupId>
-	        <artifactId>maven-enforcer-plugin</artifactId>
-	        <version>3.0.0-M2</version> 
-	        <executions>
-	          <execution>
-	            <id>enforce-bytecode-version</id>
-	            <goals>
-	              <goal>enforce</goal>
-	            </goals>
-	            <configuration>
-	              <rules>
-	                <enforceBytecodeVersion>
-	                  <maxJdkVersion>1.8</maxJdkVersion>
-	                  <excludes>
-	                    <exclude>org.mindrot:jbcrypt</exclude>
-	                  </excludes>
-	                </enforceBytecodeVersion>
-	              </rules>
-	              <fail>true</fail>
-	            </configuration>
-	          </execution>
-	        </executions>
-	        <dependencies>
-	          <dependency>
-	            <groupId>org.codehaus.mojo</groupId>
-	            <artifactId>extra-enforcer-rules</artifactId>
-	            <version>1.2</version>
-	          </dependency>
-	        </dependencies>
-	      </plugin>			
-			 			
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<!-- The Surefire Plugin is used during the test phase of the build lifecycle
-					to execute the unit tests of an application -->
-				<version>2.6</version>
-				<configuration>
-					<excludes>
-						<exclude>**/samples/*.java</exclude>
-					</excludes>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>2.3.1</version>
-				<configuration>
-					<excludes>
-						<exclude>**/*.docx</exclude>
-						<exclude>src/test/resources/**</exclude>
-						<exclude>**/log4j.xml</exclude>
-					</excludes>
-				</configuration>
-			</plugin>
+			<!--  you can run this with: mvn validate
+			      See further https://stackoverflow.com/questions/24827194/maven-enforcer-plugin-missing-or-invalid-rules 
+			      
+			      2019 05 25 should work with Java 11: https://github.com/mojohaus/extra-enforcer-rules/pull/63
+			      but it doesn't.
+			      
+			      Seems to work with Java 12 though -->
+			      
+		     <plugin>
+		        <groupId>org.apache.maven.plugins</groupId>
+		        <artifactId>maven-enforcer-plugin</artifactId>
+		        <version>3.0.0-M2</version> 
+		        <executions>
+		          <execution>
+		            <id>enforce-bytecode-version</id>
+		            <goals>
+		              <goal>enforce</goal>
+		            </goals>
+		            <configuration>
+		              <rules>
+		                <enforceBytecodeVersion>
+		                  <maxJdkVersion>11</maxJdkVersion>
+		                  <excludes>
+		                    <exclude>org.mindrot:jbcrypt</exclude>
+		                  </excludes>
+		                </enforceBytecodeVersion>
+		              </rules>
+		              <fail>true</fail>
+		            </configuration>
+		          </execution>
+		        </executions>
+		        <dependencies>
+		          <dependency>
+		            <groupId>org.codehaus.mojo</groupId>
+		            <artifactId>extra-enforcer-rules</artifactId>
+		            <version>1.2</version>
+		          </dependency>
+		        </dependencies> 
+		      </plugin>
+	       			
 			<plugin>
 				<artifactId>maven-source-plugin</artifactId>
 				<!-- The Source Plugin creates a jar archive of the source files of the
@@ -183,6 +214,7 @@
 				<configuration>
 					<maxmemory>512m</maxmemory>
 					<additionalJOption>-Xdoclint:none</additionalJOption>
+					<javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>  
 					<!-- workaround for 'javadoc: error - The code being documented uses packages in the unnamed module' issue 
 						 still present in Java 14!
 						 https://stackoverflow.com/a/63475569/1031689
@@ -199,103 +231,71 @@
 					</execution>
 				</executions>
 			</plugin>
-			
- 			<!--  mvn versions:display-dependency-updates -->
+<!-- 			
+		<plugin>
+            <groupId>org.basepom.maven</groupId>
+            <artifactId>duplicate-finder-maven-plugin</artifactId>
+            <version>1.2.0</version>
+            <executions>
+                <execution>
+                    <id>default</id>
+                    <phase>verify</phase>
+                    <goals>
+                        <goal>check</goal>
+                    </goals>
+                </execution>
+            </executions>
+            <configuration>
+                <printEqualFiles>false</printEqualFiles>
+                <failBuildInCaseOfDifferentContentConflict>true</failBuildInCaseOfDifferentContentConflict>
+                <failBuildInCaseOfEqualContentConflict>false</failBuildInCaseOfEqualContentConflict>
+                <failBuildInCaseOfConflict>false</failBuildInCaseOfConflict>
+                <checkCompileClasspath>true</checkCompileClasspath>
+                <checkRuntimeClasspath>true</checkRuntimeClasspath>
+                <checkTestClasspath>true</checkTestClasspath>
+                <skip>false</skip>
+                <quiet>false</quiet>
+                <preferLocal>true</preferLocal>
+                <useResultFile>true</useResultFile>
+                <resultFileMinClasspathCount>2</resultFileMinClasspathCount>
+                <resultFile>${project.build.directory}/duplicate-finder-result.xml</resultFile>
+                
+				<includeBootClasspath>true</includeBootClasspath>
+                <bootClasspathProperty>sun.boot.class.path</bootClasspathProperty>                
+
+            </configuration>
+        </plugin>
+ -->
+ 			
 			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>versions-maven-plugin</artifactId>
-				<version>2.3</version>
-				<configuration>
-					<rulesUri>file:///${project.basedir}/rules.xml</rulesUri>
-				</configuration>
-			</plugin> 
+			    <groupId>org.codehaus.mojo</groupId>
+			    <artifactId>flatten-maven-plugin</artifactId>
+			    <version>1.0.0</version>
+			    <configuration>
+			        <!--  <updatePomFile>true</updatePomFile>-->
+			        <flattenMode>oss</flattenMode>           
+			    </configuration>
+			    <executions>
+			        <execution>
+			            <id>flatten</id>
+			            <phase>process-resources</phase>
+			            <goals>
+			                <goal>flatten</goal>
+			            </goals>
+			        </execution>
+			        <execution>
+			            <id>flatten.clean</id>
+			            <phase>clean</phase>
+			            <goals>
+			                <goal>clean</goal>
+			            </goals>
+			        </execution>
+			    </executions>
+			</plugin>			
 			
 		</plugins>
-		
-	<pluginManagement>
-		<plugins>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-release-plugin</artifactId>
-				<version>2.5.3</version>
-				<configuration>
-					<mavenExecutorId>forked-path</mavenExecutorId>
-					<useReleaseProfile>false</useReleaseProfile>
-					<arguments>${arguments} -Psonatype-oss-release</arguments>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-resources-plugin</artifactId>
-				<version>3.1.0</version>
-			</plugin>
-
-			<plugin>
-				<groupId>org.eclipse.m2e</groupId>
-				<artifactId>lifecycle-mapping</artifactId>
-				<version>1.0.0</version>
-				<configuration>
-					<lifecycleMappingMetadata>
-						<pluginExecutions>
-							<pluginExecution>
-								<pluginExecutionFilter>
-									<groupId>org.codehaus.mojo</groupId>
-									<artifactId>build-helper-maven-plugin</artifactId>
-									<versionRange>[1.3,2.0)</versionRange>
-									<goals>
-										<goal>add-source</goal>
-									</goals>
-								</pluginExecutionFilter>
-								<action>
-									<execute>
-										<runOnIncremental>true</runOnIncremental>
-									</execute>
-								</action>
-							</pluginExecution>
-							<pluginExecution>
-								<pluginExecutionFilter>
-									<groupId>org.codehaus.mojo</groupId>
-									<artifactId>flatten-maven-plugin</artifactId>
-									<versionRange>[1.0.0,)</versionRange>
-									<goals>
-										<goal>flatten</goal>
-										<goal>clean</goal>
-									</goals>
-								</pluginExecutionFilter>
-								<action>
-									<ignore />
-								</action>
-							</pluginExecution>
-						</pluginExecutions>
-					</lifecycleMappingMetadata>
-				</configuration>
-			</plugin>
-		</plugins>
-	</pluginManagement> 
-	   
-		<resources>
-			<!-- be sure to get xml,xlst resources in various src trees -->
-			<resource>
-				<directory>src/main/java</directory>
-				<includes>
-					<include>**/*.xslt</include>
-					<include>**/*.xml</include>
-					<include>**/jaxb.properties</include>
-				</includes>
-			</resource>
-			<resource>
-				<directory>src/main/resources</directory>
-				<includes>
-					<include>XhtmlNamespaceHandler.css</include>
-					<include>xhtmlrenderer.conf</include>
-				</includes>
-			
-			</resource>
-			<!-- <resource> <directory>src/test/resources</directory> <excludes> <exclude>*.docx</exclude>
-				</excludes> </resource> -->
-		</resources>
 	</build>
+
 	
 	<dependencies>
 
@@ -317,10 +317,11 @@
 			<version>${version.docx4j}</version>
 		</dependency>
 
+		<!--  docx4j v11.4.0 and later use JAXB 3.0 -->
 		<dependency>
-			<groupId>org.docx4j</groupId>
-			<artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
-			<version>${version.docx4j}</version>
+			<groupId>jakarta.xml.bind</groupId>
+			<artifactId>jakarta.xml.bind-api</artifactId>
+			<version>3.0.1</version>
 		</dependency>
  
 		<dependency>
@@ -352,34 +353,15 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.12</version>
+			<version>4.13.1</version>
 			<scope>test</scope>
 		</dependency>
 	 	
 	</dependencies>
 
-		<profiles> <!--  use -P eg mvn -Psign-artifacts  -->
-		
-		    <profile>
-		        <id>jdk-8-config</id>
-		        <activation>
-		            <jdk>1.8</jdk>
-		        </activation>
-		        <properties>
-		            <javadocExecutable>${java.home}/../bin/javadoc</javadocExecutable>
-		        </properties>
-		    </profile>
-		    <profile>
-		        <id>jdk-11-config</id>
-		        <activation>
-		            <jdk>11</jdk>
-		        </activation>
-		        <properties>
-		            <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
-		        </properties>
-		    </profile>
-		
-		
+	<profiles>
+		<!--  use -P eg mvn -Psign-artifacts  -->
+
 		<profile>
 			<id>sign-artifacts</id>
 			<build>
@@ -401,6 +383,70 @@
 				</plugins>
 			</build>
 		</profile>
+
+		<profile>
+			<id>OSGi</id>
+			<properties>
+				<packaging.type>bundle</packaging.type>
+			</properties>
+		</profile>
+
+		<!-- Deploy a snapshot to GitHub  
+		
+			 See http://stackoverflow.com/questions/14013644/hosting-a-maven-repository-on-github
+			 
+			 To do this:
+			 0. uncomment distribution management above
+			 1. comment out parent element (top of pom), since this is what makes deploy push to https://oss.sonatype.org
+			 2. comment out maven-javadoc-plugin, since its not worth bothering with that large upload
+			 3. execute 
+			  
+			       mvn clean deploy  -Pgithub-mvn-repo
+		
+		 -->		
+		<profile>
+			<id>github-mvn-repo</id>
+			<build>
+			
+				<plugins>
+				
+				    <plugin>
+				        <artifactId>maven-deploy-plugin</artifactId>
+				        <version>2.8.1</version>
+				        <configuration>
+				            <altDeploymentRepository>internal.repo::default::file://${project.build.directory}/mvn-repo</altDeploymentRepository>
+				        </configuration>
+				    </plugin>
+				
+			        <plugin>
+			            <groupId>com.github.github</groupId>
+			            <artifactId>site-maven-plugin</artifactId>
+			            <version>0.12</version>
+			            <configuration>
+			            	<server>github</server>
+			            	<merge>true</merge>
+			                <message>Maven artifacts for ${project.version}</message>  <!-- git commit message -->
+			                <noJekyll>true</noJekyll>                                  <!-- disable webpage processing -->
+			                <outputDirectory>${project.build.directory}/mvn-repo</outputDirectory> <!-- matches distribution management repository url above -->
+			                <branch>refs/heads/mvn-repo</branch>                        <!-- remote branch name -->
+			                <includes><include>**/*</include></includes>
+			                <repositoryName>docx4j-ImportXHTML</repositoryName>      <!-- github repo name -->
+			                <repositoryOwner>plutext</repositoryOwner>    <!-- github username  -->
+			            </configuration>
+			            <executions>
+			              <!-- run site-maven-plugin's 'site' target as part of the build's normal 'deploy' phase -->
+			              <execution>
+			                <goals>
+			                  <goal>site</goal>
+			                </goals>
+			                <phase>deploy</phase>
+			              </execution>
+			            </executions>
+			        </plugin>			
+				</plugins>
+			</build>
+		</profile>
+
 
    	</profiles>
 </project>

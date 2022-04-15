@@ -2,13 +2,13 @@ CHANGELOG
 =========
 
 
-Version 11.4.0  (jakarta.xml.bind; parity with 8.3.2)
+Version 11.4.6  (jakarta.xml.bind; parity with 8.3.2)
 ==============
 ￼
 Release date
 ------------
 ￼
-11 April 2022
+[  ] April 2022
 ￼
 ￼
 Contributors to this release
@@ -17,14 +17,22 @@ Contributors to this release
 Jason Harrop
 ￼
 ￼
-Changes in Version 11.4.0 
+Changes in Version 11.4.6 (multi-module)
 -------------------------
 
-Parity with 8.3.2￼
+11.4.6 is our first JPMS modularised release of ImportXHTML, so the jars contain module-info.class entries.
+
+11.4.6 is compiled with Java 15, targeting Java 11.
 
 Uses jakarta.xml.bind, rather than javax.xml.bind (hence the 11.4.x numbering); if you have existing code which imports javax.xml.bind, you'll need to search/replace across your code base, replacing javax.xml.bind  with jakarta.xml.bind
 
-From hereon, changes will generally be made to this branch first.  
+This is also a Maven multi-module project. 
+
+From hereon, changes will generally be made to this branch first. 
+
+Parity with ImportXHTML 8.3.2￼
+
+Use auto-generated id value when an image is added; fixes #71, requires docx4j 11.4.6 (hence this version number)
 
 
 
