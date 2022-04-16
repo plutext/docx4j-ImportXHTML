@@ -10,7 +10,7 @@
 	
 	<groupId>org.docx4j</groupId>
 	<artifactId>docx4j-ImportXHTML-parent</artifactId>
-	<version>${revision}</version>
+	<version>11.4.6</version>
 	
 	<properties>
 		<revision>11.4.6-SNAPSHOT</revision>
@@ -52,7 +52,7 @@
   	</licenses>
 	<scm>
 	    <developerConnection>scm:git|git@github.com:plutext/docx4j-ImportXHTML.git</developerConnection>
-      <tag>HEAD</tag>
+      <tag>docx4j-ImportXHTML-parent-11.4.6</tag>
   </scm>
 	<inceptionYear>2013</inceptionYear>
 	<developers>
