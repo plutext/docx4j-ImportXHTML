@@ -14,7 +14,7 @@
 	
 	<properties>
 		<revision>11.4.6-SNAPSHOT</revision>
-		<version.docx4j>11.4.6-SNAPSHOT</version.docx4j>
+		<version.docx4j>11.4.6</version.docx4j>
 		<packaging.type>jar</packaging.type>
 	    <!-- <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> -->
 	    <!-- github server corresponds to entry in ~/.m2/settings.xml -->
@@ -94,8 +94,9 @@
 					<mavenExecutorId>forked-path</mavenExecutorId>
 					<useReleaseProfile>false</useReleaseProfile>
 					<arguments>${arguments} -Psonatype-oss-release</arguments>
-					<!-- run the install step again, to get META-INFO without -SNAPSHOT -->
+					<!-- run the install step again, to get META-INFO without -SNAPSHOT 
 					<preparationGoals>clean install</preparationGoals>
+-->
 				</configuration>
 			</plugin>
 			<plugin>

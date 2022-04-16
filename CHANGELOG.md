@@ -8,7 +8,7 @@ Version 11.4.6  (jakarta.xml.bind; parity with 8.3.2)
 Release date
 ------------
 ￼
-[  ] April 2022
+16 April 2022
 ￼
 ￼
 Contributors to this release
@@ -29,8 +29,6 @@ Uses jakarta.xml.bind, rather than javax.xml.bind (hence the 11.4.x numbering); 
 This is also a Maven multi-module project. 
 
 From hereon, changes will generally be made to this branch first. 
-
-Parity with ImportXHTML 8.3.2￼
 
 Use auto-generated id value when an image is added; fixes #71, requires docx4j 11.4.6 (hence this version number)
 

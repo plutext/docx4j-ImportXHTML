@@ -124,7 +124,7 @@
 		<dependency>
             <groupId>org.docx4j</groupId>
 			<artifactId>docx4j-ImportXHTML</artifactId>
-			<version>${version.docx4j}</version>
+			<version>${project.version}</version>
 		</dependency>
 
 </dependencies>
