@@ -10,7 +10,7 @@
 	
 	<groupId>org.docx4j</groupId>
 	<artifactId>docx4j-ImportXHTML-parent</artifactId>
-	<version>11.4.7-SNAPSHOT</version>
+	<version>${revision}</version>
 	
 	<properties>
 		<revision>11.4.6-SNAPSHOT</revision>
