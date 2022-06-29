@@ -124,6 +124,7 @@ public class ListHelper {
 		return box;
 	}
 	protected BlockBox peekListStack() {
+		if(listStack.peek() == null) return new BlockBox();
 		return listStack.peek();
 	}
 
@@ -184,6 +185,7 @@ public class ListHelper {
 	}
 
 	protected ListItemContentState peekListItemStateStack() {
+		if(listItemStateStack.peek() == null) return new ListItemContentState();
 		return listItemStateStack.peek();
 	}
 	private void pushListItemStateStack() {
