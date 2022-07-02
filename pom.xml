@@ -318,6 +318,12 @@
 			<version>${version.docx4j}</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.apache.james</groupId>
+			<artifactId>apache-mime4j-core</artifactId>
+			<version>0.8.7</version>
+		</dependency>
+
 		<!--  docx4j v11.4.0 and later use JAXB 3.0 -->
 		<dependency>
 			<groupId>jakarta.xml.bind</groupId>
