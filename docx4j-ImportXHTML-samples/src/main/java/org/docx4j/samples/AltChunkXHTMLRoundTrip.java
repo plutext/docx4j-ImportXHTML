@@ -30,13 +30,13 @@ public class AltChunkXHTMLRoundTrip {
 		mdp.addParagraphOfText("Paragraph 3");
 		
 		// Round trip
-		WordprocessingMLPackage pkgOut = mdp.convertAltChunks();
+		mdp.convertAltChunks();
 		
 		// Display result
 		System.out.println(
-				XmlUtils.marshaltoString(pkgOut.getMainDocumentPart().getJaxbElement(), true, true));
+				XmlUtils.marshaltoString(wordMLPackage.getMainDocumentPart().getJaxbElement(), true, true));
 		
-		pkgOut.save(new java.io.File(System.getProperty("user.dir") + "/OUT_AltChunkXHTMLRoundTrip.docx"));
+		wordMLPackage.save(new java.io.File(System.getProperty("user.dir") + "/OUT_AltChunkXHTMLRoundTrip.docx"));
 		
 		
 	}
