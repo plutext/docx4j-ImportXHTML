@@ -49,6 +49,7 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.transform.Source;
 
+import org.apache.james.mime4j.parser.MimeStreamParser;
 import org.docx4j.Docx4jProperties;
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.XmlUtils;
@@ -535,6 +536,43 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         
         return imports.getContent();    	
     }
+    
+    public List<Object> convertMHT(InputStream is, String baseUrl) throws Docx4JException {
+    	
+    	// First, extract HTML from the MHT
+    	MHTContentHandler handler = new MHTContentHandler();
+         //MimeConfig config = new MimeConfig();
+         MimeStreamParser parser = new MimeStreamParser();
+         parser.setContentHandler(handler);    	
+         try {
+        	 parser.parse(is);
+        	 if (handler.getBody()==null) {
+        		 log.error("Couldn't get body from mht");
+        		 throw new Docx4JException("Couldn't get body from mht");
+        	 }
+        	 
+        	 log.info(handler.getCharset());  // eg gb2312 TODO - handle this
+        	 
+        	 if ("text/html".equals(handler.getMimeType())) {
+        		 log.info("Filtering html altChunk");
+            	 return convert(new MHTFilterInputStream(handler.getBody()), baseUrl);
+        	 } else {
+        		 throw new Docx4JException("Unexpected Mime type: " + handler.getMimeType());        		 
+        	 }
+        	 
+    	} catch (Exception e) {
+    		/*
+Caused by: org.docx4j.openpackaging.exceptions.Docx4JException: Cannot invoke "org.apache.james.mime4j.parser.ContentHandler.startMessage()" because "this.handler" is null
+	at docx4j_ImportXHTML/org.docx4j.convert.in.xhtml.XHTMLImporterImpl.convertMHT(XHTMLImporterImpl.java:547)
+	... 6 common frames omitted
+Caused by: java.lang.NullPointerException: Cannot invoke "org.apache.james.mime4j.parser.ContentHandler.startMessage()" 
+because "this.handler" is null
+	at apache.mime4j.core@0.8.7/org.apache.james.mime4j.parser.MimeStreamParser.parse(MimeStreamParser.java:168)
+	at docx4j_ImportXHTML/org.docx4j.convert.in.xhtml.XHTMLImporterImpl.convertMHT(XHTMLImporterImpl.java:545)
+	... 6 common frames omitted    		 */
+    		throw new Docx4JException(e.getMessage(), e);
+    	}
+    }    
 
     /**
      * @param is
