@@ -2,6 +2,24 @@ CHANGELOG
 =========
 
 
+Version 8.3.8  (requires docx4j 8.3.8)
+=============
+
+Release date
+------------
+
+6 July 2022
+
+
+Changes in Version 8.3.8
+------------------------
+
+Support converting altChunks of type mht (as emitted by BIRT) - proof of concept.
+
+Use auto-generated id value when an image is added; fixes #71 (backported from 11.4.6) 
+
+
+
 Version 8.3.2
 =============
 

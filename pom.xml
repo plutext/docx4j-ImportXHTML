@@ -11,7 +11,7 @@
 	<groupId>org.docx4j</groupId>
 	<artifactId>docx4j-ImportXHTML</artifactId>
 	<name>docx4j-ImportXHTML</name>
-	<version>8.3.3-SNAPSHOT</version>
+	<version>8.3.8-SNAPSHOT</version>
 	<description>
 		docx4j-ImportXHTML converts XHTML to OpenXML WordML (docx) using docx4j 
 	</description>
@@ -307,14 +307,19 @@
 			<version>1.0.10</version>
 		</dependency>
  
- 
 		<!--  you should use the RI here if you are using eg Java 13, even if compliance is set in your project to 1.8 -->
 		<dependency>
 		  <groupId>org.docx4j</groupId>
 		  <artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
-			<version>8.3.2</version>
+			<version>8.3.8</version>
 			<!--  <scope>test</scope>-->
 		</dependency>
+		
+		<dependency>
+			<groupId>org.apache.james</groupId>
+			<artifactId>apache-mime4j-core</artifactId>
+			<version>0.8.7</version>
+		</dependency>		
 	 	
 		<!-- sample docx4j.properties specifies this --> 
 		<dependency>
