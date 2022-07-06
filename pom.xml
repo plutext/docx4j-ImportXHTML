@@ -13,8 +13,8 @@
 	<version>${revision}</version>
 	
 	<properties>
-		<revision>11.4.6</revision>
-		<version.docx4j>11.4.6</version.docx4j>
+		<revision>11.4.8-SNAPSHOT</revision>
+		<version.docx4j>11.4.8-SNAPSHOT</version.docx4j>
 		<packaging.type>jar</packaging.type>
 	    <!-- <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> -->
 	    <!-- github server corresponds to entry in ~/.m2/settings.xml -->

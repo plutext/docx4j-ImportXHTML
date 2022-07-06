@@ -95,6 +95,20 @@
 			<version>${project.version}</version>
 		</dependency>
 
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${version.logback-classic}</version>
+		</dependency>
+
+		<!--  logging config files for log4j2 and logback can be found in:-->
+		<dependency>
+			<groupId>org.docx4j</groupId>
+			<artifactId>docx4j-samples-resources</artifactId>
+			<version>${version.docx4j}</version>
+		</dependency>
+
+
 </dependencies>
 	
 </project>
