@@ -173,7 +173,7 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 				drawing.getAnchorOrInline().add(inline);
 			}
 		} catch (Exception e1) {
-			log.error(MessageFormat.format("Error during image processing: ''{0}'', insert default text.", new Object[] {e.getAttribute("alt")}), e1);
+			log.error(MessageFormat.format("Error during image processing: ''{0}'', insert default text.", e.getAttribute("alt")), e1);
 			isError = true;
 		}
 
