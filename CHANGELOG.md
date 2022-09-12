@@ -2,21 +2,44 @@ CHANGELOG
 =========
 
 
-Version 11.4.6  (jakarta.xml.bind; parity with 8.3.2)
+Version 11.4.8  
 ==============
-￼
+
 Release date
 ------------
-￼
-16 April 2022
-￼
-￼
+
+12 September 2022
+
+
 Contributors to this release
 ----------------------------
-￼
+
 Jason Harrop
-￼
-￼
+
+
+Changes in Version 11.4.8 
+-------------------------
+
+MathML support (requires user-supplied mathml2omml.xslt)
+
+Support converting altChunks of type mht (as emitted by BIRT) - proof of concept.
+
+
+Version 11.4.6  (jakarta.xml.bind; parity with 8.3.2)
+==============
+
+Release date
+------------
+
+16 April 2022
+
+
+Contributors to this release
+----------------------------
+
+Jason Harrop
+
+
 Changes in Version 11.4.6 (multi-module)
 -------------------------
 
