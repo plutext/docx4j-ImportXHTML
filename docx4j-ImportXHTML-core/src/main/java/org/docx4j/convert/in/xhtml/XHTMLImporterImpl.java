@@ -45,9 +45,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
+
 import javax.xml.transform.Source;
+import javax.xml.transform.Templates;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamSource;
 
 import org.apache.james.mime4j.parser.ContentHandler;
 import org.apache.james.mime4j.parser.MimeStreamParser;
@@ -58,6 +65,7 @@ import org.docx4j.XmlUtils;
 import org.docx4j.convert.in.xhtml.renderer.DocxRenderer;
 import org.docx4j.convert.out.html.HtmlCssHelper;
 import org.docx4j.jaxb.Context;
+import org.docx4j.math.CTOMathPara;
 import org.docx4j.model.PropertyResolver;
 import org.docx4j.model.properties.Property;
 import org.docx4j.model.properties.PropertyFactory;
@@ -72,6 +80,7 @@ import org.docx4j.openpackaging.parts.WordprocessingML.NumberingDefinitionsPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.StyleDefinitionsPart;
 import org.docx4j.openpackaging.parts.relationships.Namespaces;
 import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
+import org.docx4j.utils.ResourceUtils;
 import org.docx4j.wml.Body;
 import org.docx4j.wml.BooleanDefaultTrue;
 import org.docx4j.wml.CTMarkupRange;
@@ -167,6 +176,37 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     protected WordprocessingMLPackage wordMLPackage;
     private RelationshipsPart rp;
     private NumberingDefinitionsPart ndp;
+    
+	static Templates mathXSLT;	
+	
+	public static Templates getMathXSLT() throws IOException, TransformerConfigurationException {
+		
+		if (mathXSLT==null) {
+			
+			Source xsltSource  = new StreamSource(
+					ResourceUtils.getResourceViaProperty("docx4j-ImportXHTML.mml2omml", 
+							"mml2omml.xslZ")
+					);
+			
+			// User needs to supply a suitable mml2omml.xsl XSLT, possibly
+			// https://raw.githubusercontent.com/MartinPaulEve/meTypeset/master/docx/utils/maths/mml2omml.xsl
+    		/* You need to add the template:
+    		 * 
+				  <xsl:template match="/|*">
+				    <oMath>
+				      <xsl:apply-templates mode="mml"  />
+				    </oMath>
+				  </xsl:template>
+
+    		 */
+			
+			mathXSLT = XmlUtils.getTransformerTemplate(xsltSource);
+		}
+		
+		return mathXSLT;
+		
+	}
+    
 	
 	public XHTMLImporterImpl(WordprocessingMLPackage wordMLPackage) {
 		
@@ -1374,7 +1414,45 @@ because "this.handler" is null
             	
         		this.contentContextStack.peek().getContent().add(
         				getPforHR());
-	            	
+
+        	} else if  (e.getNodeName().equals("math")) {
+        		
+        		// handle me
+        		if (log.isDebugEnabled()) {
+        			log.debug("Handling mathml \n\r" + XmlUtils.w3CDomNodeToString(e) );
+        		}
+				try {
+	        		// Use constructor which takes Unmarshaller, rather than JAXBContext,
+	        		// so we can set JaxbValidationEventHandler
+	        		JAXBContext jc = Context.jc;
+	        		Unmarshaller u = jc.createUnmarshaller();
+	        		u.setEventHandler(new org.docx4j.jaxb.JaxbValidationEventHandler());
+	        		jakarta.xml.bind.util.JAXBResult result = new jakarta.xml.bind.util.JAXBResult(u );
+	        		
+	        		XmlUtils.transform(new DOMSource(e), getMathXSLT(), null, result);
+	        		
+	        		// What happened?
+	        		org.docx4j.math.CTOMath math = (org.docx4j.math.CTOMath)XmlUtils.unwrap(result.getResult());
+	        		
+	        		org.docx4j.math.ObjectFactory mathObjectFactory = new org.docx4j.math.ObjectFactory();
+	                // Create object for oMathPara (wrapped in JAXBElement) 
+	                CTOMathPara omathpara = mathObjectFactory.createCTOMathPara(); 
+	                JAXBElement<org.docx4j.math.CTOMathPara> omathparaWrapped = mathObjectFactory.createOMathPara(omathpara); 
+	                
+	                omathpara.getOMath().add(math);
+	                
+	                P wP = new P();
+	                wP.getContent().add(omathparaWrapped);
+	                
+	        		// Attach it to the document
+	        		this.contentContextStack.peek().getContent().add(wP); 
+	        		
+				} catch (Exception e1) {
+					throw new Docx4JException("Error processing MathML", e1);
+				}
+        		
+        		return;
+        		
             } else {
             	
             	log.debug("default handling for " + e.getNodeName());

@@ -87,6 +87,8 @@
 				<includes>
 					<include>XhtmlNamespaceHandler.css</include>
 					<include>xhtmlrenderer.conf</include>
+					<!-- user supplied: -->
+					<!--<include>mml2omml.xsl</include> -->
 				</includes>
 			
 			</resource>
