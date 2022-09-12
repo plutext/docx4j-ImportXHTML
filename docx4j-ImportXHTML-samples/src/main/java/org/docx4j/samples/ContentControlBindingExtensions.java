@@ -68,10 +68,10 @@ public class ContentControlBindingExtensions {
 	 */
 	public static void main(String[] args) throws Exception {
 		
-		String inputfilepath = System.getProperty("user.dir") + "/sample-docs/word/databinding/invoice.docx";
+		String inputfilepath = System.getProperty("user.dir") + "/sample-docs/word/databinding/xhtml.docx";
 
 		
-		String data = System.getProperty("user.dir") + "/sample-docs/word/databinding/invoice-data.xml";
+		String data = System.getProperty("user.dir") + "/sample-docs/word/databinding/xhtml-data.xml";
 
 
 		WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new java.io.File(inputfilepath));		
@@ -97,7 +97,7 @@ public class ContentControlBindingExtensions {
 		System.out.println("data merged");
 	
 		SaveToZipFile saver = new SaveToZipFile(wordMLPackage);		
-		saver.save(new File(System.getProperty("user.dir") + "/OUT_injected.docx"));
+		saver.save(filepathprefix + "_0_injected.docx");
 		
 		
 
