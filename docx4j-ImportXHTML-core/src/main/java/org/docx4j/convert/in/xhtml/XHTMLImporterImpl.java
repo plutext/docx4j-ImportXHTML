@@ -76,6 +76,7 @@ import org.docx4j.model.properties.run.FontSize;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.exceptions.InvalidFormatException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.openpackaging.parts.Part;
 import org.docx4j.openpackaging.parts.WordprocessingML.NumberingDefinitionsPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.StyleDefinitionsPart;
 import org.docx4j.openpackaging.parts.relationships.Namespaces;
@@ -275,8 +276,13 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	public void setXHTMLImageHandler(XHTMLImageHandler xHTMLImageHandler) {
 		this.xHTMLImageHandler = xHTMLImageHandler;
 	}
+	public void setDefaultHandler(){
+		xHTMLImageHandler = defaultHandler;
+	}
 	
-	private XHTMLImageHandler xHTMLImageHandler = new XHTMLImageHandlerDefault(this);
+	private XHTMLImageHandler xHTMLImageHandler;
+
+	private XHTMLImageHandlerDefault defaultHandler = new XHTMLImageHandlerDefault(this);
 	
 	@Override
 	public void setMaxWidth(int maxWidth, String tableStyle) {
@@ -535,7 +541,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      * @throws IOException
      */
     public List<Object> convert(File file, String baseUrl) throws Docx4JException {
-
+		setDefaultHandler();
         renderer = getRenderer();
         
         File parent = file.getAbsoluteFile().getParentFile();
@@ -566,7 +572,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      * @throws IOException
      */
     public List<Object> convert(InputSource is,  String baseUrl) throws Docx4JException {
-
+		setDefaultHandler();
         renderer = getRenderer();
         
         Document dom = XMLResource.load(is).getDocument();        
@@ -619,12 +625,11 @@ because "this.handler" is null
     /**
      * @param is
      * @param baseUrl
-     * @param wordMLPackage
      * @return
      * @throws IOException
      */
     public List<Object> convert(InputStream is, String baseUrl) throws Docx4JException {
-    	
+    	setDefaultHandler();
         renderer = getRenderer();
         
         Document dom = XMLResource.load(is).getDocument();        
@@ -640,12 +645,11 @@ because "this.handler" is null
     /**
      * @param node
      * @param baseUrl
-     * @param wordMLPackage
      * @return
      * @throws IOException
      */
     public List<Object> convert(Node node,  String baseUrl) throws Docx4JException {
-    	
+    	setDefaultHandler();
         renderer = getRenderer();
         if (node instanceof Document) {
         	renderer.setDocument( (Document)node, baseUrl );
@@ -664,12 +668,11 @@ because "this.handler" is null
     /**
      * @param reader
      * @param baseUrl
-     * @param wordMLPackage
      * @return
      * @throws IOException
      */
     public List<Object> convert(Reader reader,  String baseUrl) throws Docx4JException {
-    	
+    	setDefaultHandler();
         renderer = getRenderer();
         
         Document dom = XMLResource.load(reader).getDocument();        
@@ -681,40 +684,16 @@ because "this.handler" is null
         
         return imports.getContent();    	
     }
-    
-//    /**
-//     * @param source
-//     * @param baseUrl
-//     * @param wordMLPackage
-//     * @return
-//     * @throws IOException
-//     */
-//    public List<Object> convert(Source source,  String baseUrl) throws Docx4JException {
-//    	    	
-//        renderer = getRenderer();
-//                
-//        Document dom = XMLResource.load(source).getDocument();        
-//        renderer.setDocument(dom, baseUrl);
-//
-//        renderer.layout();
-//                    
-//        traverse(renderer.getRootBox(),  null);
-//        
-//        return imports.getContent();    	
-//    }
-    
-    //public List<Object> convert(XMLEventReader reader) throws IOException {
-    //public List<Object> convert(XMLStreamReader reader) throws IOException {
+
     
     /**
      * Convert the well formed XHTML found at the specified URI to a list of WML objects.
      * 
      * @param url
-     * @param wordMLPackage
      * @return
      */
     public List<Object> convert(URL url) throws Docx4JException {
-
+		setDefaultHandler();
         renderer = getRenderer();
         
         String urlString = url.toString();
@@ -733,7 +712,6 @@ because "this.handler" is null
      * 
      * @param content
      * @param baseUrl
-     * @param wordMLPackage
      * @return
      */
     public List<Object> convert(String content,  String baseUrl) throws Docx4JException {
@@ -743,7 +721,7 @@ because "this.handler" is null
     	 *     http://stackoverflow.com/questions/4897876/reading-utf-8-bom-marker
     	 *     http://www.unicode.org/faq/utf_bom.html#BOM
     	 */
-    	
+    	setDefaultHandler();
     	int firstChar = content.codePointAt(0);
     	if (firstChar==0xFEFF) {
     		log.info("Removing BOM..");
@@ -788,7 +766,71 @@ because "this.handler" is null
         traverse(renderer.getRootBox(),  null);
         
         return imports.getContent();    	
-    }
+	}
+	/**
+	 *
+	 * Convert the well formed XHTML contained in the string to a list of WML objects.
+	 *
+	 * @param content - the content of the XHTML in String
+	 * @param baseUrl	- the base URL of the XHTML
+	 * @param targetPart - the part to which the content will be added.
+	 * @return	- the list of objects added to the targetPart.
+	 */
+	public List<Object> convert(String content, String baseUrl, Part targetPart) throws Docx4JException {
+
+		/* Test for and if present remove BOM, which causes "SAXParseException: Content is not allowed in prolog"
+		 * See further:
+		 *     http://stackoverflow.com/questions/4897876/reading-utf-8-bom-marker
+		 *     http://www.unicode.org/faq/utf_bom.html#BOM
+		 */
+
+		int firstChar = content.codePointAt(0);
+		if (firstChar==0xFEFF) {
+			log.info("Removing BOM..");
+			content = content.substring(1);
+		}
+		setXHTMLImageHandler(new
+				XHTMLImageHandlerDifferentTarget(this,targetPart));
+
+		renderer = getRenderer();
+
+		InputSource is = new InputSource(new BufferedReader(new StringReader(content)));
+
+		Document dom;
+		try {
+			dom = XMLResource.load(is).getDocument();
+		} catch  ( com.openhtmltopdf.util.XRRuntimeException xre) {
+			// javax.xml.transform.TransformerException te
+			Throwable t = xre.getCause();
+			log.error(t.getMessage(), t);
+			if (t instanceof javax.xml.transform.TransformerException) {
+				// eg content of elements must consist of well-formed character data or markup.
+
+
+				Throwable t2 = ((javax.xml.transform.TransformerException)t).getCause();
+				if (t2 instanceof org.xml.sax.SAXParseException) {
+					throw new Docx4JException(
+							"issues at Line " + ((org.xml.sax.SAXParseException)t2).getLineNumber()
+									+ ", Col " + ((org.xml.sax.SAXParseException)t2).getColumnNumber(), t);
+
+				}
+
+				throw new Docx4JException(
+						((javax.xml.transform.TransformerException)t).getLocationAsString(), t);
+
+			} else {
+				throw xre;
+			}
+		}
+
+
+		renderer.setDocument(dom, baseUrl);
+		renderer.layout();
+
+		traverse(renderer.getRootBox(),  null);
+
+		return imports.getContent();
+	}
     
     public Map<String, PropertyValue> getCascadedProperties(CalculatedStyle cs) {
     	
