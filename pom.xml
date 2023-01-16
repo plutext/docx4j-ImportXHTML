@@ -2,12 +2,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	
-  <parent>
-    <groupId>org.sonatype.oss</groupId>
-    <artifactId>oss-parent</artifactId>
-    <version>9</version>
-  </parent>
-	
 	<groupId>org.docx4j</groupId>
 	<artifactId>docx4j-ImportXHTML</artifactId>
 	<name>docx4j-ImportXHTML</name>
@@ -27,6 +21,8 @@
 	<scm>
 	    <developerConnection>scm:git|git@github.com:plutext/docx4j-ImportXHTML.git</developerConnection>
       <tag>HEAD</tag>
+      <url>https://github.com/plutext/docx4j-ImportXHTML</url>
+      
   </scm>
 	<inceptionYear>2013</inceptionYear>
 	<developers>
@@ -58,13 +54,32 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	  	
+	<distributionManagement>
+		<snapshotRepository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
+		  	
 	<build>
 		<sourceDirectory>src/main/java</sourceDirectory>
 		<testSourceDirectory>src/test/java</testSourceDirectory>
 		<outputDirectory>bin</outputDirectory> <!--  bin-mvn -->
 		<testOutputDirectory>bin-testOutput</testOutputDirectory>
+		
 		<plugins>
 		
+			<plugin>
+				<groupId>org.sonatype.plugins</groupId>
+				<artifactId>nexus-staging-maven-plugin</artifactId>
+				<version>1.6.13</version>
+				<extensions>true</extensions>
+				<configuration>
+					<serverId>ossrh</serverId>
+					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
+					<autoReleaseAfterClose>true</autoReleaseAfterClose>
+				</configuration>
+			</plugin>
 		
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
@@ -180,10 +195,6 @@
 				<configuration>
 					<maxmemory>512m</maxmemory>
 					<additionalJOption>-Xdoclint:none</additionalJOption>
-					<!-- workaround for 'javadoc: error - The code being documented uses packages in the unnamed module' issue 
-						 still present in Java 14!
-						 https://stackoverflow.com/a/63475569/1031689
-						 -->
 				    <source>8</source>
 				    <detectJavaApiLink>false</detectJavaApiLink>
 				</configuration>
@@ -206,6 +217,27 @@
 					<rulesUri>file:///${project.basedir}/rules.xml</rulesUri>
 				</configuration>
 			</plugin> 
+			
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<version>1.5</version>
+				<executions>
+					<execution>
+					<id>sign-artifacts</id>
+					<phase>verify</phase>
+					<goals>
+						<goal>sign</goal>
+					</goals>
+		            <configuration>
+		                <gpgArguments>
+		                    <arg>--pinentry-mode</arg>
+		                    <arg>loopback</arg>
+		                </gpgArguments>
+		            </configuration>
+					</execution>
+				</executions>
+			</plugin>			
 			
 		</plugins>
 		
@@ -379,7 +411,7 @@
 		    <profile>
 		        <id>jdk-11-config</id>
 		        <activation>
-		            <jdk>11</jdk>
+		            <jdk>[11,)</jdk>
 		        </activation>
 		        <properties>
 		            <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
@@ -387,26 +419,66 @@
 		    </profile>
 		
 		
-		<profile>
-			<id>sign-artifacts</id>
+		  <profile>
+			<id>release</id>
 			<build>
 				<plugins>
 					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.4</version>
+						<artifactId>maven-source-plugin</artifactId>
+						<!-- The Source Plugin creates a jar archive of the source files of the
+							current project. -->
+						<version>3.0.1</version>
 						<executions>
 							<execution>
-								<id>sign-artifacts</id>
-								<phase>verify</phase>
 								<goals>
-									<goal>sign</goal>
+									<goal>jar</goal>
 								</goals>
+							</execution>
+						</executions>
+					</plugin>
+
+					<plugin>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<version>3.1.0</version>
+						<configuration>
+							<maxmemory>512m</maxmemory>
+							<additionalJOption>-Xdoclint:none</additionalJOption>
+							<source>8</source>
+							<detectJavaApiLink>false</detectJavaApiLink>
+						</configuration>
+						<executions>
+							<execution>
+								<id>attach-javadocs</id>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>1.5</version>
+						<executions>
+							<execution>
+							<id>sign-artifacts</id>
+							<phase>verify</phase>
+							<goals>
+								<goal>sign</goal>
+							</goals>
+								<configuration>
+									<gpgArguments>
+										<arg>--pinentry-mode</arg>
+										<arg>loopback</arg>
+									</gpgArguments>
+								</configuration>
 							</execution>
 						</executions>
 					</plugin>
 				</plugins>
 			</build>
+			
 		</profile>
 
    	</profiles>
