@@ -1529,9 +1529,9 @@ because "this.handler" is null
     }
 	
     private void addPageBreakBefore(BlockBox box) {
-        Map<String, CSSValue> cssMap = getCascadedProperties(box.getStyle());
+        Map<String, PropertyValue> cssMap = getCascadedProperties(box.getStyle());
 
-        CSSValue pageBreakAfter = cssMap.get("page-break-before");
+        PropertyValue pageBreakAfter = cssMap.get("page-break-before");
         if("always".equals(pageBreakAfter.getCssText())){
 
             Br br = Context.getWmlObjectFactory().createBr();
@@ -1545,9 +1545,9 @@ because "this.handler" is null
     }
 
     private void addPageBreakAfter(BlockBox box) {
-        Map<String, CSSValue> cssMap = getCascadedProperties(box.getStyle());
+        Map<String, PropertyValue> cssMap = getCascadedProperties(box.getStyle());
 
-        CSSValue pageBreakAfter = cssMap.get("page-break-after");
+        PropertyValue pageBreakAfter = cssMap.get("page-break-after");
         if("always".equals(pageBreakAfter.getCssText())){
             Br br = Context.getWmlObjectFactory().createBr();
             br.setType(PAGE);
