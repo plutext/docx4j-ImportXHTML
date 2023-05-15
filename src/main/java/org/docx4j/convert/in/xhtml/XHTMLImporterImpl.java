@@ -123,6 +123,8 @@ import com.openhtmltopdf.render.Box;
 import com.openhtmltopdf.render.InlineBox;
 import com.openhtmltopdf.resource.XMLResource;
 
+import static org.docx4j.wml.STBrType.PAGE;
+
 /**
  * Convert XHTML + CSS to WordML content.  Can convert an entire document, 
  * or a fragment consisting of one or more block level objects.
@@ -1408,13 +1410,15 @@ because "this.handler" is null
         	log.debug("Processing children of " + box.getElement().getNodeName() );
             switch (blockBox.getChildrenContentType()) {
                 case BLOCK:
-                	log.debug(".. which are BlockBox.CONTENT_BLOCK");	                	
+                	log.debug(".. which are BlockBox.CONTENT_BLOCK");
+			addPageBreakBefore(blockBox);
                     for (Object o : ((BlockBox)box).getChildren() ) {
                         log.debug("   processing child " + o.getClass().getName() );
                     	
                         traverse((Box)o,  box, tableProperties);                    
                         log.debug(".. processed child " + o.getClass().getName() );
                     }
+			addPageBreakAfter(blockBox);
                     break;
                 case INLINE:
                 	
@@ -1522,6 +1526,37 @@ because "this.handler" is null
     		markupRangeForID = null;
     	}
     
+    }
+	
+    private void addPageBreakBefore(BlockBox box) {
+        Map<String, CSSValue> cssMap = getCascadedProperties(box.getStyle());
+
+        CSSValue pageBreakAfter = cssMap.get("page-break-before");
+        if("always".equals(pageBreakAfter.getCssText())){
+
+            Br br = Context.getWmlObjectFactory().createBr();
+            br.setType(PAGE);
+
+            R r = Context.getWmlObjectFactory().createR();
+            r.getContent().add(br);
+
+            getListForRun().getContent().add(r);
+        }
+    }
+
+    private void addPageBreakAfter(BlockBox box) {
+        Map<String, CSSValue> cssMap = getCascadedProperties(box.getStyle());
+
+        CSSValue pageBreakAfter = cssMap.get("page-break-after");
+        if("always".equals(pageBreakAfter.getCssText())){
+            Br br = Context.getWmlObjectFactory().createBr();
+            br.setType(PAGE);
+
+            R r = Context.getWmlObjectFactory().createR();
+            r.getContent().add(br);
+
+            getListForRun().getContent().add(r);
+        }
     }
     
     private static final String FIGCAPTION_SEQUENCE_ATTRIBUTE_NAME="sequence";
