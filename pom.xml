@@ -321,7 +321,7 @@
 		<dependency>
 			<groupId>org.apache.james</groupId>
 			<artifactId>apache-mime4j-core</artifactId>
-			<version>0.8.7</version>
+			<version>0.8.10</version>
 		</dependency>
 
 		<!--  docx4j v11.4.0 and later use JAXB 3.0 -->
