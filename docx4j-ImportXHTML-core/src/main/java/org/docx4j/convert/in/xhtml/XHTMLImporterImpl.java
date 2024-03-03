@@ -1376,9 +1376,23 @@ because "this.handler" is null
 		            		} else {
 		            			log.debug("For docx style for @class='" + cssClass + "', but its not a numbering style ");
 		            			
-		            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
+		            			// For paragraph styles containing numbering,
+		            			// use the same approach as above
+		            			if (s.getPPr()!=null
+		            					&& s.getPPr().getNumPr() !=null
+		            					&& s.getPPr().getNumPr().getNumId() !=null
+		            					&& s.getPPr().getNumPr().getNumId().getVal() !=null) {
+		            						            				
+			            			BigInteger numId = s.getPPr().getNumPr().getNumId().getVal();
+			            			listHelper.setNumbering(pPr, numId);  
 		            				
-		    	            		listHelper.addNumbering(this.getCurrentParagraph(true), blockBox.getElement(), cssMap);
+		            			} else {
+
+			            			log.debug(".. and doesn't contain numPr  ");
+		    	            		listHelper.addNumbering(this.getCurrentParagraph(true), blockBox.getElement(), cssMap);		            				
+		            			}
+		            			
+		            			if (paragraphFormatting.equals(FormattingOption.CLASS_PLUS_OTHER)) {
 		    	            		
 		    	            		// SPECIAL CASE
 		    	            		if (Docx4jProperties.getProperty("docx4j.model.datastorage.BindingTraverser.XHTML.Block.rStyle.Adopt", false)
@@ -1390,9 +1404,9 @@ because "this.handler" is null
 		    	            			pStyle.setVal(s.getStyleId());
 		    	            			this.getCurrentParagraph(false).getPPr().setPStyle(pStyle);			    	            			
 		    	            		}
+		    	            		
 		            				addParagraphProperties(pPr, blockBox, cssMap );
-		            			}			            			
-		            			
+		            			}		            			
 		            		}
 		            		
 	            		}
