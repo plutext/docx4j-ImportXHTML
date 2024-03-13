@@ -7,13 +7,13 @@
 	<version>${revision}</version>
 	
 	<properties>
-		<revision>11.4.9-SNAPSHOT</revision>
-		<version.docx4j>11.4.9-SNAPSHOT</version.docx4j>
+		<revision>11.4.10</revision>
+		<version.docx4j>11.4.11</version.docx4j>
 		<packaging.type>jar</packaging.type>
 	    <!-- <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> -->
 	    <!-- github server corresponds to entry in ~/.m2/settings.xml -->
 	    <github.global.server>github</github.global.server>
-		<version.logback-classic>1.3.0-alpha14</version.logback-classic>
+		<version.logback-classic>1.5.3</version.logback-classic>
 		<version.maven-jar-plugin>2.3.1</version.maven-jar-plugin>
 		<version.maven-bundle-plugin>5.1.2</version.maven-bundle-plugin>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -333,9 +333,74 @@
 			<groupId>com.openhtmltopdf</groupId>
 			<artifactId>openhtmltopdf-pdfbox</artifactId>
 			<version>1.0.10</version>
+			<exclusions>
+				<exclusion>
+		            <groupId>org.apache.pdfbox</groupId>
+		            <artifactId>pdfbox</artifactId>				
+				</exclusion>			
+			</exclusions>
 		</dependency>
- 
- 
+
+		<!-- pdfbox 2.0.30 fixes 
+
+				java.lang.NoClassDefFoundError: Could not initialize class org.apache.pdfbox.pdmodel.font.PDType1Font
+				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.addCourier(AbstractFontStore.java:55)
+				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.createInitialFontMap(AbstractFontStore.java:43)
+				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.<init>(AbstractFontStore.java:38)
+				        at com.openhtmltopdf.pdfboxout.PdfBoxFontResolver.<init>(PdfBoxFontResolver.java:82)
+				        at org.docx4j.convert.in.xhtml.renderer.DocxRenderer.<init>(DocxRenderer.java:152)
+				        at org.docx4j.convert.in.xhtml.renderer.DocxRenderer.<init>(DocxRenderer.java:100)
+				        at org.docx4j.convert.in.xhtml.XHTMLImporterImpl.getRenderer(XHTMLImporterImpl.java:324)
+				        at org.docx4j.convert.in.xhtml.XHTMLImporterImpl.convert(XHTMLImporterImpl.java:753)
+				        at org.docx4j.convert.in.xhtml.DestinationAnchorTest.convert(DestinationAnchorTest.java:38)
+				        at org.docx4j.convert.in.xhtml.DestinationAnchorTest.bookmarkInTr(DestinationAnchorTest.java:142)
+				:
+				Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.ExceptionInInitializerError [in thread "main"]
+				        at org.apache.pdfbox.pdmodel.font.FontMapperImpl.getProvider(FontMapperImpl.java:159)
+				        at org.apache.pdfbox.pdmodel.font.FontMapperImpl.findFont(FontMapperImpl.java:423)
+				        at org.apache.pdfbox.pdmodel.font.FontMapperImpl.findFontBoxFont(FontMapperImpl.java:386)
+				        at org.apache.pdfbox.pdmodel.font.FontMapperImpl.getFontBoxFont(FontMapperImpl.java:360)
+				        at org.apache.pdfbox.pdmodel.font.PDType1Font.<init>(PDType1Font.java:146)
+				        at org.apache.pdfbox.pdmodel.font.PDType1Font.<clinit>(PDType1Font.java:79)
+				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.addCourier(AbstractFontStore.java:55)
+				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.createInitialFontMap(AbstractFontStore.java:43)
+				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.<init>(AbstractFontStore.java:38)
+				        at com.openhtmltopdf.pdfboxout.PdfBoxFontResolver.<init>(PdfBoxFontResolver.java:82)
+				        at org.docx4j.convert.in.xhtml.renderer.DocxRenderer.<init>(DocxRenderer.java:152)
+				        at org.docx4j.convert.in.xhtml.renderer.DocxRenderer.<init>(DocxRenderer.java:100)        
+        -->		
+		
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>2.0.30</version>
+			<exclusions>
+			  	<!-- use org.slf4j:jcl-over-slf4j instead -->
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.pdfbox</groupId>
+					<artifactId>xmpbox</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>xmpbox</artifactId>
+			<version>2.0.24</version>
+			<exclusions>
+			  	<!-- use org.slf4j:jcl-over-slf4j instead -->
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+  
 		<dependency>
             <groupId>org.docx4j</groupId>
             <artifactId>docx4j-core</artifactId>
@@ -345,7 +410,7 @@
 		<dependency>
 			<groupId>org.apache.james</groupId>
 			<artifactId>apache-mime4j-core</artifactId>
-			<version>0.8.7</version>
+			<version>0.8.10</version>
 		</dependency>
 
 		<!--  docx4j v11.4.0 and later use JAXB 3.0 -->
@@ -358,14 +423,14 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-  			<version>2.0.0-alpha6</version>
+  			<version>2.0.12</version>
   		</dependency>
 	 	
 		<!-- sample docx4j.properties specifies this --> 
 		<dependency>
 		  <groupId>xerces</groupId>
 		  <artifactId>xercesImpl</artifactId>
-		  <version>2.12.0</version>
+		  <version>2.12.2</version>
 		  <exclusions>
 		  	<exclusion>
 			  <groupId>xml-apis</groupId>
@@ -384,7 +449,7 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.13.1</version>
+			<version>4.13.2</version>
 			<scope>test</scope>
 		</dependency>
 	 	
