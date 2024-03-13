@@ -88,7 +88,7 @@ public class BookmarkHelper {
 
 		int highestId = 0;
 		
-		RangeFinder rt = new RangeFinder("CTBookmark", "CTMarkupRange");
+		RangeFinder rt = new RangeFinder();
 		new TraversalUtil(wordMLPackage.getMainDocumentPart().getContent(), rt);
 		
 		for (CTBookmark bm : rt.getStarts()) {
