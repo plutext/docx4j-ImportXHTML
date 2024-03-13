@@ -90,7 +90,7 @@
 
 		<dependency>
             <groupId>org.docx4j</groupId>
-			<artifactId>docx4j-ImportXHTML</artifactId>
+			<artifactId>docx4j-ImportXHTML-core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 

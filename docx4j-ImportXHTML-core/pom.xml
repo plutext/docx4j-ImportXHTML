@@ -10,10 +10,10 @@
  
 	
 	<groupId>org.docx4j</groupId>
-	<artifactId>docx4j-ImportXHTML</artifactId>
+	<artifactId>docx4j-ImportXHTML-core</artifactId>
 	<packaging>${packaging.type}</packaging>    
 
-    <name>docx4j-ImportXHTML</name>
+    <name>docx4j-ImportXHTML-core</name>
 	<description>
 		docx4j-ImportXHTML converts XHTML to OpenXML WordML (docx) using docx4j 
 	</description>
@@ -41,6 +41,11 @@
 						<exclude>src/test/resources/**</exclude>
 						<exclude>**/log4j.xml</exclude>
 					</excludes>
+					<!--
+					<archive>
+			            <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+			          </archive>
+			          -->					
 				</configuration>
 			</plugin>
 

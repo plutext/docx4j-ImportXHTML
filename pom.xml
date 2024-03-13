@@ -25,7 +25,9 @@
 
     <modules>
         <module>docx4j-ImportXHTML-core</module>
-        <module>docx4j-ImportXHTML-samples</module>        
+        <!-- 2024 03 13 have to comment out the -samples module otherwise "remote staging" gets skipped? 
+        	 I suspect that happens if the last project has skipNexusStagingDeployMojo true -->
+        <module>docx4j-ImportXHTML-samples</module>      
     </modules>
 
 
@@ -159,7 +161,7 @@
 			      2019 05 25 should work with Java 11: https://github.com/mojohaus/extra-enforcer-rules/pull/63
 			      but it doesn't.
 			      
-			      Seems to work with Java 12 though -->
+			      Seems to work with Java 12 though
 			      
 		     <plugin>
 		        <groupId>org.apache.maven.plugins</groupId>
@@ -192,7 +194,8 @@
 		          </dependency>
 		        </dependencies> 
 		      </plugin>
-	       			
+	       	-->
+
 			<plugin>
 				<artifactId>maven-source-plugin</artifactId>
 				<!-- The Source Plugin creates a jar archive of the source files of the
