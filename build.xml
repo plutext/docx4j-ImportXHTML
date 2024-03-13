@@ -2,31 +2,13 @@
 <project basedir="." default="release" name="docx4j-ImportXHTML">
     <property environment="env"/>
 	
-	<property name="importxhtml-version" value="8.2.1"/>
+	<property name="importxhtml-version" value="11.4.10"/>
 	
 	<property name="release.dir" value="docx4j-ImportXHTML-${importxhtml-version}"/>
 	
 	<!--NOTE this is not generally used, since ImportXHTML is packaged in docx4j zip by its build.xml  
 		TODO update for 11.4.x release -->
-    
-    <!-- 
-		org.docx4j:docx4j-ImportXHTML:jar:8.2.0
-		
-		+- com.openhtmltopdf:openhtmltopdf-core:jar:1.0.6
-		+- com.openhtmltopdf:openhtmltopdf-pdfbox:jar:1.0.6
-		|  +- org.apache.pdfbox:pdfbox:jar:2.0.22
-		|  |  +- org.apache.pdfbox:fontbox:jar:2.0.22
-		|  |  \- commons-logging:commons-logging:jar:1.2
-		|  +- org.apache.pdfbox:xmpbox:jar:2.0.22
-		|  \- de.rototor.pdfbox:graphics2d:jar:0.30
-		
-		+- org.docx4j:docx4j-JAXB-ReferenceImpl:jar:8.2.8
-		+- org.slf4j:slf4j-api:jar:1.7.26
-		+- ch.qos.logback:logback-classic:jar:1.2.3
-		|  \- ch.qos.logback:logback-core:jar:1.2.3
-		+- org.docx4j:docx4j-samples-resources:jar:8.2.8
-     -->
-	
+    	
 	<property name="m2Repository" value="/home/jharrop/.m2/repository"/>
 	
     <!--.NET properties -->
@@ -36,58 +18,48 @@
 		
     
     <path id="deps_other.libraryclasspath">
-        <pathelement location="${m2Repository}/com/openhtmltopdf/openhtmltopdf-core/1.0.8/openhtmltopdf-core-1.0.8.jar"/>
-        <pathelement location="${m2Repository}/com/openhtmltopdf/openhtmltopdf-pdfbox/1.0.8/openhtmltopdf-pdfbox-1.0.8.jar"/>
-        <pathelement location="${m2Repository}/org/apache/pdfbox/pdfbox/2.0.23/pdfbox-2.0.23.jar"/>
-        <pathelement location="${m2Repository}/org/apache/pdfbox/fontbox/2.0.23/fontbox-2.0.23.jar"/>
-        <pathelement location="${m2Repository}/commons-logging/commons-logging/1.2/commons-logging-1.2.jar"/>
-        <pathelement location="${m2Repository}/org/apache/pdfbox/xmpbox/2.0.23/xmpbox-2.0.23.jar"/>
-        <pathelement location="${m2Repository}/de/rototor/pdfbox/graphics2d/0.30/graphics2d-0.30.jar"/>
+        <pathelement location="${m2Repository}/com/openhtmltopdf/openhtmltopdf-core/1.0.10/openhtmltopdf-core-1.0.10.jar"/>
+        <pathelement location="${m2Repository}/com/openhtmltopdf/openhtmltopdf-pdfbox/1.0.10/openhtmltopdf-pdfbox-1.0.10.jar"/>
+        <pathelement location="${m2Repository}/de/rototor/pdfbox/graphics2d/0.32/graphics2d-0.32.jar"/>
+        <pathelement location="${m2Repository}/org/apache/pdfbox/pdfbox/2.0.30/pdfbox-2.0.30.jar"/>
+        <pathelement location="${m2Repository}/org/apache/pdfbox/fontbox/2.0.30/fontbox-2.0.30.jar"/>
+        <pathelement location="${m2Repository}/org/apache/pdfbox/xmpbox/2.0.24/xmpbox-2.0.24.jar"/>
 	</path>
     	
     <path id="docx4j.libraryclasspath">
-        <pathelement location="${m2Repository}/org/docx4j/docx4j-JAXB-ReferenceImpl/8.2.9/docx4j-JAXB-ReferenceImpl-8.2.9.jar"/>
-        <pathelement location="${m2Repository}/org/docx4j/docx4j-core/8.2.9/docx4j-core-8.2.9.jar"/>
-        <pathelement location="${m2Repository}/org/docx4j/docx4j-openxml-objects/8.2.9/docx4j-openxml-objects-8.2.9.jar"/>
-        <pathelement location="${m2Repository}/org/docx4j/docx4j-openxml-objects-pml/8.2.9/docx4j-openxml-objects-pml-8.2.9.jar"/>
-        <pathelement location="${m2Repository}/org/docx4j/docx4j-openxml-objects-sml/8.2.9/docx4j-openxml-objects-sml-8.2.9.jar"/>
-        <pathelement location="${m2Repository}/org/plutext/jaxb-svg11/1.0.2/jaxb-svg11-1.0.2.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/docx4j-core/11.4.11/docx4j-core-11.4.11.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/docx4j-openxml-objects/11.4.11/docx4j-openxml-objects-11.4.11.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/docx4j-openxml-objects-pml/11.4.11/docx4j-openxml-objects-pml-11.4.11.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/docx4j-openxml-objects-sml/11.4.11/docx4j-openxml-objects-sml-11.4.11.jar"/>
+        <pathelement location="${m2Repository}/org/plutext/jaxb-svg11/11.4.0/jaxb-svg11-11.4.0.jar"/>
         <pathelement location="${m2Repository}/net/engio/mbassador/1.3.2/mbassador-1.3.2.jar"/>
-        <pathelement location="${m2Repository}/org/slf4j/jcl-over-slf4j/1.7.26/jcl-over-slf4j-1.7.26.jar"/>
-        <pathelement location="${m2Repository}/org/apache/commons/commons-lang3/3.9/commons-lang3-3.9.jar"/>
-        <pathelement location="${m2Repository}/org/apache/commons/commons-compress/1.18/commons-compress-1.18.jar"/>
-        <pathelement location="${m2Repository}/commons-codec/commons-codec/1.12/commons-codec-1.12.jar"/>
-        <pathelement location="${m2Repository}/commons-io/commons-io/2.6/commons-io-2.6.jar"/>
-        <pathelement location="${m2Repository}/org/apache/httpcomponents/httpclient/4.5.8/httpclient-4.5.8.jar"/>
-        <pathelement location="${m2Repository}/org/apache/httpcomponents/httpcore/4.4.11/httpcore-4.4.11.jar"/>
-        <pathelement location="${m2Repository}/com/fasterxml/jackson/core/jackson-core/2.9.9/jackson-core-2.9.9.jar"/>
-        <pathelement location="${m2Repository}/com/fasterxml/jackson/core/jackson-databind/2.9.9/jackson-databind-2.9.9.jar"/>
-        <pathelement location="${m2Repository}/com/fasterxml/jackson/core/jackson-annotations/2.9.0/jackson-annotations-2.9.0.jar"/>
-        <pathelement location="${m2Repository}/org/apache/xmlgraphics/xmlgraphics-commons/2.3/xmlgraphics-commons-2.3.jar"/>
-        <pathelement location="${m2Repository}/org/docx4j/org/apache/xalan-metainf/8.0.0/xalan-metainf-8.0.0.jar"/>
-        <pathelement location="${m2Repository}/org/docx4j/org/apache/xalan-interpretive/8.0.0/xalan-interpretive-8.0.0.jar"/>
-        <pathelement location="${m2Repository}/org/docx4j/org/apache/xalan-serializer/8.0.0/xalan-serializer-8.0.0.jar"/>
-        <pathelement location="${m2Repository}/net/arnx/wmf2svg/0.9.8/wmf2svg-0.9.8.jar"/>
-        <pathelement location="${m2Repository}/org/antlr/antlr-runtime/3.5.2/antlr-runtime-3.5.2.jar"/>
+        <pathelement location="${m2Repository}/org/slf4j/jcl-over-slf4j/2.0.12/jcl-over-slf4j-2.0.12.jar"/>
+        <pathelement location="${m2Repository}/org/apache/commons/commons-lang3/3.14.0/commons-lang3-3.14.0.jar"/>
+        <pathelement location="${m2Repository}/org/apache/commons/commons-compress/1.26.0/commons-compress-1.26.0.jar"/>
+        <pathelement location="${m2Repository}/commons-codec/commons-codec/1.16.0/commons-codec-1.16.0.jar"/>
+        <pathelement location="${m2Repository}/commons-io/commons-io/2.15.1/commons-io-2.15.1.jar"/>
+        <pathelement location="${m2Repository}/org/apache/xmlgraphics/xmlgraphics-commons/2.9/xmlgraphics-commons-2.9.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/org/apache/xalan-interpretive/11.0.0/xalan-interpretive-11.0.0.jar"/>
+        <pathelement location="${m2Repository}/org/docx4j/org/apache/xalan-serializer/11.0.0/xalan-serializer-11.0.0.jar"/>
+        <pathelement location="${m2Repository}/net/arnx/wmf2svg/0.9.11/wmf2svg-0.9.11.jar"/>
+        <pathelement location="${m2Repository}/org/antlr/antlr-runtime/3.5.3/antlr-runtime-3.5.3.jar"/>
         <pathelement location="${m2Repository}/org/antlr/stringtemplate/3.2.1/stringtemplate-3.2.1.jar"/>
         <pathelement location="${m2Repository}/antlr/antlr/2.7.7/antlr-2.7.7.jar"/>
-        <pathelement location="${m2Repository}/org/checkerframework/checker-qual/2.8.1/checker-qual-2.8.1.jar"/>
+        <pathelement location="${m2Repository}/org/checkerframework/checker-qual/3.42.0/checker-qual-3.42.0.jar"/>
         <pathelement location="${m2Repository}/com/google/errorprone/error_prone_annotations/2.3.3/error_prone_annotations-2.3.3.jar"/>
-        <pathelement location="${m2Repository}/org/glassfish/jaxb/jaxb-runtime/2.3.2/jaxb-runtime-2.3.2.jar"/>
-        <pathelement location="${m2Repository}/jakarta/xml/bind/jakarta.xml.bind-api/2.3.2/jakarta.xml.bind-api-2.3.2.jar"/>
-        <pathelement location="${m2Repository}/org/glassfish/jaxb/txw2/2.3.2/txw2-2.3.2.jar"/>
-        <pathelement location="${m2Repository}/com/sun/istack/istack-commons-runtime/3.0.8/istack-commons-runtime-3.0.8.jar"/>
-        <pathelement location="${m2Repository}/org/jvnet/staxex/stax-ex/1.8.1/stax-ex-1.8.1.jar"/>
-        <pathelement location="${m2Repository}/com/sun/xml/fastinfoset/FastInfoset/1.2.16/FastInfoset-1.2.16.jar"/>
-        <pathelement location="${m2Repository}/jakarta/activation/jakarta.activation-api/1.2.1/jakarta.activation-api-1.2.1.jar"/>
+        <pathelement location="${m2Repository}/com/thoughtworks/qdox/qdox/1.12/qdox-1.12.jar"/>
+        <pathelement location="${m2Repository}/org/apache/james/apache-mime4j-core/0.8.10/apache-mime4j-core-0.8.10.jar"/>
+        <pathelement location="${m2Repository}/jakarta/xml/bind/jakarta.xml.bind-api/3.0.1/jakarta.xml.bind-api-3.0.1.jar"/>
+        <pathelement location="${m2Repository}/com/sun/activation/jakarta.activation/2.0.1/jakarta.activation-2.0.1.jar"/>
     </path>
     	
     <path id="deps_conf.libraryclasspath">
-        <pathelement location="${m2Repository}/org/slf4j/slf4j-api/1.7.26/slf4j-api-1.7.26.jar"/>
-        <pathelement location="${m2Repository}/ch/qos/logback/logback-classic/1.2.3/logback-classic-1.2.3.jar"/>
+        <pathelement location="${m2Repository}/org/slf4j/slf4j-api/2.0.12/slf4j-api-2.0.12.jar"/>
+        <pathelement location="${m2Repository}/xerces/xercesImpl/2.12.2/xercesImpl-2.12.2.jar"/>
+        <pathelement location="${m2Repository}/ch/qos/logback/logback-classic/1.5.3/logback-classic-1.5.3.jar"/>
     	
-        <pathelement location="${m2Repository}/ch/qos/logback/logback-core/1.2.3/logback-core-1.2.3.jar"/>
-        <!--<pathelement location="${m2Repository}/org/docx4j/docx4j-samples-resources/8.2.9/docx4j-samples-resources-8.2.9.jar"/>-->
+        <pathelement location="${m2Repository}/ch/qos/logback/logback-core/1.5.3/logback-core-1.5.3.jar"/>
+        <!--<pathelement location="${m2Repository}/org/docx4j/docx4j-samples-resources/11.4.11/docx4j-samples-resources-11.4.11.jar"/>-->
     </path>
 	
     

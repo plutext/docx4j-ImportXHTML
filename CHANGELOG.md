@@ -2,6 +2,32 @@ CHANGELOG
 =========
 
 
+Version 11.4.10  
+==============
+
+Release date
+------------
+
+13 March 2024
+
+
+Contributors to this release
+----------------------------
+
+Jason Harrop
+
+
+Changes in Version 11.4.10
+-------------------------
+
+Update code to work with docx4j 11.4.10
+
+Bump pdfbox to address font initialization errors
+
+Bump other deps 
+
+
+
 Version 11.4.8  
 ==============
 
