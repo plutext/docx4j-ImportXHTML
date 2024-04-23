@@ -1,8 +1,17 @@
 /target/
 /bin/
 /dist/
+.classpath
 .directory
+.project
+.settings
 
-/bin-testOutput/
+bin-testOutput/
 /openhtmltopdf_2021.txt
 /release-zips
+
+docx4j-ImportXHTML-core/bin
+docx4j-ImportXHTML-core/target
+
+docx4j-ImportXHTML-samples/bin
+docx4j-ImportXHTML-samples/target
