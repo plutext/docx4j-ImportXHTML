@@ -410,16 +410,15 @@
 			<version>8.3.10</version>
 		</dependency>
 
-		<!--  To actually use ImportXHTML, you need one of the docx4j-JAXB-* deps -->
+		<!--  To actually use ImportXHTML (and to run the tests), you need one of the docx4j-JAXB-* deps -->
 		<!--  you should use docx4j-JAXB-ReferenceImplementation instead here if you are using eg Java 13, 
 		      even if compliance is set in your project to 1.8 -->
-		<!-- 
 		<dependency>
 		  <groupId>org.docx4j</groupId>
 		  <artifactId>docx4j-JAXB-Internal</artifactId>
-			<version>8.3.10</version>
+		  <version>8.3.10</version>
+		  <scope>test</scope>
 		</dependency>
-        -->
 		
 		<dependency>
 			<groupId>org.apache.james</groupId>
