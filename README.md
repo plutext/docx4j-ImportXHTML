@@ -5,7 +5,12 @@ Converts XHTML to OpenXML WordML (docx) using docx4j; there is also some support
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.docx4j/docx4j-ImportXHTML/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.docx4j/docx4j-ImportXHTML)
 
-For docx4j-ImportXHTML v8.x, you need Java 8 or later. ( If you are still using Java 6, you can use docx4j-ImportXHTML v6.x)
+For docx4j-ImportXHTML v8.x, you need Java 8 or later.
+
+To run the samples, you need a JAXB implementation, so in addition to docx4j-ImportXHTML, add one and only one of the following to your project: docx4j-JAXB-Internal,
+docx4j-JAXB-MOXy, docx4j-JAXB-ReferenceImpl. 
+
+( If you are still using Java 6, you can use docx4j-ImportXHTML v6.x)
 
 docx4j is licensed under ASLv2.
 

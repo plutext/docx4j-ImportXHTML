@@ -2,6 +2,26 @@ CHANGELOG
 =========
 
 
+Version 8.3.10  (requires docx4j 8.3.10 or later)
+==============
+
+Release date
+------------
+
+24 April 2024
+
+Changes in Version 8.3.10
+-------------------------
+
+Update code to work with docx4j 8.3.10
+
+Bump pdfbox to address font initialization errors
+
+Bump other deps 
+
+When converting a list which specifies a Word style, support normal paragraph styles (ie in addition to numbering styles)
+
+
 Version 8.3.8  (requires docx4j 8.3.8)
 =============
 

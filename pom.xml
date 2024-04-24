@@ -5,7 +5,7 @@
 	<groupId>org.docx4j</groupId>
 	<artifactId>docx4j-ImportXHTML</artifactId>
 	<name>docx4j-ImportXHTML</name>
-	<version>8.3.10-SNAPSHOT</version>
+	<version>8.3.10</version>
 	<description>
 		docx4j-ImportXHTML converts XHTML to OpenXML WordML (docx) using docx4j 
 	</description>
@@ -337,15 +337,89 @@
 			<groupId>com.openhtmltopdf</groupId>
 			<artifactId>openhtmltopdf-pdfbox</artifactId>
 			<version>1.0.10</version>
+						<exclusions>
+				<exclusion>
+		            <groupId>org.apache.pdfbox</groupId>
+		            <artifactId>pdfbox</artifactId>				
+				</exclusion>			
+			</exclusions>
 		</dependency>
  
-		<!--  you should use the RI here if you are using eg Java 13, even if compliance is set in your project to 1.8 -->
+
+		<!-- pdfbox 2.0.30 fixes 
+				java.lang.NoClassDefFoundError: Could not initialize class org.apache.pdfbox.pdmodel.font.PDType1Font
+				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.addCourier(AbstractFontStore.java:55)
+				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.createInitialFontMap(AbstractFontStore.java:43)
+				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.<init>(AbstractFontStore.java:38)
+				        at com.openhtmltopdf.pdfboxout.PdfBoxFontResolver.<init>(PdfBoxFontResolver.java:82)
+				        at org.docx4j.convert.in.xhtml.renderer.DocxRenderer.<init>(DocxRenderer.java:152)
+				        at org.docx4j.convert.in.xhtml.renderer.DocxRenderer.<init>(DocxRenderer.java:100)
+				        at org.docx4j.convert.in.xhtml.XHTMLImporterImpl.getRenderer(XHTMLImporterImpl.java:324)
+				        at org.docx4j.convert.in.xhtml.XHTMLImporterImpl.convert(XHTMLImporterImpl.java:753)
+				        at org.docx4j.convert.in.xhtml.DestinationAnchorTest.convert(DestinationAnchorTest.java:38)
+				        at org.docx4j.convert.in.xhtml.DestinationAnchorTest.bookmarkInTr(DestinationAnchorTest.java:142)
+				:
+				Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.ExceptionInInitializerError [in thread "main"]
+				        at org.apache.pdfbox.pdmodel.font.FontMapperImpl.getProvider(FontMapperImpl.java:159)
+				        at org.apache.pdfbox.pdmodel.font.FontMapperImpl.findFont(FontMapperImpl.java:423)
+				        at org.apache.pdfbox.pdmodel.font.FontMapperImpl.findFontBoxFont(FontMapperImpl.java:386)
+				        at org.apache.pdfbox.pdmodel.font.FontMapperImpl.getFontBoxFont(FontMapperImpl.java:360)
+				        at org.apache.pdfbox.pdmodel.font.PDType1Font.<init>(PDType1Font.java:146)
+				        at org.apache.pdfbox.pdmodel.font.PDType1Font.<clinit>(PDType1Font.java:79)
+				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.addCourier(AbstractFontStore.java:55)
+				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.createInitialFontMap(AbstractFontStore.java:43)
+				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.<init>(AbstractFontStore.java:38)
+				        at com.openhtmltopdf.pdfboxout.PdfBoxFontResolver.<init>(PdfBoxFontResolver.java:82)
+				        at org.docx4j.convert.in.xhtml.renderer.DocxRenderer.<init>(DocxRenderer.java:152)
+				        at org.docx4j.convert.in.xhtml.renderer.DocxRenderer.<init>(DocxRenderer.java:100)        
+        -->		
+
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>2.0.30</version>
+			<exclusions>
+			  	<!-- use org.slf4j:jcl-over-slf4j instead -->
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.pdfbox</groupId>
+					<artifactId>xmpbox</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>xmpbox</artifactId>
+			<version>2.0.24</version>
+			<exclusions>
+			  	<!-- use org.slf4j:jcl-over-slf4j instead -->
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		 
 		<dependency>
 		  <groupId>org.docx4j</groupId>
-		  <artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
+		  <artifactId>docx4j-core</artifactId>
 			<version>8.3.10</version>
-			<!--  <scope>test</scope>-->
 		</dependency>
+
+		<!--  To actually use ImportXHTML, you need one of the docx4j-JAXB-* deps -->
+		<!--  you should use docx4j-JAXB-ReferenceImplementation instead here if you are using eg Java 13, 
+		      even if compliance is set in your project to 1.8 -->
+		<!-- 
+		<dependency>
+		  <groupId>org.docx4j</groupId>
+		  <artifactId>docx4j-JAXB-Internal</artifactId>
+			<version>8.3.10</version>
+		</dependency>
+        -->
 		
 		<dependency>
 			<groupId>org.apache.james</groupId>
