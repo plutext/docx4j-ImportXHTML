@@ -20,7 +20,7 @@
   	</licenses>
 	<scm>
 	    <developerConnection>scm:git|git@github.com:plutext/docx4j-ImportXHTML.git</developerConnection>
-      <tag>HEAD</tag>
+      <tag>docx4j-ImportXHTML-8.3.10</tag>
       <url>https://github.com/plutext/docx4j-ImportXHTML</url>
       
   </scm>
