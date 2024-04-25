@@ -2,6 +2,22 @@ CHANGELOG
 =========
 
 
+Version 8.3.11  (requires docx4j 8.3.11 or later)
+==============
+
+Release date
+------------
+
+25 April 2024
+
+Changes in Version 8.3.11
+-------------------------
+
+Bump deps to work with docx4j 8.3.11 (slf4j-api v2 in particular)\
+Bump deps to address reported vulnerabilities
+
+
+
 Version 8.3.10  (requires docx4j 8.3.10 or later)
 ==============
 
