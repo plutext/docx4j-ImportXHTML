@@ -130,6 +130,7 @@ import com.openhtmltopdf.layout.Styleable;
 import com.openhtmltopdf.newtable.TableBox;
 import com.openhtmltopdf.render.AnonymousBlockBox;
 import com.openhtmltopdf.render.BlockBox;
+import com.openhtmltopdf.render.BlockBox.ContentType;
 import com.openhtmltopdf.render.Box;
 import com.openhtmltopdf.render.InlineBox;
 import com.openhtmltopdf.resource.XMLResource;
@@ -827,6 +828,7 @@ because "this.handler" is null
             	
             } else {
             	
+        		//System.out.println(val.getClass().getName() + ": " + name + " = " + val.asString());
             	if (log.isDebugEnabled()) {
             		log.debug(val.getClass().getName() + ": " + name + " = " + val.asString());
             	}
@@ -1240,8 +1242,24 @@ because "this.handler" is null
         		this.contentContextStack.peek().getContent().add(tr);
 	            pushBlockStack(tr);
 	            mustPop = true;
+	            
+	            // do we need to specify tblHeader?
+	            // Word sets this property at the row level, whereas in XHTML, it is at the cell level
+	            // So here we do that if *any* child is a th
+	            boolean isTblHeader = false;
+	            if (blockBox.getChildrenContentType().equals(ContentType.BLOCK)) {
+	                for (Object o : ((BlockBox)box).getChildren() ) {
+	                	System.out.println(((Box)o).getElement().getNodeName());
+	                    if (((Box)o).getElement().getNodeName().equals("th")) {
+	                    	isTblHeader = true;
+	                    	break;
+	                    }
+	                }
+	            } else {
+	            	log.warn("Unexpected ChildrenContentType " + blockBox.getChildrenContentType()) ;
+	            }
         		
-	            tableHelper.setupTrPr((com.openhtmltopdf.newtable.TableRowBox)box, tr); // does nothing at present
+	            tableHelper.setupTrPr((com.openhtmltopdf.newtable.TableRowBox)box, tr, isTblHeader); // does nothing at present
         		
         	} else if (box instanceof com.openhtmltopdf.newtable.TableCellBox) {
         		            		

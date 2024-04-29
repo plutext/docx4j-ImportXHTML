@@ -10,6 +10,7 @@ import org.docx4j.XmlUtils;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl.TableProperties;
 import org.docx4j.jaxb.Context;
 import org.docx4j.model.properties.table.tr.TrHeight;
+import org.docx4j.wml.BooleanDefaultTrue;
 import org.docx4j.wml.CTBorder;
 import org.docx4j.wml.CTHeight;
 import org.docx4j.wml.CTShd;
@@ -51,6 +52,8 @@ import com.openhtmltopdf.newtable.TableBox;
 import com.openhtmltopdf.newtable.TableCellBox;
 import com.openhtmltopdf.newtable.TableSectionBox;
 import com.openhtmltopdf.render.Box;
+
+import jakarta.xml.bind.JAXBElement;
 
 public class TableHelper {
 	
@@ -233,7 +236,7 @@ public class TableHelper {
     	
     }
 
-    protected void setupTrPr(com.openhtmltopdf.newtable.TableRowBox trBox, Tr tr) {
+    protected void setupTrPr(com.openhtmltopdf.newtable.TableRowBox trBox, Tr tr, boolean isTblHeader ) {
 
 	    TrPr trPr = Context.getWmlObjectFactory().createTrPr();
 	    tr.setTrPr(trPr);
@@ -281,7 +284,14 @@ public class TableHelper {
 	    	 */
 			int twip = UnitsOfMeasurement.pxToTwip(height/20);
 			((CTHeight)thr.getObject()).setVal(BigInteger.valueOf(twip));	    	
-	    }	    
+	    }
+	    
+	    if (isTblHeader) {
+            // Create object for tblHeader (wrapped in JAXBElement) 
+            BooleanDefaultTrue booleandefaulttrue = Context.getWmlObjectFactory().createBooleanDefaultTrue(); 
+            JAXBElement<org.docx4j.wml.BooleanDefaultTrue> booleandefaulttrueWrapped = Context.getWmlObjectFactory().createCTTrPrBaseTblHeader(booleandefaulttrue); 
+            trPr.getCnfStyleOrDivIdOrGridBefore().add( booleandefaulttrueWrapped); 	
+            }
 
     }
     
