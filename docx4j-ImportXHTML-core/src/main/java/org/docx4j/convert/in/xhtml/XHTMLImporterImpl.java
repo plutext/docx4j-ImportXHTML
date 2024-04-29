@@ -1242,24 +1242,35 @@ because "this.handler" is null
         		this.contentContextStack.peek().getContent().add(tr);
 	            pushBlockStack(tr);
 	            mustPop = true;
-	            
-	            // do we need to specify tblHeader?
-	            // Word sets this property at the row level, whereas in XHTML, it is at the cell level
-	            // So here we do that if *any* child is a th
+	            	            
 	            boolean isTblHeader = false;
-	            if (blockBox.getChildrenContentType().equals(ContentType.BLOCK)) {
-	                for (Object o : ((BlockBox)box).getChildren() ) {
-	                	System.out.println(((Box)o).getElement().getNodeName());
-	                    if (((Box)o).getElement().getNodeName().equals("th")) {
-	                    	isTblHeader = true;
-	                    	break;
-	                    }
-	                }
-	            } else {
-	            	log.warn("Unexpected ChildrenContentType " + blockBox.getChildrenContentType()) ;
+	            if (ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.Tables.th.to.tblHeader", false)) { // default is false to preserve existing behaviour
+		            // do we need to specify tblHeader?
+		            // Word sets this property at the row level, whereas in XHTML, it is at the cell level
+		            // So here we do that if *any* child is a th
+		            if (blockBox.getChildrenContentType().equals(ContentType.BLOCK)) {
+		            	boolean isFirst = true;
+		                for (Object o : ((BlockBox)box).getChildren() ) {
+		                	// System.out.println(((Box)o).getElement().getNodeName());
+		                	
+		                	// ignore the first cell, since this could be the left most column being a heading
+		                	// (which the docx format doesn't accommodate via tblHeader 
+		                	if (isFirst) {
+		                		isFirst = false;
+		                		continue;
+		                	}
+		                	
+		                    if (((Box)o).getElement().getNodeName().equals("th")) {
+		                    	isTblHeader = true;
+		                    	break;
+		                    }
+		                }
+		            } else {
+		            	log.warn("Unexpected ChildrenContentType " + blockBox.getChildrenContentType()) ;
+		            }
 	            }
-        		
-	            tableHelper.setupTrPr((com.openhtmltopdf.newtable.TableRowBox)box, tr, isTblHeader); // does nothing at present
+	            
+	            tableHelper.setupTrPr((com.openhtmltopdf.newtable.TableRowBox)box, tr, isTblHeader); 
         		
         	} else if (box instanceof com.openhtmltopdf.newtable.TableCellBox) {
         		            		

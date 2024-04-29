@@ -20,6 +20,8 @@ import org.docx4j.utils.ResourceUtils;
 	  * 
 	  * "docx4j-ImportXHTML.Element.Heading.MapToStyle", false
 	  * 
+	  * "docx4j-ImportXHTML.Tables.th.to.tblHeader", false
+	  * 
 	  * Note: Via code, you can configure:
 	  * 
 	  * FontHandler.addFontMapping which lets you map a font family, for example "Century Gothic" in:
@@ -45,9 +47,7 @@ import org.docx4j.utils.ResourceUtils;
 	  * a CSS property will only be honoured if it is on the list.
 	  * Useful where suitable default values aren't being provided via
 	  * @class, or direct values are otherwise providing unwanted results.
-
-     
-	 *      */
+      */
 	
 	protected static Logger log = LoggerFactory.getLogger(ImportXHTMLProperties.class);
 	
