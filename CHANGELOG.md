@@ -2,6 +2,30 @@ CHANGELOG
 =========
 
 
+Version 11.5.0  (Jakarta XML Binding 4.0)
+==============
+
+Release date
+------------
+
+22 July 2024
+
+
+Contributors to this release
+----------------------------
+
+Jason Harrop
+
+
+Changes in Version 11.5.0
+-------------------------
+
+Use Jakarta XML Binding 4.0, consistent with docx4j 11.5.0 (compare 11.4.x, which used the 3.0 API). The dep change from 3.0 to 4.0 API does not change docx4j-ImportXHTML code at all, but makes integration easier with other jars which expect the 4.0 API (for example, Spring Boot 3.3.0).
+
+Bump certain deps
+
+
+
 Version 11.4.10  
 ==============
 
