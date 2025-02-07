@@ -38,6 +38,7 @@ import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.Bidi;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -1046,6 +1047,8 @@ because "this.handler" is null
             
         	//Map cssMap = styleReference.getCascadedPropertiesMap(e);
             Map<String, PropertyValue> cssMap = getCascadedProperties(box.getStyle());
+			List<String> tableElements = Arrays.asList("table","table-row","table-cell");
+			String display = box.getStyle().getStringProperty(CSSName.DISPLAY);
         	
         	/* Sometimes, when it is display: inline, the following is not set:
             	CSSValue cssValue = (CSSValue)cssMap.get("display");
@@ -1054,7 +1057,8 @@ because "this.handler" is null
             	}
             */
         	// So do it this way ...
-            if (e.getNodeName().equals("div")) {
+            if (e.getNodeName().equals("div") &&
+				!tableElements.contains(display)) {
             	
             	if (divHandler!=null) {
             		ContentAccessor ca = divHandler.enter(blockBox, this.contentContextStack.peek());
