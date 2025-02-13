@@ -27,15 +27,19 @@
         
 		<plugins>
 		
-			<!--  don't deploy this jar to Maven Central -->			
+			<!--  TODO don't deploy this jar to Maven Central, but can't' skip deploy,
+			since its the last module:- https://stackoverflow.com/questions/25305850/how-to-disable-nexus-staging-maven-plugin-in-sub-modules
+			 			
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
 				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>1.6.13</version>
+				<version>1.7.0</version>
 				<configuration>
 				    <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
 				</configuration>
 			</plugin>
+			
+			-->
 			
 		</plugins>
 			   
