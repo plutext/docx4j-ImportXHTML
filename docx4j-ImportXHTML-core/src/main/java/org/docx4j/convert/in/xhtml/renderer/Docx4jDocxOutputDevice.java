@@ -163,30 +163,6 @@ public class Docx4jDocxOutputDevice extends AbstractOutputDevice {
 	}
 
 	@Override
-	public List<AffineTransform> pushTransforms(List<AffineTransform> transforms) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void popTransforms(List<AffineTransform> inverse) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public float getAbsoluteTransformOriginX() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public float getAbsoluteTransformOriginY() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
 	public void drawBorderLine(Shape bounds, int side, int width, boolean solid) {
 		// TODO Auto-generated method stub
 		
@@ -232,12 +208,6 @@ public class Docx4jDocxOutputDevice extends AbstractOutputDevice {
 	public void popClip() {
 		// TODO Auto-generated method stub
 		
-	}
-
-	@Override
-	public boolean isFastRenderer() {
-		// TODO Auto-generated method stub
-		return false;
 	}
 
 	@Override

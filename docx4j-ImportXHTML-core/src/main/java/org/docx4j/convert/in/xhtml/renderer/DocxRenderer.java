@@ -46,11 +46,8 @@ import com.openhtmltopdf.render.BlockBox;
 import com.openhtmltopdf.render.PageBox;
 import com.openhtmltopdf.render.ViewportBox;
 import com.openhtmltopdf.simple.extend.XhtmlNamespaceHandler;
-import com.openhtmltopdf.util.Configuration;
-import org.w3c.dom.CharacterData;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 
 public class DocxRenderer {
@@ -274,6 +271,11 @@ public class DocxRenderer {
 		}
 
 		public boolean isFocus(Element e) {
+			return false;
+		}
+
+		@Override
+		public boolean isMarker(Element element) {
 			return false;
 		}
 	}
