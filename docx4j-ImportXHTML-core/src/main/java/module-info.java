@@ -8,8 +8,10 @@ module docx4j_ImportXHTML {
 	requires openhtmltopdf.core;
 	requires openhtmltopdf.pdfbox;
 	requires org.apache.pdfbox;
+	requires org.apache.pdfbox.io;
 	requires apache.mime4j.core;
 	requires org.apache.commons.codec;
+//	requires org.apache.commons.lang3;
 	
 	//requires transitive java.xml.Node;
 	

@@ -4,7 +4,6 @@ import java.text.MessageFormat;
 import java.util.HashMap;
 
 import org.apache.commons.codec.binary.Base64;
-import org.docx4j.convert.in.xhtml.renderer.Docx4JFSImage;
 import org.docx4j.convert.in.xhtml.renderer.Docx4jUserAgent;
 import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.jaxb.Context;
@@ -18,6 +17,10 @@ import org.docx4j.wml.Style.BasedOn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
+
+import com.openhtmltopdf.extend.FSImage;
+import com.openhtmltopdf.pdfboxout.PdfBoxImage;
+import com.openhtmltopdf.resource.ImageResource;
 
 public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 	
@@ -97,14 +100,21 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 					if (url.substring(1,2).equals(":")) {
 						url = "file:/" + url;
 					}
-					
-					Docx4JFSImage docx4JFSImage = docx4jUserAgent.getDocx4JImageResource(url);
-					if (docx4JFSImage == null) {						
+										
+					ImageResource imageResource = docx4jUserAgent.getImageResource(url);
+					if (imageResource == null) {						
 						// in case of wrong URL - docx4JFSImage will be null
 						log.error("Couldn't fetch " + url);
 					} else {
-						imageBytes = docx4JFSImage.getBytes();
+						FSImage fsImage = imageResource.getImage();
+						if (fsImage instanceof PdfBoxImage ) {						
+							imageBytes = ((PdfBoxImage)fsImage).getBytes();
+						} else {
+							log.error("Unexpected FSImage class " + fsImage.getClass().getName() );
+							
+						}
 					}
+
 				}
 			}
 			if (imageBytes == null

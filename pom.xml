@@ -8,7 +8,7 @@
 	
 	<properties>
 		<revision>11.5.0</revision>
-		<version.docx4j>11.5.0</version.docx4j>
+		<version.docx4j>11.5.2</version.docx4j>
 		<packaging.type>jar</packaging.type>
 	    <!-- <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> -->
 	    <!-- github server corresponds to entry in ~/.m2/settings.xml -->
@@ -148,7 +148,7 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.1</version>
 				<configuration>
-					<release>11</release>				
+					<release>17</release>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -163,7 +163,7 @@
 			      but it doesn't.
 			      
 			      Seems to work with Java 12 though
-			      
+
 		     <plugin>
 		        <groupId>org.apache.maven.plugins</groupId>
 		        <artifactId>maven-enforcer-plugin</artifactId>
@@ -329,86 +329,40 @@
 	<dependencies>
 
 		<dependency>
-			<groupId>com.openhtmltopdf</groupId>
-			<artifactId>openhtmltopdf-core</artifactId>
-			<version>1.0.10</version>
-		</dependency>
-		<dependency>
-			<groupId>com.openhtmltopdf</groupId>
-			<artifactId>openhtmltopdf-pdfbox</artifactId>
-			<version>1.0.10</version>
-			<exclusions>
-				<exclusion>
-		            <groupId>org.apache.pdfbox</groupId>
-		            <artifactId>pdfbox</artifactId>				
-				</exclusion>			
-			</exclusions>
+		    <groupId>io.github.openhtmltopdf</groupId>
+		    <artifactId>openhtmltopdf-core</artifactId>
+		    <version>1.1.24</version>
 		</dependency>
 
-		<!-- pdfbox 2.0.30 fixes 
-
-				java.lang.NoClassDefFoundError: Could not initialize class org.apache.pdfbox.pdmodel.font.PDType1Font
-				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.addCourier(AbstractFontStore.java:55)
-				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.createInitialFontMap(AbstractFontStore.java:43)
-				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.<init>(AbstractFontStore.java:38)
-				        at com.openhtmltopdf.pdfboxout.PdfBoxFontResolver.<init>(PdfBoxFontResolver.java:82)
-				        at org.docx4j.convert.in.xhtml.renderer.DocxRenderer.<init>(DocxRenderer.java:152)
-				        at org.docx4j.convert.in.xhtml.renderer.DocxRenderer.<init>(DocxRenderer.java:100)
-				        at org.docx4j.convert.in.xhtml.XHTMLImporterImpl.getRenderer(XHTMLImporterImpl.java:324)
-				        at org.docx4j.convert.in.xhtml.XHTMLImporterImpl.convert(XHTMLImporterImpl.java:753)
-				        at org.docx4j.convert.in.xhtml.DestinationAnchorTest.convert(DestinationAnchorTest.java:38)
-				        at org.docx4j.convert.in.xhtml.DestinationAnchorTest.bookmarkInTr(DestinationAnchorTest.java:142)
-				:
-				Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.ExceptionInInitializerError [in thread "main"]
-				        at org.apache.pdfbox.pdmodel.font.FontMapperImpl.getProvider(FontMapperImpl.java:159)
-				        at org.apache.pdfbox.pdmodel.font.FontMapperImpl.findFont(FontMapperImpl.java:423)
-				        at org.apache.pdfbox.pdmodel.font.FontMapperImpl.findFontBoxFont(FontMapperImpl.java:386)
-				        at org.apache.pdfbox.pdmodel.font.FontMapperImpl.getFontBoxFont(FontMapperImpl.java:360)
-				        at org.apache.pdfbox.pdmodel.font.PDType1Font.<init>(PDType1Font.java:146)
-				        at org.apache.pdfbox.pdmodel.font.PDType1Font.<clinit>(PDType1Font.java:79)
-				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.addCourier(AbstractFontStore.java:55)
-				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.createInitialFontMap(AbstractFontStore.java:43)
-				        at com.openhtmltopdf.pdfboxout.fontstore.AbstractFontStore$BuiltinFontStore.<init>(AbstractFontStore.java:38)
-				        at com.openhtmltopdf.pdfboxout.PdfBoxFontResolver.<init>(PdfBoxFontResolver.java:82)
-				        at org.docx4j.convert.in.xhtml.renderer.DocxRenderer.<init>(DocxRenderer.java:152)
-				        at org.docx4j.convert.in.xhtml.renderer.DocxRenderer.<init>(DocxRenderer.java:100)        
-        -->		
-		
 		<dependency>
-			<groupId>org.apache.pdfbox</groupId>
-			<artifactId>pdfbox</artifactId>
-			<version>2.0.30</version>
-			<exclusions>
-			  	<!-- use org.slf4j:jcl-over-slf4j instead -->
-				<exclusion>
-					<groupId>commons-logging</groupId>
-					<artifactId>commons-logging</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.apache.pdfbox</groupId>
-					<artifactId>xmpbox</artifactId>
-				</exclusion>
-			</exclusions>
+		    <groupId>io.github.openhtmltopdf</groupId>
+		    <artifactId>openhtmltopdf-pdfbox</artifactId>
+		    <version>1.1.24</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
-			<artifactId>xmpbox</artifactId>
-			<version>2.0.24</version>
+			<artifactId>fontbox</artifactId>
+			<version>3.0.3</version>
 			<exclusions>
-			  	<!-- use org.slf4j:jcl-over-slf4j instead -->
 				<exclusion>
+					<!-- use org.slf4j:jcl-over-slf4j instead -->
 					<groupId>commons-logging</groupId>
 					<artifactId>commons-logging</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>
-
   
 		<dependency>
             <groupId>org.docx4j</groupId>
             <artifactId>docx4j-core</artifactId>
 			<version>${version.docx4j}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.apache.pdfbox</groupId>
+					<artifactId>fontbox</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -430,7 +384,14 @@
   			<version>2.0.13</version>
   		</dependency>
 	 	
-		<!-- sample docx4j.properties specifies this --> 
+		<!-- sample docx4j.properties specifies this.
+
+		Have to exclude it entirely
+
+			module xxx reads package org.w3c.dom.html from both xercesImpl and jdk.xml.dom
+
+		after adding module-info to test classes (necessitated by PDF Box)
+
 		<dependency>
 		  <groupId>xerces</groupId>
 		  <artifactId>xercesImpl</artifactId>
@@ -442,8 +403,8 @@
 		  	</exclusion>
 		  </exclusions>
 		</dependency>
+-->
 
-		
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
