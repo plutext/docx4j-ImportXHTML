@@ -9,7 +9,6 @@
   </parent>
  
 	
-	<groupId>org.docx4j</groupId>
 	<artifactId>docx4j-ImportXHTML-core</artifactId>
 	<packaging>${packaging.type}</packaging>    
 
