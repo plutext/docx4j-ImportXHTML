@@ -1776,7 +1776,7 @@ because "this.handler" is null
     	return pPr;
     }
     
-    protected boolean isBidi(String pText) {
+    public boolean isBidi(String pText) {
     	
     	if (pText==null
     			|| pText.trim().length()==0) {
