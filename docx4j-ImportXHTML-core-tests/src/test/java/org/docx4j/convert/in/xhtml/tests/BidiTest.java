@@ -1,10 +1,12 @@
-package org.docx4j.convert.in.xhtml;
+package org.docx4j.convert.in.xhtml.tests;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.text.Bidi;
 
+import org.docx4j.convert.in.xhtml.ImportXHTMLProperties;
+import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
 import org.docx4j.openpackaging.exceptions.InvalidFormatException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.junit.Before;

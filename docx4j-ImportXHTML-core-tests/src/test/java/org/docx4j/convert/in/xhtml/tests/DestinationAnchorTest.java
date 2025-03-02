@@ -1,4 +1,4 @@
-package org.docx4j.convert.in.xhtml;
+package org.docx4j.convert.in.xhtml.tests;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -8,6 +8,7 @@ import java.util.List;
 import jakarta.xml.bind.JAXBException;
 
 import org.docx4j.XmlUtils;
+import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.exceptions.InvalidFormatException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;

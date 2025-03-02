@@ -25,12 +25,13 @@
 	see http://www.gnu.org/licenses/lgpl-2.1.html
 
  */
-package org.docx4j.convert.in.xhtml;
+package org.docx4j.convert.in.xhtml.tests;
 
 import java.io.File;
 import java.util.List;
 
 import org.docx4j.UnitsOfMeasurement;
+import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
 import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.Drawing;
