@@ -104,14 +104,28 @@
 			<version>${version.logback-classic}</version>
 		</dependency>
 
-		<!--  logging config files for log4j2 and logback can be found in:-->
+		<!--  logging config files for log4j2 and logback can be found in:  https://github.com/plutext/docx4j/tree/VERSION_11_5_2/docx4j-samples-resources/src/main/resources
+		
+		We don't put those in Maven Central: 
+		'
 		<dependency>
 			<groupId>org.docx4j</groupId>
 			<artifactId>docx4j-samples-resources</artifactId>
 			<version>${version.docx4j}</version>
 		</dependency>
+-->
 
-
+		<dependency>
+		  <groupId>xerces</groupId>
+		  <artifactId>xercesImpl</artifactId>
+		  <version>2.12.2</version>
+		  <exclusions>
+		  	<exclusion>
+			  <groupId>xml-apis</groupId>
+			  <artifactId>xml-apis</artifactId>
+		  	</exclusion>
+		  </exclusions>
+		</dependency>
 </dependencies>
 	
 </project>

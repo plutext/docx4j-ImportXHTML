@@ -2,6 +2,38 @@ CHANGELOG
 =========
 
 
+Version 11.5.3 
+==============
+
+Release date
+------------
+
+7 May 2025
+
+
+Contributors to this release
+----------------------------
+
+Andreas Keefer (xtermi2)
+
+Dorian Puerta
+
+Fabien Nicollet
+
+Jason Harrop
+
+
+Changes in Version 11.5.3
+-------------------------
+
+Migrate to io.github.openhtmltopdf, which in turn uses PDFBox 3
+
+Also:
+- expose isBidi
+- added support page-break-before:always and page-break-after:always
+- support for display:table, display:table-row and display:table-cell
+
+
 Version 11.5.0  (Jakarta XML Binding 4.0)
 ==============
 

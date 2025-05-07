@@ -7,8 +7,8 @@
 	<version>${revision}</version>
 	
 	<properties>
-		<revision>11.5.0</revision>
-		<version.docx4j>11.5.2</version.docx4j>
+		<revision>11.5.3</revision>
+		<version.docx4j>11.5.3</version.docx4j>
 		<packaging.type>jar</packaging.type>
 	    <!-- <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> -->
 	    <!-- github server corresponds to entry in ~/.m2/settings.xml -->
@@ -49,7 +49,7 @@
   	</licenses>
 	<scm>
 	    <developerConnection>scm:git|git@github.com:plutext/docx4j-ImportXHTML.git</developerConnection>
-      <tag>docx4j-ImportXHTML-11.4.10</tag>
+      <tag>docx4j-ImportXHTML-11.5.3</tag>
       <url>https://github.com/plutext/docx4j-ImportXHTML</url>      
   </scm>
   
@@ -328,17 +328,45 @@
 	
 	<dependencies>
 
+		<!-- https://github.com/openhtmltopdf/openhtmltopdf -->
 		<dependency>
 		    <groupId>io.github.openhtmltopdf</groupId>
 		    <artifactId>openhtmltopdf-core</artifactId>
-		    <version>1.1.24</version>
+		    <version>1.1.28</version>
 		</dependency>
 
 		<dependency>
 		    <groupId>io.github.openhtmltopdf</groupId>
 		    <artifactId>openhtmltopdf-pdfbox</artifactId>
-		    <version>1.1.24</version>
+		    <version>1.1.28</version>
 		</dependency>
+
+		<!-- declare these explicitly in order to exclude commons-logging --> 
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>3.0.3</version>
+			<exclusions>
+				<exclusion>
+					<!-- use org.slf4j:jcl-over-slf4j instead -->
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>xmpbox</artifactId>
+			<version>3.0.3</version>
+			<exclusions>
+				<exclusion>
+					<!-- use org.slf4j:jcl-over-slf4j instead -->
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
 
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
