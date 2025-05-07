@@ -106,7 +106,7 @@
 		<dependency>
             <groupId>org.docx4j</groupId>
 			<artifactId>docx4j-ImportXHTML-core</artifactId>
-			<version>11.5.0</version>
+			<version>${project.version}</version>
 		</dependency>
 
 		<dependency>

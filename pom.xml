@@ -26,9 +26,10 @@
     <modules>
         <module>docx4j-ImportXHTML-core</module>
         <module>docx4j-ImportXHTML-core-tests</module>
-        <!-- 2024 03 13 have to comment out the -samples module otherwise "remote staging" gets skipped?
-        	 I suspect that happens if the last project has skipNexusStagingDeployMojo true -->
         <module>docx4j-ImportXHTML-samples</module>      
+        <!-- 2024 03 13 have to comment out the -samples module otherwise "remote staging" gets skipped?
+        	 I suspect that happens if the last project has skipNexusStagingDeployMojo true.
+        	 For deployment, easiest just to comment out-core-tests and -samples here -->
     </modules>
 
 
