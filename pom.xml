@@ -7,8 +7,8 @@
 	<version>${revision}</version>
 	
 	<properties>
-		<revision>11.5.4-SNAPSHOT</revision>
-		<version.docx4j>11.5.4-SNAPSHOT</version.docx4j>
+		<revision>11.5.4</revision>
+		<version.docx4j>11.5.4</version.docx4j>
 		<packaging.type>jar</packaging.type>
 	    <!-- <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> -->
 	    <!-- github server corresponds to entry in ~/.m2/settings.xml -->
@@ -50,14 +50,14 @@
   	</licenses>
 	<scm>
 	    <developerConnection>scm:git|git@github.com:plutext/docx4j-ImportXHTML.git</developerConnection>
-      <tag>docx4j-ImportXHTML-11.5.3</tag>
+      <tag>docx4j-ImportXHTML-11.5.4</tag>
       <url>https://github.com/plutext/docx4j-ImportXHTML</url>      
   </scm>
   
 	<distributionManagement>
 		<snapshotRepository>
 			<id>ossrh</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>  <!-- obsolete? -->
 		</snapshotRepository>
 	</distributionManagement>
   
@@ -139,7 +139,17 @@
 				<extensions>true</extensions>
 				<configuration>
 					<serverId>ossrh</serverId>
-					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
+					<nexusUrl>https://ossrh-staging-api.central.sonatype.com</nexusUrl>
+					<!-- July 2025
+
+					Portal OSSRH Staging API is a partial reimplementation of the OSSRH / Nexus Repository Manager 2 Staging APIs.
+					The intent of this service is to enable publishers who are using existing plugins to have a smooth migration to the Central Publisher Portal.
+
+					https://central.sonatype.org/publish/publish-portal-ossrh-staging-api/
+
+					TODO: migrate to https://central.sonatype.org/publish/publish-portal-maven/
+
+					-->
 					<autoReleaseAfterClose>true</autoReleaseAfterClose>
 				</configuration>
 			</plugin>

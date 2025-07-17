@@ -2,7 +2,28 @@ CHANGELOG
 =========
 
 
-Version 11.5.3 
+Version 11.5.4 
+==============
+
+Release date
+------------
+
+17 July 2025
+
+
+Contributors to this release
+----------------------------
+
+Jason Harrop
+
+
+Changes in Version 11.5.4
+-------------------------
+
+Target Java 11, not 17
+
+
+Version 11.5.3 (targeted Java 17)
 ==============
 
 Release date
