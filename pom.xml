@@ -7,7 +7,7 @@
 	<version>${revision}</version>
 	
 	<properties>
-		<revision>11.5.5-SNAPSHOT</revision>
+		<revision>11.5.5</revision>
 		<version.docx4j>11.5.5</version.docx4j>
 		<packaging.type>jar</packaging.type>
 	    <!-- <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> -->
@@ -41,18 +41,19 @@
 
 	<url>http://www.docx4java.org/</url>
 	<licenses>
-	  <license>
-	    <name>LGPL v2.1</name>
-	    <url>http://www.gnu.org/licenses/lgpl-2.1.html</url>
-	    <distribution>repo</distribution>
-	    <comments>The same license as https://github.com/danfickle/openhtmltopdf.  See legals/NOTICE for details.</comments>
-	  </license>
-  	</licenses>
+		<license>
+			<name>LGPL v2.1</name>
+			<url>http://www.gnu.org/licenses/lgpl-2.1.html</url>
+			<distribution>repo</distribution>
+			<comments>The same license as https://github.com/danfickle/openhtmltopdf.  See legals/NOTICE for details.</comments>
+		</license>
+	</licenses>
+	
 	<scm>
-	    <developerConnection>scm:git|git@github.com:plutext/docx4j-ImportXHTML.git</developerConnection>
-      <tag>docx4j-ImportXHTML-11.5.4</tag>
-      <url>https://github.com/plutext/docx4j-ImportXHTML</url>      
-  </scm>
+		<developerConnection>scm:git|git@github.com:plutext/docx4j-ImportXHTML.git</developerConnection>
+		<tag>docx4j-ImportXHTML-11.5.5</tag>
+		<url>https://github.com/plutext/docx4j-ImportXHTML</url>
+	</scm>
   
 	<distributionManagement>
 		<snapshotRepository>

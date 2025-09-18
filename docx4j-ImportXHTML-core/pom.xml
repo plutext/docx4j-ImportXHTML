@@ -217,12 +217,6 @@
 -->
 
 		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-			<version>${version.logback-classic}</version>
-		</dependency>
-
-		<dependency>
             <groupId>org.docx4j</groupId>
 			<artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
 			<version>${version.docx4j}</version>
