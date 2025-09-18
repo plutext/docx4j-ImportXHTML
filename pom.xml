@@ -8,7 +8,7 @@
 	
 	<properties>
 		<revision>11.5.5-SNAPSHOT</revision>
-		<version.docx4j>11.5.5-SNAPSHOT</version.docx4j>
+		<version.docx4j>11.5.5</version.docx4j>
 		<packaging.type>jar</packaging.type>
 	    <!-- <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> -->
 	    <!-- github server corresponds to entry in ~/.m2/settings.xml -->
@@ -87,6 +87,43 @@
 		</contributor>
 		<!--  others listed in CHANGELOG.md, to be added here -->
 	</contributors>
+
+  <dependencyManagement>
+    <dependencies>
+		<dependency>
+			<groupId>jakarta.xml.bind</groupId>
+			<artifactId>jakarta.xml.bind-api</artifactId>
+			<!--  docx4j v11.5.x uses JAXB 4.0.x -->			
+			<version>4.0.4</version>
+			<!-- declares jakarta.activation:jakarta.activation-api:jar:2.1.4, but that's not in Maven Central! -->
+		</dependency>
+
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+  			<version>2.0.17</version>
+		</dependency>
+
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.20.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>jakarta.activation</groupId>
+			<artifactId>jakarta.activation-api</artifactId>
+			<version>2.1.3</version>  <!-- there is no 2.1.4 as of 2025 09 18 -->
+		</dependency>
+		
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>fontbox</artifactId>
+			<version>3.0.5</version>
+		</dependency>		
+    </dependencies>
+        
+  </dependencyManagement>
 
 	  	
 	<build>
@@ -174,11 +211,12 @@
 			      but it doesn't.
 			      
 			      Seems to work with Java 12 though
+	       	-->
 
 		     <plugin>
 		        <groupId>org.apache.maven.plugins</groupId>
 		        <artifactId>maven-enforcer-plugin</artifactId>
-		        <version>3.0.0-M2</version> 
+		        <version>3.4.1</version> 
 		        <executions>
 		          <execution>
 		            <id>enforce-bytecode-version</id>
@@ -187,12 +225,15 @@
 		            </goals>
 		            <configuration>
 		              <rules>
+		              <!--
 		                <enforceBytecodeVersion>
 		                  <maxJdkVersion>11</maxJdkVersion>
 		                  <excludes>
 		                    <exclude>org.mindrot:jbcrypt</exclude>
 		                  </excludes>
 		                </enforceBytecodeVersion>
+		              -->
+		                 <dependencyConvergence/>		                
 		              </rules>
 		              <fail>true</fail>
 		            </configuration>
@@ -206,7 +247,6 @@
 		          </dependency>
 		        </dependencies> 
 		      </plugin>
-	       	-->
 
 			<plugin>
 				<artifactId>maven-source-plugin</artifactId>
@@ -337,128 +377,6 @@
 	</build>
 
 	
-	<dependencies>
-
-		<!-- https://github.com/openhtmltopdf/openhtmltopdf -->
-		<dependency>
-		    <groupId>io.github.openhtmltopdf</groupId>
-		    <artifactId>openhtmltopdf-core</artifactId>
-		    <version>1.1.28</version>
-		</dependency>
-
-		<dependency>
-		    <groupId>io.github.openhtmltopdf</groupId>
-		    <artifactId>openhtmltopdf-pdfbox</artifactId>
-		    <version>1.1.28</version>
-		</dependency>
-
-		<!-- declare these explicitly in order to exclude commons-logging --> 
-		<dependency>
-			<groupId>org.apache.pdfbox</groupId>
-			<artifactId>pdfbox</artifactId>
-			<version>3.0.3</version>
-			<exclusions>
-				<exclusion>
-					<!-- use org.slf4j:jcl-over-slf4j instead -->
-					<groupId>commons-logging</groupId>
-					<artifactId>commons-logging</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.pdfbox</groupId>
-			<artifactId>xmpbox</artifactId>
-			<version>3.0.3</version>
-			<exclusions>
-				<exclusion>
-					<!-- use org.slf4j:jcl-over-slf4j instead -->
-					<groupId>commons-logging</groupId>
-					<artifactId>commons-logging</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
-
-		<dependency>
-			<groupId>org.apache.pdfbox</groupId>
-			<artifactId>fontbox</artifactId>
-			<version>3.0.3</version>
-			<exclusions>
-				<exclusion>
-					<!-- use org.slf4j:jcl-over-slf4j instead -->
-					<groupId>commons-logging</groupId>
-					<artifactId>commons-logging</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-  
-		<dependency>
-            <groupId>org.docx4j</groupId>
-            <artifactId>docx4j-core</artifactId>
-			<version>${version.docx4j}</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.apache.pdfbox</groupId>
-					<artifactId>fontbox</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.james</groupId>
-			<artifactId>apache-mime4j-core</artifactId>
-			<version>0.8.11</version>
-		</dependency>
-
-		<!--  docx4j v11.5.0 and later use JAXB 4.0 -->
-		<dependency>
-			<groupId>jakarta.xml.bind</groupId>
-			<artifactId>jakarta.xml.bind-api</artifactId>
-			<version>4.0.2</version>
-		</dependency>
- 
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-  			<version>2.0.13</version>
-  		</dependency>
-	 	
-		<!-- sample docx4j.properties specifies this.
-
-		Have to exclude it entirely
-
-			module xxx reads package org.w3c.dom.html from both xercesImpl and jdk.xml.dom
-
-		after adding module-info to test classes (necessitated by PDF Box)
-
-		<dependency>
-		  <groupId>xerces</groupId>
-		  <artifactId>xercesImpl</artifactId>
-		  <version>2.12.2</version>
-		  <exclusions>
-		  	<exclusion>
-			  <groupId>xml-apis</groupId>
-			  <artifactId>xml-apis</artifactId>
-		  	</exclusion>
-		  </exclusions>
-		</dependency>
--->
-
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-			<version>${version.logback-classic}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.13.2</version>
-			<scope>test</scope>
-		</dependency>
-	 	
-	</dependencies>
-
 	<profiles>
 		<!--  use -P eg mvn -Psign-artifacts  -->
 

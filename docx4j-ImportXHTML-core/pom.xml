@@ -103,6 +103,125 @@
 
 <dependencies>
 
+		<!-- https://github.com/openhtmltopdf/openhtmltopdf -->
+		<dependency>
+		    <groupId>io.github.openhtmltopdf</groupId>
+		    <artifactId>openhtmltopdf-core</artifactId>
+		    <version>1.1.31</version>
+		</dependency>
+
+		<dependency>
+		    <groupId>io.github.openhtmltopdf</groupId>
+		    <artifactId>openhtmltopdf-pdfbox</artifactId>
+		    <version>1.1.31</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.apache.pdfbox</groupId>
+					<artifactId>pdfbox</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.pdfbox</groupId>
+					<artifactId>xmpbox</artifactId>
+				</exclusion>
+			</exclusions>
+		    
+		</dependency>
+
+		<!-- declare these explicitly in order to exclude commons-logging --> 
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>3.0.5</version>
+			<exclusions>
+				<exclusion>
+					<!-- use org.slf4j:jcl-over-slf4j instead -->
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>xmpbox</artifactId>
+			<version>3.0.5</version>
+			<exclusions>
+				<exclusion>
+					<!-- use org.slf4j:jcl-over-slf4j instead -->
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>fontbox</artifactId>
+			<exclusions>
+				<exclusion>
+					<!-- use org.slf4j:jcl-over-slf4j instead -->
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+  
+		<dependency>
+            <groupId>org.docx4j</groupId>
+            <artifactId>docx4j-core</artifactId>
+			<version>${version.docx4j}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.apache.pdfbox</groupId>
+					<artifactId>fontbox</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.james</groupId>
+			<artifactId>apache-mime4j-core</artifactId>
+			<version>0.8.13</version>
+		</dependency>
+
+		<!--  docx4j v11.5.0 and later use JAXB 4.0 -->
+		<dependency>
+			<groupId>jakarta.xml.bind</groupId>
+			<artifactId>jakarta.xml.bind-api</artifactId>
+		</dependency>
+ 
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+  		</dependency>
+	 	
+		<!-- sample docx4j.properties specifies this.
+
+		Have to exclude it entirely
+
+			module xxx reads package org.w3c.dom.html from both xercesImpl and jdk.xml.dom
+
+		after adding module-info to test classes (necessitated by PDF Box)
+
+		<dependency>
+		  <groupId>xerces</groupId>
+		  <artifactId>xercesImpl</artifactId>
+		  <version>2.12.2</version>
+		  <exclusions>
+		  	<exclusion>
+			  <groupId>xml-apis</groupId>
+			  <artifactId>xml-apis</artifactId>
+		  	</exclusion>
+		  </exclusions>
+		</dependency>
+-->
+
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${version.logback-classic}</version>
+		</dependency>
+
 		<dependency>
             <groupId>org.docx4j</groupId>
 			<artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
