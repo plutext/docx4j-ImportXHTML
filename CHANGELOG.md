@@ -7,7 +7,7 @@ Version 11.5.5 (minor release)
 Release date
 ------------
 
-18 September 2025
+19 September 2025
 
 
 Contributors to this release
@@ -20,15 +20,18 @@ Changes in Version 11.5.5
 
 Bump dependencies:
 
-	ch.qos.logback:logback-classic ....................... 1.5.6 -> 1.5.18
-	jakarta.xml.bind:jakarta.xml.bind-api ................. 4.0.2 -> 4.0.4
-	org.apache.james:apache-mime4j-core ................. 0.8.11 -> 0.8.13
-	org.slf4j:slf4j-api ................................. 2.0.13 -> 2.0.17
+	docx4j 11.5.5 and its dependencies, and:
+	
 	io.github.openhtmltopdf:openhtmltopdf-core .......... 1.1.28 -> 1.1.31
 	io.github.openhtmltopdf:openhtmltopdf-pdfbox ........ 1.1.28 -> 1.1.31
+
 	org.apache.pdfbox:fontbox ............................. 3.0.3 -> 3.0.5
 	org.apache.pdfbox:pdfbox .............................. 3.0.3 -> 3.0.5
 	org.apache.pdfbox:xmpbox .............................. 3.0.3 -> 3.0.5
+
+	jakarta.xml.bind:jakarta.xml.bind-api ................. 4.0.2 -> 4.0.4
+	org.slf4j:slf4j-api ................................. 2.0.13 -> 2.0.17
+	org.apache.james:apache-mime4j-core ................. 0.8.11 -> 0.8.13
 
 
 Version 11.5.4 
