@@ -2,7 +2,7 @@
 <project basedir="." default="release" name="docx4j-ImportXHTML">
     <property environment="env"/>
 	
-	<property name="importxhtml-version" value="8.3.11"/>
+	<property name="importxhtml-version" value="8.3.15"/>
 	
 	<property name="release.dir" value="docx4j-ImportXHTML-${importxhtml-version}"/>
     	

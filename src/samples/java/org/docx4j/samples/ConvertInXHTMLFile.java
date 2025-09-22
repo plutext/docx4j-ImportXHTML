@@ -64,7 +64,7 @@ public class ConvertInXHTMLFile {
     public static void main(String[] args) throws Exception {
         
     	
-        String inputfilepath = System.getProperty("user.dir") + "/sample-docs/docx/DocxToXhtmlAndBack.html";
+        String inputfilepath = System.getProperty("user.dir") + "/sample-docs/xhtml/Image-Samples.html";
         
      // Images: provide correct baseURL
     	String baseURL = "file:///bvols/@git/repos/docx4j-ImportXHTML/sample-docs/docx/sample-docxv2.docx_files";    	

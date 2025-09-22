@@ -2,6 +2,27 @@ CHANGELOG
 =========
 
 
+Version 8.3.15  (built against docx4j 8.3.15)
+==============
+
+Release date
+------------
+
+23 September 2025
+
+Changes in Version 8.3.15
+-------------------------
+
+Bump deps
+
+   org.apache.james:apache-mime4j-core ................. 0.8.11 -> 0.8.13
+   org.apache.pdfbox:pdfbox ............................ 2.0.30 -> 2.0.34
+   org.apache.pdfbox:xmpbox ............................ 2.0.24 -> 2.0.34
+   org.slf4j:slf4j-api ................................. 2.0.13 -> 2.0.17
+   ch.qos.logback:logback-classic ...................... 1.3.14 -> 1.3.15
+
+
+
 Version 8.3.11  (requires docx4j 8.3.11 or later)
 ==============
 

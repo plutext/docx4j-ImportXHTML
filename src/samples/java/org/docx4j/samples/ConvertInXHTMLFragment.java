@@ -69,6 +69,7 @@ public class ConvertInXHTMLFragment {
 //    	 " <li> Outer 3 </li>"+
 //    	"</ul>";
     	
+    	// A very small image (just a few pixels)
 		String PNG_IMAGE_DATA = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAgMAAAAP2OW3AAAADFBMVEUDAP//AAAA/wb//AAD4Tw1AAAACXBIWXMAAAsTAAALEwEAmpwYAAAADElEQVQI12NwYNgAAAF0APHJnpmVAAAAAElFTkSuQmCC";		
 		String xhtml= "<div align=\"center\">" +
 //					"<p><img src='" + PNG_IMAGE_DATA + "'  /></p>" +
