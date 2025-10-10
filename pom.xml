@@ -7,8 +7,8 @@
 	<version>${revision}</version>
 	
 	<properties>
-		<revision>11.5.6-SNAPSHOT</revision>
-		<version.docx4j>11.5.5</version.docx4j>
+		<revision>11.5.6</revision>
+		<version.docx4j>11.5.6</version.docx4j>
 		<packaging.type>jar</packaging.type>
 	    <!-- <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> -->
 	    <!-- github server corresponds to entry in ~/.m2/settings.xml -->
@@ -51,7 +51,7 @@
 	
 	<scm>
 		<developerConnection>scm:git|git@github.com:plutext/docx4j-ImportXHTML.git</developerConnection>
-		<tag>docx4j-ImportXHTML-11.5.5</tag>
+		<tag>docx4j-ImportXHTML-11.5.6</tag>
 		<url>https://github.com/plutext/docx4j-ImportXHTML</url>
 	</scm>
   
@@ -121,7 +121,16 @@
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>fontbox</artifactId>
 			<version>3.0.5</version>
-		</dependency>		
+			</dependency>
+
+
+		<!-- workaround for docx4j RI declaring 1.3.0 on account of xmlgraphics-commons -->
+		<dependency>
+			<groupId>commons-logging</groupId>
+			<artifactId>commons-logging</artifactId>
+			<version>1.3.5</version>
+		</dependency>
+
     </dependencies>
         
   </dependencyManagement>
@@ -233,7 +242,7 @@
 		                    <exclude>org.mindrot:jbcrypt</exclude>
 		                  </excludes>
 		                </enforceBytecodeVersion>
-		              -->
+		                -->
 		                 <dependencyConvergence/>		                
 		              </rules>
 		              <fail>true</fail>
@@ -244,7 +253,7 @@
 		          <dependency>
 		            <groupId>org.codehaus.mojo</groupId>
 		            <artifactId>extra-enforcer-rules</artifactId>
-		            <version>1.2</version>
+		            <version>1.11.0</version>
 		          </dependency>
 		        </dependencies> 
 		      </plugin>
@@ -330,10 +339,17 @@
 			<plugin>
 			    <groupId>org.codehaus.mojo</groupId>
 			    <artifactId>flatten-maven-plugin</artifactId>
-			    <version>1.0.0</version>
+			    <version>1.7.3</version>
 			    <configuration>
 			        <!--  <updatePomFile>true</updatePomFile>-->
-			        <flattenMode>oss</flattenMode>           
+			        <!-- Keeps all optional POM elements that are required for OSS Repository-Hosting. -->
+					<flattenMode>ossrh</flattenMode>
+					<!-- 
+						Flatten both direct and transitive dependencies. This will examine the full dependency tree, 
+						and pull up all transitive dependencies as a direct dependency, and setting their versions appropriately.
+
+						This is recommended if you are releasing a library that uses dependency management to manage dependency versions. -->
+					<flattenDependencyMode>all</flattenDependencyMode>
 			    </configuration>
 			    <executions>
 			        <execution>
@@ -373,6 +389,49 @@
 					</execution>
 				</executions>
 			</plugin>					
+			
+			<plugin>
+			    <groupId>com.github.spotbugs</groupId>
+			    <artifactId>spotbugs-maven-plugin</artifactId>
+			    <version>4.8.5.0</version>
+			    <dependencies>
+					<dependency>
+						<groupId>com.github.spotbugs</groupId>
+						<artifactId>spotbugs</artifactId>
+						<version>4.9.6</version>
+					</dependency>
+			    </dependencies>
+			</plugin>
+			
+		    <plugin>
+		        <groupId>org.cyclonedx</groupId>
+		        <artifactId>cyclonedx-maven-plugin</artifactId>
+				<version>2.9.1</version>		        
+		        <executions>
+		            <execution>
+		                <phase>package</phase>
+		                <goals>
+		                    <goal>makeAggregateBom</goal>
+		                </goals>
+		            </execution>
+		        </executions>
+		    </plugin>
+		    
+			<plugin>
+			    <groupId>org.owasp</groupId>
+			    <artifactId>dependency-check-maven</artifactId>
+			    <version>12.1.5</version> 
+				<configuration>
+					<ossIndexServerId>ossindex</ossIndexServerId>
+				</configuration>
+			    <executions>
+			        <execution>
+			            <goals>
+			                <goal>check</goal>
+			            </goals>
+			        </execution>
+			    </executions>
+			</plugin>		    
 			
 		</plugins>
 	</build>

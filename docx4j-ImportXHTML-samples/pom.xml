@@ -115,6 +115,14 @@
 		</dependency>
 -->
 
+		<!-- You'll want this with 11.5.6 (if your docx4j properties specifies Xerces)
+		
+			Alternatively, 	 
+				Docx4jProperties.setProperty("javax.xml.parsers.SAXParserFactory", "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl");
+				Docx4jProperties.setProperty("javax.xml.parsers.DocumentBuilderFactory", "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl");		
+		
+		-->
+
 		<dependency>
 		  <groupId>xerces</groupId>
 		  <artifactId>xercesImpl</artifactId>
