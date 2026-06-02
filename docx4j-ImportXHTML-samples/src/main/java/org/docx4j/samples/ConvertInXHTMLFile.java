@@ -64,12 +64,10 @@ public class ConvertInXHTMLFile {
     public static void main(String[] args) throws Exception {
         
     	
-        String inputfilepath = System.getProperty("user.dir") + "/sample-docs/docx/DocxToXhtmlAndBack.html";
+        String inputfilepath = System.getProperty("user.dir") + "/sample-docs/docx/sample-docxv2.html";
         
      // Images: provide correct baseURL
-    	String baseURL = "file:///bvols/@git/repos/docx4j-ImportXHTML/sample-docs/docx/sample-docxv2.docx_files";    	
-//        String baseURL = "file:///C:/Users/jharrop/git/docx4j-ImportXHTML/sample-docs/docx/sample-docxv2.docx_files";
-
+        String baseURL = "file:///home/jharrop/git/docx4j-ImportXHTML/docx4j-ImportXHTML-samples/sample-docs/docx/sample-docxv2.docx_files";
         
         String stringFromFile = FileUtils.readFileToString(new File(inputfilepath), "UTF-8");
         

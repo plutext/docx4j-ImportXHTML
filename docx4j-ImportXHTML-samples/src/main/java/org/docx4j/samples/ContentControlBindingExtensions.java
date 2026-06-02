@@ -39,7 +39,10 @@ import org.docx4j.openpackaging.io.SaveToZipFile;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.CustomXmlDataStoragePart;
 import org.docx4j.openpackaging.parts.CustomXmlPart;
+import org.slf4j.LoggerFactory;
 
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.core.util.StatusPrinter;
 
 /**
  * This sample demonstrates populating content controls
@@ -68,10 +71,9 @@ public class ContentControlBindingExtensions {
 	 */
 	public static void main(String[] args) throws Exception {
 		
-		String inputfilepath = System.getProperty("user.dir") + "/sample-docs/word/databinding/xhtml.docx";
-
+		String inputfilepath = System.getProperty("user.dir") + "/sample-docs/word/databinding/bind_xhtml-test.docx";
 		
-		String data = System.getProperty("user.dir") + "/sample-docs/word/databinding/xhtml-data.xml";
+		String data          = System.getProperty("user.dir") + "/sample-docs/word/databinding/bind_xhtml-test.xml";
 
 
 		WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new java.io.File(inputfilepath));		

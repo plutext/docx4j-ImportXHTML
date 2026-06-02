@@ -30,11 +30,16 @@ package org.docx4j.samples;
 import java.io.File;
 import java.io.OutputStream;
 
+import org.docx4j.Docx4J;
+import org.docx4j.Docx4jProperties;
 import org.docx4j.XmlUtils;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
+import org.docx4j.convert.out.HTMLSettings;
 import org.docx4j.convert.out.html.AbstractHtmlExporter;
 import org.docx4j.convert.out.html.AbstractHtmlExporter.HtmlSettings;
 import org.docx4j.convert.out.html.HtmlExporterNG2;
+import org.docx4j.convert.out.html.SdtToListSdtTagHandler;
+import org.docx4j.convert.out.html.SdtWriter;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.NumberingDefinitionsPart;
 
@@ -51,7 +56,7 @@ public class ConvertInXHTMLDocument {
     	// The input would generally be an XHTML document,
     	// but for convenience, this sample can convert a 
     	// docx to XHTML first (ie round trip).
-        String inputfilepath = System.getProperty("user.dir") + "/sample-docs/word/sample-docx.docx";
+        String inputfilepath = System.getProperty("user.dir") + "/sample-docs/docx/sample-docxv2.docx";
 
         
         // Create an empty docx package
@@ -72,19 +77,29 @@ public class ConvertInXHTMLDocument {
 			
 		} else if (inputfilepath.endsWith("docx")) {
 			//Round trip docx -> XHTML -> docx
+			
+	        Docx4jProperties.setProperty(
+	                "docx4j.Convert.Out.HTML.OutputMethodXML",
+	                true
+	            );			
+
 			WordprocessingMLPackage docx = WordprocessingMLPackage.load( new File(inputfilepath));	    	
-			AbstractHtmlExporter exporter = new HtmlExporterNG2();
 			
 			// Use file system, so there is somewhere to save images (if any)
 			OutputStream os = new java.io.FileOutputStream(inputfilepath + ".html");	
+
+	    	HTMLSettings htmlSettings = Docx4J.createHTMLSettings();
+	    	
+	    	htmlSettings.setOpcPackage(docx);
 			
-	    	HtmlSettings htmlSettings = new HtmlSettings();
 	    	htmlSettings.setImageDirPath(inputfilepath + "_files"); 
 	    	htmlSettings.setImageTargetUri(inputfilepath.substring(inputfilepath.lastIndexOf("/")+1) 
 	    			  + "_files");
 			
-			javax.xml.transform.stream.StreamResult result = new javax.xml.transform.stream.StreamResult(os);
-			exporter.html(docx, result, htmlSettings );			
+    		SdtWriter.registerTagHandler("HTML_ELEMENT", new SdtToListSdtTagHandler());
+			
+			Docx4J.toHTML(htmlSettings, os, Docx4J.FLAG_EXPORT_PREFER_XSL);
+			
 			
 			// Now after all that, we have XHTML we can convert 
 			wordMLPackage.getMainDocumentPart().getContent().addAll( 

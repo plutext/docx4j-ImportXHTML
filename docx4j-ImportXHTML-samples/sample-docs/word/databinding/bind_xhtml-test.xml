@@ -1,0 +1,4 @@
+<data>
+<x>&lt;div&gt;This is a &lt;span style="font-size: 76pt;;font-family: 'Times New Roman'"&gt;big&lt;/span&gt; test&lt;/div&gt;</x>
+<y>&lt;span style="font-size: 76pt;;font-family: 'Times New Roman'"&gt;big&lt;/span&gt;</y>
+</data>
