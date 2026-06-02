@@ -74,6 +74,7 @@ import org.docx4j.model.properties.paragraph.AbstractParagraphProperty;
 import org.docx4j.model.properties.paragraph.Indent;
 import org.docx4j.model.properties.run.AbstractRunProperty;
 import org.docx4j.model.properties.run.FontSize;
+import org.docx4j.openpackaging.exceptions.CyclicStylesException;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.exceptions.InvalidFormatException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
@@ -213,7 +214,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	}
     
 	
-	public XHTMLImporterImpl(WordprocessingMLPackage wordMLPackage) {
+	public XHTMLImporterImpl(WordprocessingMLPackage wordMLPackage) throws Docx4JException {
 		
 		displayFormattingOptionSettings();
 		
@@ -318,8 +319,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     
     /**
 	 * @return the renderer
+     * @throws CyclicStylesException 
 	 */
-	public DocxRenderer getRenderer() {
+	protected DocxRenderer getRenderer() throws CyclicStylesException {
 		if (renderer==null) {
 			
 			if (paragraphFormatting==FormattingOption.CLASS_PLUS_OTHER
@@ -512,8 +514,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	 * formatting assuming CLASS_PLUS_OTHER) 
 	 * @param pkg
 	 * @return
+	 * @throws CyclicStylesException 
 	 */
-	private String stylesToCSS() {
+	private String stylesToCSS() throws CyclicStylesException {
 		
 		String css = wordMLPackage.getMainDocumentPart().getStyleDefinitionsPart().getCss();
 		
@@ -1323,7 +1326,12 @@ because "this.handler" is null
             	//P currentP = this.getCurrentParagraph(true);
             	
         		// You'll get an NPE here if you have li which isn't in ol|ul
-            	listHelper.peekListItemStateStack().init(); 
+        		try {
+        			listHelper.peekListItemStateStack().init();
+        		} catch (java.lang.NullPointerException ex) {
+        			
+        			throw new RuntimeException("NPE processing list item.  This is likely because you have an <li> which isn't in an <ol> or <ul>. "); 
+        		}
             	
                 PPr pPr =  Context.getWmlObjectFactory().createPPr();
                 this.getCurrentParagraph(true).setPPr(pPr);
@@ -1769,7 +1777,7 @@ because "this.handler" is null
     	simpleField.getContent().add(resultRun);
     }
 
-    protected PPr getPPr(BlockBox blockBox, Map<String, PropertyValue> cssMap) {
+    protected PPr getPPr(BlockBox blockBox, Map<String, PropertyValue> cssMap) throws Docx4JException {
     	
         PPr pPr =  Context.getWmlObjectFactory().createPPr();
         populatePPr(pPr, blockBox, cssMap);
@@ -1816,7 +1824,7 @@ because "this.handler" is null
 	    return ((rtl/ltr)>0.5);    	
     }
     
-    protected void populatePPr(PPr pPr, Styleable blockBox, Map<String, PropertyValue> cssMap) {
+    protected void populatePPr(PPr pPr, Styleable blockBox, Map<String, PropertyValue> cssMap) throws Docx4JException {
     	
         if (paragraphFormatting.equals(FormattingOption.IGNORE_CLASS)) {
     		addParagraphProperties(pPr, blockBox, cssMap );
@@ -1938,8 +1946,9 @@ because "this.handler" is null
  /**
 		Currently flying saucer is initialized with DEFAULT_DOTS_PER_PIXEL = 20.
 		Keep in mind that the values returned from FS are in dots (as opposed to px)
+ * @throws CyclicStylesException 
 	*/
-	private void addImage(BlockBox box) {
+	private void addImage(BlockBox box) throws CyclicStylesException {
 		
 		/*
 			com.openhtmltopdf.layout.SharedContext
@@ -2028,7 +2037,7 @@ because "this.handler" is null
 	
 	
 	
-    private void  processInlineBox( InlineBox inlineBox) {
+    private void  processInlineBox( InlineBox inlineBox) throws Docx4JException {
     	
     	if (inlineBox.getPseudoElementOrClass()!=null) {
     		log.debug("Ignoring Pseudo");
@@ -2266,7 +2275,7 @@ because "this.handler" is null
     }
 
 	private void processInlineBoxContent(InlineBox inlineBox, Styleable s,
-			Map<String, PropertyValue> cssMap) {
+			Map<String, PropertyValue> cssMap) throws Docx4JException {
 				
         
         // bookmark start?
@@ -2342,8 +2351,9 @@ because "this.handler" is null
 	/**
 	 * @param cssMap
 	 * @param theText
+	 * @throws Docx4JException 
 	 */
-	private void addRuns( String cssClass, Map<String, PropertyValue> cssMap, String theText) {
+	private void addRuns( String cssClass, Map<String, PropertyValue> cssMap, String theText) throws Docx4JException {
 		
 //    	System.out.println(theText);
 		
@@ -2393,7 +2403,7 @@ because "this.handler" is null
 		return ((x & 1) == 0 ) ;
 	}
 	
-	private void addRun( String cssClass, Map<String, PropertyValue> cssMap, String theText, boolean isRTL) {
+	private void addRun( String cssClass, Map<String, PropertyValue> cssMap, String theText, boolean isRTL) throws Docx4JException {
 		
 		R run = Context.getWmlObjectFactory().createR();
 		Text text = Context.getWmlObjectFactory().createText();
@@ -2416,7 +2426,7 @@ because "this.handler" is null
         }
 	}
 	
-	private void formatRPr(RPr rPr, String cssClass, Map<String, PropertyValue> cssMap) {
+	private void formatRPr(RPr rPr, String cssClass, Map<String, PropertyValue> cssMap) throws Docx4JException {
 
 		//addRunProperties(rPr, cssMap );  // ?????
 		
@@ -2470,7 +2480,7 @@ because "this.handler" is null
     }
     
 	
-    private void addParagraphProperties(PPr pPr, Styleable styleable, Map<String, PropertyValue> cssMap) {
+    private void addParagraphProperties(PPr pPr, Styleable styleable, Map<String, PropertyValue> cssMap) throws Docx4JException {
     	// NB, not invoked in CLASS_TO_STYLE_ONLY case
     	
 //    	log.debug("BEFORE " + XmlUtils.marshaltoString(pPr, true, true));
@@ -2706,7 +2716,7 @@ because "this.handler" is null
 	}
 	
 	
-    private void addRunProperties(RPr rPr, Map cssMap) {
+    private void addRunProperties(RPr rPr, Map cssMap) throws Docx4JException {
     	
     	log.debug("addRunProperties");
     	

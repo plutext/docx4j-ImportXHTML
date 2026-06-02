@@ -10,6 +10,7 @@ import org.docx4j.XmlUtils;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl.TableProperties;
 import org.docx4j.jaxb.Context;
 import org.docx4j.model.properties.table.tr.TrHeight;
+import org.docx4j.openpackaging.exceptions.CyclicStylesException;
 import org.docx4j.wml.BooleanDefaultTrue;
 import org.docx4j.wml.CTBorder;
 import org.docx4j.wml.CTHeight;
@@ -70,8 +71,9 @@ public class TableHelper {
      * @param cssTable
      * @param tbl
      * @param tableProperties
+     * @throws CyclicStylesException 
      */
-    protected void setupTblPr(TableBox cssTable, Tbl tbl, TableProperties tableProperties) {
+    protected void setupTblPr(TableBox cssTable, Tbl tbl, TableProperties tableProperties) throws CyclicStylesException {
     	
         Element e = cssTable.getElement();     	
 
@@ -295,7 +297,7 @@ public class TableHelper {
 
     }
     
-    protected void setupTcPr(TableCellBox tcb, Tc tc, TableProperties tableProperties) {
+    protected void setupTcPr(TableCellBox tcb, Tc tc, TableProperties tableProperties) throws CyclicStylesException {
 
 		int effCol = tcb.getTable().colToEffCol(tcb.getCol());
 		
@@ -443,8 +445,9 @@ public class TableHelper {
 	 * @param side "top"/"bottom"/"left"/"right"
 	 * @param keepNone if true, then missed borders returned as border with style NONE (for tables), else as null (for cells) 
 	 * @return reproduced border style
+	 * @throws CyclicStylesException 
 	 */
-	private CTBorder copyBorderStyle(Box box, String side, boolean keepNone) {
+	private CTBorder copyBorderStyle(Box box, String side, boolean keepNone) throws CyclicStylesException {
 		FSDerivedValue borderStyle = box.getStyle().valueByName( CSSName.getByPropertyName("border-"+side+"-style") );
 		FSDerivedValue borderColor = box.getStyle().valueByName( CSSName.getByPropertyName("border-"+side+"-color") );
 		float width = box.getStyle().getFloatPropertyProportionalHeight(
@@ -500,7 +503,7 @@ public class TableHelper {
 		return border;
 	}
 
-	private TcPrInner.TcBorders copyCellBorderStyles(TableCellBox box) {
+	private TcPrInner.TcBorders copyCellBorderStyles(TableCellBox box) throws CyclicStylesException {
 		TcPrInner.TcBorders tcBorders = Context.getWmlObjectFactory().createTcPrInnerTcBorders();
 		tcBorders.setTop( copyBorderStyle(box, "top", false) );
 		tcBorders.setBottom( copyBorderStyle(box, "bottom", false) );
@@ -516,8 +519,9 @@ public class TableHelper {
 	 * @param trContext context of the row to insert dummies into
 	 * @param tcb current cell
 	 * @param backwards direction flag: if true, then scan to the left
+	 * @throws CyclicStylesException 
 	 */
-	protected void insertDummyVMergedCells(ContentAccessor trContext, TableCellBox tcb, boolean backwards) {
+	protected void insertDummyVMergedCells(ContentAccessor trContext, TableCellBox tcb, boolean backwards) throws CyclicStylesException {
 
 		log.debug("Scanning cells from " + tcb.getRow() + ", " + tcb.getCol() + " to the " + (backwards ? "left" : "right") );
 

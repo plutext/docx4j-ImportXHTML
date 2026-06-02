@@ -7,7 +7,7 @@ import java.text.Bidi;
 
 import org.docx4j.convert.in.xhtml.ImportXHTMLProperties;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
-import org.docx4j.openpackaging.exceptions.InvalidFormatException;
+import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,7 +21,7 @@ public class BidiTest {
 
 	
 	@Before
-	public void setup() throws InvalidFormatException {
+	public void setup() throws Docx4JException {
 		
 		ImportXHTMLProperties.setProperty("docx4j-ImportXHTML.Bidi.Heuristic", true);
 		wordMLPackage = WordprocessingMLPackage.createPackage();

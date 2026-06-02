@@ -5,6 +5,8 @@ import java.util.Map;
 
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.jaxb.Context;
+import org.docx4j.openpackaging.exceptions.CyclicStylesException;
+
 import com.openhtmltopdf.css.constants.CSSName;
 import com.openhtmltopdf.css.parser.PropertyValue;
 import com.openhtmltopdf.css.style.FSDerivedValue;
@@ -103,7 +105,7 @@ public class ParagraphBorderHelper {
 		}
 	}
 	
-    protected void addBorderProperties(PPr pPr, Styleable styleable, Map<String, PropertyValue> cssMap) {
+    protected void addBorderProperties(PPr pPr, Styleable styleable, Map<String, PropertyValue> cssMap) throws CyclicStylesException {
     	
     	doSide( pPr,  styleable,cssMap, "left");
     	doSide( pPr,  styleable,cssMap, "right");
@@ -112,7 +114,7 @@ public class ParagraphBorderHelper {
 
     }
     
-    protected void doSide(PPr pPr, Styleable styleable, Map<String, PropertyValue> cssMap, String side) {
+    protected void doSide(PPr pPr, Styleable styleable, Map<String, PropertyValue> cssMap, String side) throws CyclicStylesException {
     	
     	CTBorder border = null;
     	
@@ -160,8 +162,9 @@ public class ParagraphBorderHelper {
 	 * @param box table or cell to copy css border properties from
 	 * @param side "top"/"bottom"/"left"/"right"
 	 * @return  border style
+	 * @throws CyclicStylesException 
 	 */
-	private CTBorder createBorderStyle(Styleable styleable, String side) {
+	private CTBorder createBorderStyle(Styleable styleable, String side) throws CyclicStylesException {
 		
 		FSDerivedValue borderStyle = styleable.getStyle().valueByName( CSSName.getByPropertyName("border-"+side+"-style") );
 		FSDerivedValue borderColor = styleable.getStyle().valueByName( CSSName.getByPropertyName("border-"+side+"-color") );
