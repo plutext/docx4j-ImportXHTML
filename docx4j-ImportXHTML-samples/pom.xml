@@ -58,6 +58,11 @@
 				<includes>
 					<include>XhtmlNamespaceHandler.css</include>
 					<include>xhtmlrenderer.conf</include>
+				<!-- could put here for convenience
+					<include>logback.xml</include>
+					<include>docx4j.properties</include>
+				 -->
+					<include>docx4j-ImportXHTML.properties</include>
 				</includes>
 			
 			</resource>

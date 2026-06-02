@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+
+Version 11.5.14 (minor release) 
+===============
+
+Release date
+------------
+
+2 June 2026
+
+Contributors to this release
+----------------------------
+
+Jason Harrop
+
+Changes in Version 11.5.6
+--------------------------
+
+Align with docx4j 11.5.14 release; handle CyclicStylesException
+
+
 Version 11.5.6 (minor release) 
 ===============
 
