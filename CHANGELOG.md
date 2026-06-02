@@ -19,7 +19,7 @@ Changes in Version 11.5.6
 --------------------------
 
 Align with docx4j 11.5.14 release; handle CyclicStylesException
-
+Bump org.apache.pdfbox deps from 3.0.5 to 3.0.7 to align with docx4j.
 
 Version 11.5.6 (minor release) 
 ===============
