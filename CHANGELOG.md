@@ -2,6 +2,25 @@ CHANGELOG
 =========
 
 
+Version 17.0.0
+===============
+
+Release date
+------------
+
+29 June 2026
+
+Contributors to this release
+----------------------------
+
+Jason Harrop
+
+Changes in Version 17.0.0
+--------------------------
+
+Align with docx4j 17.0.0 release; handle CyclicStylesException
+
+
 Version 11.5.14 (minor release) 
 ===============
 

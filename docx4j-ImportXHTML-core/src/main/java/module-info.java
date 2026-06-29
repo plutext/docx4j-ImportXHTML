@@ -2,7 +2,7 @@ module docx4j_ImportXHTML {
 
 	requires org.slf4j;
 	requires org.docx4j.core;
-	requires org.docx4j.openxml_objects;
+	requires org.docx4j.generated_objects;
 	
 	requires jakarta.xml.bind;
 	requires openhtmltopdf.core;

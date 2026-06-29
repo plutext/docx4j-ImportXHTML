@@ -7,8 +7,8 @@
 	<version>${revision}</version>
 	
 	<properties>
-		<revision>11.5.14</revision>
-		<version.docx4j>11.5.14</version.docx4j>
+		<revision>17.0.0</revision>
+		<version.docx4j>17.0.0</version.docx4j>
 		<packaging.type>jar</packaging.type>
 	    <!-- <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> -->
 	    <!-- github server corresponds to entry in ~/.m2/settings.xml -->
@@ -51,7 +51,7 @@
 	
 	<scm>
 		<developerConnection>scm:git|git@github.com:plutext/docx4j-ImportXHTML.git</developerConnection>
-		<tag>docx4j-ImportXHTML-11.5.14</tag>
+		<tag>docx4j-ImportXHTML-17.0.0</tag>
 		<url>https://github.com/plutext/docx4j-ImportXHTML</url>
 	</scm>
   
@@ -225,7 +225,7 @@
 		     <plugin>
 		        <groupId>org.apache.maven.plugins</groupId>
 		        <artifactId>maven-enforcer-plugin</artifactId>
-		        <version>3.4.1</version> 
+		        <version>3.6.2</version> 
 		        <executions>
 		          <execution>
 		            <id>enforce-bytecode-version</id>
@@ -234,15 +234,13 @@
 		            </goals>
 		            <configuration>
 		              <rules>
-		              <!--
 		                <enforceBytecodeVersion>
 		                  <maxJdkVersion>11</maxJdkVersion>
 		                  <excludes>
 		                    <exclude>org.mindrot:jbcrypt</exclude>
 		                  </excludes>
 		                </enforceBytecodeVersion>
-		                -->
-		                 <dependencyConvergence/>		                
+		                 <dependencyConvergence/>
 		              </rules>
 		              <fail>true</fail>
 		            </configuration>
@@ -415,7 +413,8 @@
 		            </execution>
 		        </executions>
 		    </plugin>
-		    
+
+<!--		    
 			<plugin>
 			    <groupId>org.owasp</groupId>
 			    <artifactId>dependency-check-maven</artifactId>
@@ -431,6 +430,7 @@
 			        </execution>
 			    </executions>
 			</plugin>		    
+			-->
 			
 		</plugins>
 	</build>
