@@ -1320,18 +1320,13 @@ because "this.handler" is null
 				            DON"T TRIGGER THIS LINE
 				        </li>
         			 */
+        			&& listHelper.getDepth()>0
         			&& !(blockBox instanceof com.openhtmltopdf.render.AnonymousBlockBox)) {
 
 	            // Paragraph level styling
             	//P currentP = this.getCurrentParagraph(true);
             	
-        		// You'll get an NPE here if you have li which isn't in ol|ul
-        		try {
-        			listHelper.peekListItemStateStack().init();
-        		} catch (java.lang.NullPointerException ex) {
-        			
-        			throw new RuntimeException("NPE processing list item.  This is likely because you have an <li> which isn't in an <ol> or <ul>. "); 
-        		}
+        		listHelper.peekListItemStateStack().init();
             	
                 PPr pPr =  Context.getWmlObjectFactory().createPPr();
                 this.getCurrentParagraph(true).setPPr(pPr);
