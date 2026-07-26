@@ -99,7 +99,16 @@ public class Docx4jUserAgent extends NaiveUserAgent {
         }
 
 
-        InputStream is = openStream(uriResolved);
+        InputStream is = null;
+        try {
+        	is = openStream(uriResolved);
+        } catch (Exception e) {
+        	// NaiveUserAgent.openStream throws NPE if there is no stream factory
+        	// for the URI (eg a malformed data URI).  Treat as unfetchable, so we
+        	// honour this method's contract of returning an ImageResource
+        	// containing a null image, rather than failing the conversion.
+        	log.error(LogMessageId.LogMessageId1Param.EXCEPTION_CANT_READ_IMAGE_FILE_FOR_URI + uriStr, e);
+        }
 
         if (is != null) {
             try {

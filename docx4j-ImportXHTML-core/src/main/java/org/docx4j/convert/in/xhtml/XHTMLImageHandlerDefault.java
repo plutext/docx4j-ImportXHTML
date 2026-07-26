@@ -63,6 +63,7 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 		BinaryPartAbstractImage imagePart = null;
 		
 		boolean isError = false;
+		Exception errorCause = null;
 		try {
 			byte[] imageBytes = null;
 
@@ -75,6 +76,10 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 				int commaPos = base64String.indexOf(",");
 				if (commaPos < 6) { // or so ...
 					// .. its broken
+					if (throwOnMissing()) {
+						throw new MissingImageException(e.getAttribute("src"));
+					}
+
 					org.docx4j.wml.R run = Context.getWmlObjectFactory().createR();
 					p.getContent().add(run);
 
@@ -102,17 +107,17 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 					}
 										
 					ImageResource imageResource = docx4jUserAgent.getImageResource(url);
-					if (imageResource == null) {						
-						// in case of wrong URL - docx4JFSImage will be null
+					// Docx4jUserAgent returns an ImageResource containing a null image
+					// if it couldn't fetch the URL; a custom user agent may instead
+					// return null, so allow for both
+					FSImage fsImage = (imageResource == null) ? null : imageResource.getImage();
+					if (fsImage == null) {
 						log.error("Couldn't fetch " + url);
+					} else if (fsImage instanceof PdfBoxImage ) {
+						imageBytes = ((PdfBoxImage)fsImage).getBytes();
 					} else {
-						FSImage fsImage = imageResource.getImage();
-						if (fsImage instanceof PdfBoxImage ) {						
-							imageBytes = ((PdfBoxImage)fsImage).getBytes();
-						} else {
-							log.error("Unexpected FSImage class " + fsImage.getClass().getName() );
-							
-						}
+						log.error("Unexpected FSImage class " + fsImage.getClass().getName() );
+
 					}
 
 				}
@@ -182,12 +187,20 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 				run.getContent().add(drawing);
 				drawing.getAnchorOrInline().add(inline);
 			}
+		} catch (MissingImageException mie) {
+			// we're configured to fail fast; don't swallow it below
+			throw mie;
 		} catch (Exception e1) {
 			log.error(MessageFormat.format("Error during image processing: ''{0}'', insert default text.", new Object[] {e.getAttribute("alt")}), e1);
 			isError = true;
+			errorCause = e1;
 		}
 
 		if (isError) {
+			if (throwOnMissing()) {
+				throw new MissingImageException(e.getAttribute("src"), errorCause);
+			}
+
 			org.docx4j.wml.R run = Context.getWmlObjectFactory().createR();
 			p.getContent().add(run);
 
@@ -198,7 +211,16 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 		}
 		
 	}
-	
+
+	/**
+	 * Whether to throw {@link MissingImageException} instead of inserting
+	 * placeholder text, when an image can't be added.
+	 * <br>Defaults to false, to preserve existing behaviour.
+	 */
+	private boolean throwOnMissing() {
+		return ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.Images.ThrowOnMissing", false);
+	}
+
     /**
      * Get table cell margins from table style.
      * <br>Parameter tableStyle can be null - 0 will be returned.

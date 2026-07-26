@@ -31,6 +31,7 @@ import com.openhtmltopdf.extend.ReplacedElementFactory;
 import com.openhtmltopdf.extend.UserAgentCallback;
 import com.openhtmltopdf.layout.LayoutContext;
 import com.openhtmltopdf.render.BlockBox;
+import com.openhtmltopdf.resource.ImageResource;
 //import com.openhtmltopdf.simple.extend.FormSubmissionListener;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -54,7 +55,11 @@ public class Docx4jReplacedElementFactory implements ReplacedElementFactory {
 
 		String nodeName = e.getNodeName();
 		if (nodeName.equals("img")) {
-			FSImage fsImage = uac.getImageResource(e.getAttribute("src")).getImage();
+			// the UserAgentCallback returns an ImageResource containing a null
+			// image if it couldn't fetch the URL, but a custom one may instead
+			// return null, so allow for both
+			ImageResource imageResource = uac.getImageResource(e.getAttribute("src"));
+			FSImage fsImage = (imageResource == null) ? null : imageResource.getImage();
 			if (fsImage != null) {
 				if (cssWidth != -1 || cssHeight != -1) {
 					fsImage.scale(cssWidth / c.getDotsPerPixel(), cssHeight / c.getDotsPerPixel());

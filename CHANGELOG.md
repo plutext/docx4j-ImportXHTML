@@ -2,6 +2,29 @@ CHANGELOG
 =========
 
 
+Version 17.0.1
+===============
+
+Release date
+------------
+
+27 July 2026
+
+Contributors to this release
+----------------------------
+
+Jason Harrop
+Claude Opus 5
+
+Changes in Version 17.0.1
+--------------------------
+
+Issue 113: an image which can't be fetched or decoded no longer causes a NullPointerException.
+
+New property docx4j-ImportXHTML.Images.ThrowOnMissing (default false); set true to throw
+MissingImageException, instead of inserting placeholder text and continuing.
+
+
 Version 17.0.0
 ===============
 

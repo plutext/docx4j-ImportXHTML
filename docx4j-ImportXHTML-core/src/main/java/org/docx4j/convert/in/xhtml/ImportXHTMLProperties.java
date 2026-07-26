@@ -22,6 +22,8 @@ import org.docx4j.utils.ResourceUtils;
 	  * 
 	  * "docx4j-ImportXHTML.Tables.th.to.tblHeader", false
 	  * 
+	  * "docx4j-ImportXHTML.Images.ThrowOnMissing", false
+	  * 
 	  * Note: Via code, you can configure:
 	  * 
 	  * FontHandler.addFontMapping which lets you map a font family, for example "Century Gothic" in:
