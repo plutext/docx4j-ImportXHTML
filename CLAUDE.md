@@ -6,6 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 docx4j-ImportXHTML converts XHTML + CSS into OpenXML WordML (docx) using docx4j, with some support for pptx. Licensed LGPL v2.1 (same as its main dependency, openhtmltopdf) — see legals/NOTICE. New source files get the LGPL header used by existing files.
 
+## Copyright headers
+
+The project header is the LGPL v2.1 block beginning `This file is part of the docx4j-ImportXHTML library.`, whose copyright line reads `Copyright 2011-<year>, Plutext Pty Ltd, and contributors.` Copy it verbatim from an existing file (e.g. `ListHelper.java`).
+
+- **When you amend a source file, bring its Plutext copyright line up to the current year** — `Copyright 2011-2013` becomes `Copyright 2011-2026`. Keep the start year as it is; only the end year moves. Do this as part of the same edit, not as a separate pass.
+- **Only ever update Plutext's own copyright line.** Some files carry third-party notices inherited from Flying Saucer / openhtmltopdf — `Copyright (c) 2006 Wisconsin Court System`, `Copyright (c) 2004, 2005 Torbjörn Gannholm` — mostly in `org.docx4j.convert.in.xhtml.renderer`. Leave those untouched; extending someone else's years would misattribute their copyright. If such a file has no Plutext line and you make a substantial change, ask before adding one rather than assuming.
+- **A number of `.java` files have no header at all.** If you touch one, say so and offer to add the standard header — don't add it silently, and don't go header-hunting across files you weren't asked to change. `module-info.java` doesn't need one.
+
 ## Build and test
 
 Multi-module Maven build (Java 11 bytecode is enforced via maven-enforcer; building with a newer JDK is fine since the compiler uses `<release>11</release>`):

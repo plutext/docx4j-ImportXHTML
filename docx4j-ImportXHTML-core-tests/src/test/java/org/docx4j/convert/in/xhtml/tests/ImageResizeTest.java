@@ -1,7 +1,7 @@
 /*
  *  This file is part of the docx4j-ImportXHTML library.
  *
- *  Copyright 2011-2013, Plutext Pty Ltd, and contributors.
+ *  Copyright 2011-2025, Plutext Pty Ltd, and contributors.
  *  Portions contributed before 15 July 2013 formed part of docx4j
  *  and were contributed under ASL v2 (a copy of which is incorporated
  *  herein by reference and applies to those portions).
