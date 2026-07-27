@@ -30,9 +30,9 @@ package org.docx4j.convert.in.xhtml.tests;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
-import org.apache.commons.codec.binary.Base64;
 import org.docx4j.convert.in.xhtml.XHTMLImageHandlerDefault;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
 import org.docx4j.dml.wordprocessingDrawing.Inline;
@@ -210,7 +210,7 @@ public class ImageTargetPartTest {
 		f.deleteOnExit();
 		FileOutputStream fos = new FileOutputStream(f);
 		try {
-			fos.write(Base64.decodeBase64(PNG_BASE64.getBytes("UTF8")));
+			fos.write(Base64.getDecoder().decode(PNG_BASE64));
 		} finally {
 			fos.close();
 		}
