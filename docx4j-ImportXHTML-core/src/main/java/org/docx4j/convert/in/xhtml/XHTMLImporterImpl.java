@@ -1507,9 +1507,19 @@ because "this.handler" is null
         		return;
         		
             } else {
-            	
+
             	log.debug("default handling for " + e.getNodeName());
-            	
+
+            	// An li outside ol|ul is invalid XHTML, but well formed, so we
+            	// accept it, as a browser would.  Warn, since we can't number it
+            	// (Word numbering comes from the ol|ul), so the result won't look
+            	// like the author intended.
+            	if (isListItem(e)
+            			&& !(blockBox instanceof com.openhtmltopdf.render.AnonymousBlockBox)) {
+            		log.warn("Found <li> which isn't in an <ol> or <ul>; treating it as an ordinary block, "
+            				+ "so it won't be bulleted or numbered.");
+            	}
+
             	// Paragraph processing.  Generally, we'll create a new P.
             	// An exception to that is li/p[1], where we want to use 
             	// the p created for the li.
