@@ -2,7 +2,7 @@ CHANGELOG
 =========
 
 
-Version 17.0.1
+Version 17.0.2
 ===============
 
 Release date
@@ -17,8 +17,14 @@ Claude Opus 5
 Jason Harrop
 zyplayer
 
-Changes in Version 17.0.1
+Changes in Version 17.0.2
 --------------------------
+
+Align with docx4j 17.0.2.
+
+New CONTRIBUTIONS.md policy, covering AI assisted contributions, please read.
+
+New CLAUDE.md file: Claude Code automatically reads this at the start of a session to pick up project-specific context — things like coding conventions, architecture notes, commands to run tests/builds, and other instructions — so you don't have to repeat them every time.
 
 Issue 113: an image which can't be fetched or decoded no longer causes a NullPointerException.
 New property docx4j-ImportXHTML.Images.ThrowOnMissing (default false); set true to throw
@@ -33,9 +39,16 @@ other than the main document part.  Use it when converting content destined for 
 footer; otherwise the r:embed can't be resolved there, and the image is missing in Word.
 
 Bumped deps
-org.apache.pdfbox:fontbox ............................. 3.0.7 -> 3.0.8
+org.apache.pdfbox:fontbox ............................ 3.0.7 -> 3.0.8
 org.apache.pdfbox:pdfbox ............................. 3.0.7 -> 3.0.8
+org.apache.pdfbox:pdfbox-io .......................... 3.0.7 -> 3.0.8
 org.apache.pdfbox:xmpbox ............................. 3.0.7 -> 3.0.8
+
+Version 17.0.1
+===============
+
+Not released.
+
 
 Version 17.0.0
 ===============
