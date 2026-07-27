@@ -26,13 +26,52 @@
     <modules>
         <module>docx4j-ImportXHTML-core</module>
         <module>docx4j-ImportXHTML-core-tests</module>
-        <module>docx4j-ImportXHTML-samples</module>      
-        <!-- 2024 03 13 have to comment out the -samples module otherwise "remote staging" gets skipped?
-        	 I suspect that happens if the last project has skipNexusStagingDeployMojo true.
-        	 For deployment, easiest just to comment out-core-tests and -samples here -->
+        <module>docx4j-ImportXHTML-samples</module>
     </modules>
 
+    <!-- TO RELEASE, two steps:
 
+           mvn clean install                                        <- builds all modules, runs the tests
+           mvn clean deploy -P release -pl docx4j-ImportXHTML-core  <- publishes -core only
+
+         Both steps are needed.  -core has no src/test of its own: the whole suite lives in
+         -core-tests, which -pl excludes, so the deploy step on its own runs no tests at all.
+         Do the install first and check it is green.
+
+         Don't try to fold the two together with -pl docx4j-ImportXHTML-core,docx4j-ImportXHTML-core-tests:
+         that runs the tests, but -core-tests is then last in the reactor, which breaks the
+         upload for the reason set out below.
+
+         Only -core goes to Maven Central.  Since 17.0.2 we no longer publish the parent
+         either; the poms we publish are flattened and carry no <parent>, so consumers
+         never resolve it.
+
+         The -pl is what keeps it to -core, and there is no way to get the same result from
+         configuration alone.  Both alternatives are wrong, in opposite directions:
+
+         Run "mvn clean deploy -P release" as it stands, and you publish the parent and
+         -samples as well as -core.  Only -core-tests stays out, that being the one module
+         with skipNexusStagingDeployMojo actually in effect (in -samples the same block is
+         inside a TODO comment, deliberately - see below).
+
+         Uncomment it in -samples, though, and you publish nothing at all - which is what
+         the 2024 03 13 note here suspected, and it was right.  nexus-staging-maven-plugin
+         defers all uploading to the end of the reactor: each module locally stages its
+         artifacts and logs "Execution skipped to the last project...", and the last project
+         with the mojo in execution then performs the upload, logging "Performing remote
+         staging...".  But skipNexusStagingDeployMojo is the first thing
+         DeployMojo.execute() tests, and it returns immediately - whereas
+         isThisLastProjectWithThisMojoInExecution() decides "last" from which projects have
+         the mojo bound, not from whether it is skipped.  So -samples would still count as
+         the last project, yet return before uploading anything, and -core would go nowhere.
+
+         -samples is last because both it and -core-tests depend on -core and so cannot
+         precede it; reordering the modules just moves the problem to whichever of the two
+         ends up last.  Hence -pl: with only -core in the reactor it is the last (and only)
+         project with the mojo, so the upload happens, and the other two never take part.
+
+         Whatever you run, confirm "Performing remote staging..." appears in the log.
+         Without it, nothing reached Central, BUILD SUCCESS notwithstanding. -->
 
 	<description>
 		docx4j-ImportXHTML converts XHTML to OpenXML WordML (docx) using docx4j 
