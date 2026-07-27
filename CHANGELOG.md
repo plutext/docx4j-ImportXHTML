@@ -13,17 +13,29 @@ Release date
 Contributors to this release
 ----------------------------
 
-Jason Harrop
 Claude Opus 5
+Jason Harrop
+zyplayer
 
 Changes in Version 17.0.1
 --------------------------
 
 Issue 113: an image which can't be fetched or decoded no longer causes a NullPointerException.
-
 New property docx4j-ImportXHTML.Images.ThrowOnMissing (default false); set true to throw
 MissingImageException, instead of inserting placeholder text and continuing.
 
+PR 114: an li which isn't in an ol|ul is treated as an ordinary block, rather than failing
+the conversion.  Such markup is invalid XHTML, but well formed, and browsers render it.
+It can't be bulleted or numbered, so a warning is logged.
+
+XHTMLImageHandlerDefault.setTargetPart lets you add images as a relationship of some part
+other than the main document part.  Use it when converting content destined for a header or
+footer; otherwise the r:embed can't be resolved there, and the image is missing in Word.
+
+Bumped deps
+org.apache.pdfbox:fontbox ............................. 3.0.7 -> 3.0.8
+org.apache.pdfbox:pdfbox ............................. 3.0.7 -> 3.0.8
+org.apache.pdfbox:xmpbox ............................. 3.0.7 -> 3.0.8
 
 Version 17.0.0
 ===============

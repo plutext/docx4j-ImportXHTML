@@ -13,3 +13,8 @@
 /openhtmltopdf_2021.txt
 /release-zips
 /wip
+
+# ImageAddGifTest saves this into user.dir, so it lands in whichever directory
+# the tests are run from (the tests module under maven, the repo root otherwise).
+# Not anchored, so it is ignored wherever it appears.
+OUT_from_XHTML.docx

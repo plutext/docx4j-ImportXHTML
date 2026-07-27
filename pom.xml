@@ -7,8 +7,8 @@
 	<version>${revision}</version>
 	
 	<properties>
-		<revision>17.0.0</revision>
-		<version.docx4j>17.0.0</version.docx4j>
+		<revision>17.0.1</revision>
+		<version.docx4j>17.0.1</version.docx4j>
 		<packaging.type>jar</packaging.type>
 	    <!-- <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> -->
 	    <!-- github server corresponds to entry in ~/.m2/settings.xml -->
@@ -120,7 +120,7 @@
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>fontbox</artifactId>
-			<version>3.0.7</version>
+			<version>3.0.8</version>
 			</dependency>
 
 		<!-- workaround for docx4j RI declaring 1.3.0 on account of xmlgraphics-commons -->
@@ -128,6 +128,18 @@
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>
 			<version>1.3.5</version>
+		</dependency>
+
+		<!-- Local workaround, pending a fix in docx4j itself: as at docx4j 17.0.1,
+		     docx4j-JAXB-ReferenceImpl declares txw2 4.0.9, while docx4j-core,
+		     docx4j-generated-objects and docx4j-copy each bring 4.0.8, so
+		     DependencyConvergence fails in the -samples module (the only one which
+		     depends on the RI).  4.0.9 is what Maven resolves to anyway, being the
+		     nearest.  Remove once docx4j converges these itself. -->
+		<dependency>
+			<groupId>org.glassfish.jaxb</groupId>
+			<artifactId>txw2</artifactId>
+			<version>4.0.9</version>
 		</dependency>
 
     </dependencies>
