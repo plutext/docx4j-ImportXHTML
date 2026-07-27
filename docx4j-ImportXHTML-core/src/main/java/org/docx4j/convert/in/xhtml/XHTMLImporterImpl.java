@@ -557,11 +557,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 			throw new Docx4JException("Malformed URL", e);
 		}
 
-        renderer.layout();
-                    
-        traverse(renderer.getRootBox(), null);
-        
-        return imports.getContent();    	
+        return layoutAndTraverse();
     }
 
     /**
@@ -580,11 +576,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         Document dom = XMLResource.load(is).getDocument();        
         renderer.setDocument(dom, baseUrl);
         
-        renderer.layout();
-                    
-        traverse(renderer.getRootBox(),  null);
-        
-        return imports.getContent();    	
+        return layoutAndTraverse();
     }
 
     public List<Object> convertMHT(InputStream is, String baseUrl) throws Docx4JException {
@@ -638,11 +630,7 @@ because "this.handler" is null
         Document dom = XMLResource.load(is).getDocument();        
         renderer.setDocument(dom, baseUrl);
 
-        renderer.layout();
-                    
-        traverse(renderer.getRootBox(), null);
-        
-        return imports.getContent();    	
+        return layoutAndTraverse();
     }
     
     /**
@@ -662,11 +650,7 @@ because "this.handler" is null
         	doc.importNode(node, true);
         	renderer.setDocument( doc, baseUrl );
         }
-        renderer.layout();
-                    
-        traverse(renderer.getRootBox(),  null);
-        
-        return imports.getContent();    	
+        return layoutAndTraverse();
     }
     
     /**
@@ -683,11 +667,7 @@ because "this.handler" is null
         Document dom = XMLResource.load(reader).getDocument();        
         renderer.setDocument(dom, baseUrl);
         
-        renderer.layout();
-                    
-        traverse(renderer.getRootBox(),  null);
-        
-        return imports.getContent();    	
+        return layoutAndTraverse();
     }
     
 //    /**
@@ -728,11 +708,7 @@ because "this.handler" is null
         String urlString = url.toString();
         Document dom =renderer.loadDocument(urlString);
         renderer.setDocument(dom, urlString);
-        renderer.layout();
-                    
-        traverse(renderer.getRootBox(),  null);
-        
-        return imports.getContent();    	
+        return layoutAndTraverse();
     }
 
     /**
@@ -791,13 +767,36 @@ because "this.handler" is null
         
         
         renderer.setDocument(dom, baseUrl);
-        renderer.layout();
-                    
-        traverse(renderer.getRootBox(),  null);
-        
-        return imports.getContent();    	
+        return layoutAndTraverse();
     }
-    
+
+    /**
+     * Lay the document out, then walk the resulting box tree, converting it to
+     * WML.  Common to the convert methods, each of which has set a document on
+     * the renderer.
+     *
+     * <br>The renderer is discarded once we're done with it, since it is good
+     * for a single run only, and it holds a PDDocument (which the font resolver
+     * requires) which would otherwise be retained for the life of this importer.
+     *
+     * @return the content converted so far
+     */
+    private List<Object> layoutAndTraverse() throws Docx4JException {
+
+        try {
+            renderer.layout();
+
+            traverse(renderer.getRootBox(), null);
+
+        } finally {
+            renderer.close();
+            // so that a subsequent convert doesn't reuse the closed renderer
+            renderer = null;
+        }
+
+        return imports.getContent();
+    }
+
     public Map<String, PropertyValue> getCascadedProperties(CalculatedStyle cs) {
     	
     	// Similar to renderer.getLayoutContext().getSharedContext().getCss().getCascadedPropertiesMap(e)?

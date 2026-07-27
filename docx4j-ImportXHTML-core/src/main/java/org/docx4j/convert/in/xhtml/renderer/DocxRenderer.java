@@ -20,11 +20,14 @@
 package org.docx4j.convert.in.xhtml.renderer;
 
 import java.awt.Rectangle;
+import java.io.IOException;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.openhtmltopdf.bidi.SimpleBidiReorderer;
 import com.openhtmltopdf.context.StyleReference;
 import com.openhtmltopdf.css.sheet.StylesheetInfo;
@@ -53,7 +56,9 @@ import org.w3c.dom.Node;
 
 
 public class DocxRenderer {
-    
+
+	private static final Logger log = LoggerFactory.getLogger(DocxRenderer.class);
+
     // These two defaults combine to produce an effective resolution of 96 px to the inch
     private static final float DEFAULT_DOTS_PER_POINT = 20f * 4f / 3f;
     private static final int DEFAULT_DOTS_PER_PIXEL = 20;
@@ -72,6 +77,23 @@ public class DocxRenderer {
 	
 	/* FontResolver needs a PDDocument */
 	private PDDocument _pdfDoc = new PDDocument();
+
+	/**
+	 * Release the PDDocument which the font resolver required.  A renderer is
+	 * good for a single run, so call this once you've finished with the box
+	 * tree; the renderer can't be used afterwards.
+	 *
+	 * <br>Note that we never write a PDF, so there is nothing to save.
+	 *
+	 * @since 17.0.1
+	 */
+	public void close() {
+		try {
+			_pdfDoc.close();
+		} catch (IOException e) {
+			log.warn("Couldn't close PDDocument: " + e.getMessage(), e);
+		}
+	}
 
     private PdfAConformance _pdfAConformance;
     private boolean _pdfUaConformance;
