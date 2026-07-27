@@ -7,8 +7,8 @@
 	<version>${revision}</version>
 	
 	<properties>
-		<revision>17.0.2</revision>
-		<version.docx4j>17.0.2</version.docx4j>
+		<revision>17.0.3-SNAPSHOT</revision>
+		<version.docx4j>17.0.3-SNAPSHOT</version.docx4j>
 		<packaging.type>jar</packaging.type>
 	    <!-- <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> -->
 	    <!-- github server corresponds to entry in ~/.m2/settings.xml -->
@@ -90,7 +90,7 @@
 	
 	<scm>
 		<developerConnection>scm:git|git@github.com:plutext/docx4j-ImportXHTML.git</developerConnection>
-		<tag>docx4j-ImportXHTML-17.0.2</tag>
+		<tag>docx4j-ImportXHTML-17.0.3</tag>
 		<url>https://github.com/plutext/docx4j-ImportXHTML</url>
 	</scm>
   
