@@ -22,7 +22,7 @@ Changes in Version 17.0.2
 
 Align with docx4j 17.0.2.
 
-New CONTRIBUTIONS.md policy, covering AI assisted contributions, please read.
+New CONTRIBUTING.md policy, covering AI assisted contributions, please read.
 
 New CLAUDE.md file: Claude Code automatically reads this at the start of a session to pick up project-specific context — things like coding conventions, architecture notes, commands to run tests/builds, and other instructions — so you don't have to repeat them every time.
 

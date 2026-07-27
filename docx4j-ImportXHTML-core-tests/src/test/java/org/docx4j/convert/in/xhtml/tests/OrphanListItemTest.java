@@ -43,9 +43,9 @@ import org.junit.Test;
  * it, as a browser would, treating it as an ordinary block; it just can't be
  * numbered, since the Word numbering comes from the ol|ul.
  *
- * Before 17.0.1, such an li caused the conversion to fail.
+ * Before 17.0.2, such an li caused the conversion to fail.
  *
- * @since 17.0.1
+ * @since 17.0.2
  */
 public class OrphanListItemTest {
 

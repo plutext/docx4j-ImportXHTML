@@ -43,7 +43,7 @@ package org.docx4j.convert.in.xhtml;
  * {@link XHTMLImageHandler#addImage} is unaffected; it propagates out of
  * XHTMLImporter's convert methods.
  *
- * @since 17.0.1
+ * @since 17.0.2
  */
 public class MissingImageException extends RuntimeException {
 

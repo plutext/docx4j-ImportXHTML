@@ -88,7 +88,7 @@ public class DocxRenderer {
 	 *
 	 * <br>Note that we never write a PDF, so there is nothing to save.
 	 *
-	 * @since 17.0.1
+	 * @since 17.0.2
 	 */
 	public void close() {
 		try {

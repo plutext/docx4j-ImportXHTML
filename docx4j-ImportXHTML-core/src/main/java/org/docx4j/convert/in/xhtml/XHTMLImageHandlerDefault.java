@@ -90,7 +90,7 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
      *
      * <p>null (the default) means the main document part.
      *
-     * @since 17.0.1
+     * @since 17.0.2
      */
     public void setTargetPart(Part targetPart) {
     	if (this.targetPart != targetPart) {
@@ -103,7 +103,7 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 
     /**
      * @return the part images are added to, or null for the main document part
-     * @since 17.0.1
+     * @since 17.0.2
      */
     public Part getTargetPart() {
     	return targetPart;

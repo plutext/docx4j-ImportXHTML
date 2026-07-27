@@ -59,7 +59,7 @@ import org.junit.Test;
  * footer needs its images to be relationships of that part; otherwise the
  * r:embed can't be resolved, and Word shows a missing image.
  *
- * @since 17.0.1
+ * @since 17.0.2
  */
 public class ImageTargetPartTest {
 

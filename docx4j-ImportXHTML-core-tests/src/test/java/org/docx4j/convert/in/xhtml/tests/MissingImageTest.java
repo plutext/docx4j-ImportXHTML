@@ -48,7 +48,7 @@ import org.junit.Test;
  * or, if docx4j-ImportXHTML.Images.ThrowOnMissing is set, causes
  * MissingImageException to be thrown.
  *
- * @since 17.0.1
+ * @since 17.0.2
  */
 public class MissingImageTest {
 
