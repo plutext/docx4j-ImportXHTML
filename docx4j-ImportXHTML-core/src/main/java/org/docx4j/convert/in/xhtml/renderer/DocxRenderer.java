@@ -1,7 +1,10 @@
 /*
  * {{{ header & license
  * Copyright (c) 2006 Wisconsin Court System
- *
+ * 
+ * Modifications copyright 2011-2026, Plutext Pty Ltd, and contributors.
+ * Portions contributed before 15 July 2013 formed part of docx4j and were contributed under ASL v2.
+ * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation; either version 2.1
