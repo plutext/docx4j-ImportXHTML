@@ -8,6 +8,7 @@ import org.docx4j.convert.in.xhtml.renderer.Docx4jUserAgent;
 import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.jaxb.Context;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.openpackaging.parts.Part;
 import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
 import org.docx4j.wml.CTTblCellMar;
 import org.docx4j.wml.CTTblPrBase;
@@ -49,6 +50,38 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
     	this.importer = importer;
     }
     
+    private Part targetPart;
+
+    /**
+     * Add images as a relationship of the specified part, instead of the main
+     * document part.
+     *
+     * <p>Set this when the converted content is destined for some other part,
+     * typically a header or footer.  Relationship ids are resolved per part, so
+     * an image which is a relationship of the main document part can't be
+     * resolved from a header; the image would be missing in Word.
+     *
+     * <p>null (the default) means the main document part.
+     *
+     * @since 17.0.1
+     */
+    public void setTargetPart(Part targetPart) {
+    	if (this.targetPart != targetPart) {
+    		// A cached image part is a relationship of the part it was created
+    		// for, so it can't be reused for a different target.
+    		imagePartCache.clear();
+    	}
+    	this.targetPart = targetPart;
+    }
+
+    /**
+     * @return the part images are added to, or null for the main document part
+     * @since 17.0.1
+     */
+    public Part getTargetPart() {
+    	return targetPart;
+    }
+
 	/**
 	 * @param docx4jUserAgent
 	 * @param wordMLPackage
@@ -129,7 +162,12 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 				
 				if (imagePart==null) {
 					// Its not cached
-					imagePart = BinaryPartAbstractImage.createImagePart(wordMLPackage, imageBytes);
+					if (targetPart==null) {
+						imagePart = BinaryPartAbstractImage.createImagePart(wordMLPackage, imageBytes);
+					} else {
+						// so the relationship is resolvable from targetPart
+						imagePart = BinaryPartAbstractImage.createImagePart(wordMLPackage, targetPart, imageBytes);
+					}
 					if (e.getAttribute("src").startsWith("data:image")) {
 						// don't bother caching
 					} else {
