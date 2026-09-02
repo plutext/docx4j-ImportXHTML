@@ -5,8 +5,22 @@ CHANGELOG
 Version 17.0.4
 ===============
 
+Release date
+------------
+
+2 September 2026
+
+Contributors to this release
+----------------------------
+
+Jason Harrop
+
+Claude Fable 5.1
+
 Changes in Version 17.0.4
 --------------------------
+
+Align with docx4j 17.0.4.
 
 - Embedded MathML is now converted to native OMML in Java (new
   org.docx4j.convert.in.xhtml.math.MathMLToOmml), so equations import out of the
@@ -16,6 +30,11 @@ Changes in Version 17.0.4
   prescripts, accents, group chars, phantom and enclose.  If you set the
   docx4j-ImportXHTML.mml2omml property, your own XSLT is still used instead.
   The inverse of docx4j-core's OmmlToMathML.  See CR-math-omml-mathml.
+
+Version 17.0.3
+===============
+
+Not released.
 
 
 Version 17.0.2

@@ -85,7 +85,7 @@ are welcome, subject to the following conditions:
 - **Target branch**: each release lives on its own `VERSION_x_y_z` branch;
   `master` is historical. Base your pull request on the current development
   branch (the most recent `VERSION_x_y_z` branch — at the time of writing,
-  `VERSION_17_0_1`). If in doubt, ask in the issue first.
+  `VERSION_17_0_5`). If in doubt, ask in the issue first.
 - **Discuss first**: for anything beyond a small fix, please open an issue
   describing the problem before investing effort in a pull request.
 - **Build**: `mvn clean install` (JDK 11+). Java 11 bytecode is enforced by
