@@ -185,16 +185,23 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     
 	static Templates mathXSLT;	
 	
+	/**
+	 * Opt-in XSLT MathML→OMML path, used only when the caller sets the
+	 * {@code docx4j-ImportXHTML.mml2omml} property to their own stylesheet.
+	 * By default MathML is converted natively by {@link org.docx4j.convert.in.xhtml.math.MathMLToOmml}
+	 * (no XSLT, no Microsoft MML2OMML.XSL), so this is rarely needed.
+	 */
 	public static Templates getMathXSLT() throws IOException, TransformerConfigurationException {
-		
+
 		if (mathXSLT==null) {
-			
+
 			Source xsltSource  = new StreamSource(
-					ResourceUtils.getResourceViaProperty("docx4j-ImportXHTML.mml2omml", 
+					ResourceUtils.getResourceViaProperty("docx4j-ImportXHTML.mml2omml",
 							"mml2omml.xslZ")
 					);
-			
-			// User needs to supply a suitable mml2omml.xsl XSLT, possibly
+
+			// User-supplied mml2omml.xsl XSLT (only reached when the property above
+			// is set), possibly
 			// https://raw.githubusercontent.com/MartinPaulEve/meTypeset/master/docx/utils/maths/mml2omml.xsl
     		/* You need to add the template:
     		 * 
