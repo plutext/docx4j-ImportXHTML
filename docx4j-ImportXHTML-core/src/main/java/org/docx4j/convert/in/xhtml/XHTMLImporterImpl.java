@@ -1474,18 +1474,22 @@ because "this.handler" is null
         			log.debug("Handling mathml \n\r" + XmlUtils.w3CDomNodeToString(e) );
         		}
 				try {
-	        		// Use constructor which takes Unmarshaller, rather than JAXBContext,
-	        		// so we can set JaxbValidationEventHandler
-	        		JAXBContext jc = Context.jc;
-	        		Unmarshaller u = jc.createUnmarshaller();
-	        		u.setEventHandler(new org.docx4j.jaxb.JaxbValidationEventHandler());
-	        		jakarta.xml.bind.util.JAXBResult result = new jakarta.xml.bind.util.JAXBResult(u );
-	        		
-	        		XmlUtils.transform(new DOMSource(e), getMathXSLT(), null, result);
-	        		
-	        		// What happened?
-	        		org.docx4j.math.CTOMath math = (org.docx4j.math.CTOMath)XmlUtils.unwrap(result.getResult());
-	        		
+	        		org.docx4j.math.CTOMath math;
+	        		if (Docx4jProperties.getProperty("docx4j-ImportXHTML.mml2omml") != null) {
+	        			// Back-compat: the user configured their own mml2omml XSLT.
+	        			// Use constructor which takes Unmarshaller, rather than JAXBContext,
+	        			// so we can set JaxbValidationEventHandler
+	        			JAXBContext jc = Context.jc;
+	        			Unmarshaller u = jc.createUnmarshaller();
+	        			u.setEventHandler(new org.docx4j.jaxb.JaxbValidationEventHandler());
+	        			jakarta.xml.bind.util.JAXBResult result = new jakarta.xml.bind.util.JAXBResult(u );
+	        			XmlUtils.transform(new DOMSource(e), getMathXSLT(), null, result);
+	        			math = (org.docx4j.math.CTOMath)XmlUtils.unwrap(result.getResult());
+	        		} else {
+	        			// Native MathML -> OMML: no XSLT, no Microsoft MML2OMML.XSL needed
+	        			math = new org.docx4j.convert.in.xhtml.math.MathMLToOmml().convert(e);
+	        		}
+
 	        		org.docx4j.math.ObjectFactory mathObjectFactory = new org.docx4j.math.ObjectFactory();
 	                // Create object for oMathPara (wrapped in JAXBElement) 
 	                CTOMathPara omathpara = mathObjectFactory.createCTOMathPara(); 

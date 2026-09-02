@@ -2,6 +2,22 @@ CHANGELOG
 =========
 
 
+Version 17.0.3
+===============
+
+Changes in Version 17.0.3
+--------------------------
+
+- Embedded MathML is now converted to native OMML in Java (new
+  org.docx4j.convert.in.xhtml.math.MathMLToOmml), so equations import out of the
+  box: no XSLT, and no need to supply Microsoft's non-redistributable
+  MML2OMML.XSL (the old mml2omml.xslZ placeholder).  Covers runs (with
+  mathvariant), fractions, radicals, scripts, n-ary, delimiters, matrices,
+  prescripts, accents, group chars, phantom and enclose.  If you set the
+  docx4j-ImportXHTML.mml2omml property, your own XSLT is still used instead.
+  The inverse of docx4j-core's OmmlToMathML.  See CR-math-omml-mathml.
+
+
 Version 17.0.2
 ===============
 
