@@ -74,7 +74,7 @@ import org.w3c.dom.Node;
  * <p>Lenient by design: an unrecognised element is descended into rather than
  * rejected, so an unusual equation degrades rather than failing the import.</p>
  *
- * @since 17.0.3
+ * @since 17.0.4
  */
 public class MathMLToOmml {
 

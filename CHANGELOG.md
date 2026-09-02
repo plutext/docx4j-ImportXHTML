@@ -2,10 +2,10 @@ CHANGELOG
 =========
 
 
-Version 17.0.3
+Version 17.0.4
 ===============
 
-Changes in Version 17.0.3
+Changes in Version 17.0.4
 --------------------------
 
 - Embedded MathML is now converted to native OMML in Java (new
