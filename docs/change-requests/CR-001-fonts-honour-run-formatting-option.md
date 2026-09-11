@@ -141,7 +141,7 @@ Done 2026-09-11.  Rather than duplicating the `setRFont` call into the
 the tail of `formatRPr` is kept and guarded: it runs unless `runFormatting` is
 `CLASS_TO_STYLE_ONLY`, or the property is `true`.  Same effect, one call site.
 The property is read per run, like the other `ImportXHTMLProperties` keys, so
-tests can flip it.  (Commit hash: to be recorded when committed.)
+tests can flip it.  Commit a8ec734 (phases 1 and 2 together).
 
 
 - `XHTMLImporterImpl.formatRPr`: move the `font-family` / `setRFont` call into
@@ -161,6 +161,9 @@ tests can flip it.  (Commit hash: to be recorded when committed.)
 Done 2026-09-11: `RunFormattingFontTest`, the five cases below.  The `Strong`
 character style is added to the package in `@Before`, since
 `WordprocessingMLPackage.createPackage()` doesn't define one.  Full suite green.
+Commit a8ec734.  Also exercised through OpenDoPE binding by
+`BindingFormattingOptionsTest` (docx4j CR-013 phase 3, commit cd244ba), whose
+styles-only cases assert no `w:rFonts` on the bound run.
 
 
 New `RunFormattingFontTest`, following `NumberingTest`'s pattern (fresh
