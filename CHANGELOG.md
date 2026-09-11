@@ -8,6 +8,13 @@ Version 17.1.1
 Changes in Version 17.1.1
 --------------------------
 
+- setRunFormatting(CLASS_TO_STYLE_ONLY) now applies to fonts too.  Previously
+  CSS font-family always became w:rFonts, whatever the run FormattingOption, so
+  "styles only" was unattainable for fonts (unstyled XHTML got Times New Roman
+  on every run).  Set docx4j-ImportXHTML.Fonts.IgnoreRunFormattingOption=true
+  for the old behaviour.  CLASS_PLUS_OTHER and IGNORE_CLASS are unchanged.
+  See docs/change-requests/CR-001.
+
 
 Version 17.0.4
 ===============

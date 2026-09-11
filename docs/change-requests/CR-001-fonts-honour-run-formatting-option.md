@@ -1,10 +1,10 @@
 # CR: Fonts should honour the run-level FormattingOption
 
-Status: PROPOSED (2026-09-11) — options surveyed; decisions pending (see end)
+Status: IMPLEMENTED (2026-09-11) — phases 1 and 2 done in the working tree; phase 3 done in docx4j CR-013
 Scope: `XHTMLImporterImpl.formatRPr` only — where a text run's `w:rFonts` is
 set from CSS `font-family`.  `FontHandler`'s mapping tables are unchanged; the
 fonts `ListHelper` puts on list-number symbols are out of scope.
-Branch: current line only (`VERSION_17_0_5`).  No backport to 8.3.x
+Branch: current line only (`VERSION_17_1_1`).  No backport to 8.3.x
 (Jason, 2026-09-11).
 Related: docx4j CR-013 (configurable importer formatting options from OpenDoPE
 binding), which surfaced this.
@@ -130,11 +130,19 @@ forces it.
 
 ## Recommendation
 
-B (A + opt-out property).  Ship in 17.0.5.
+B (A + opt-out property).  Ship in 17.1.1.
 
 ## Plan
 
 ### Phase 1 — code, property, docs
+
+Done 2026-09-11.  Rather than duplicating the `setRFont` call into the
+`IGNORE_CLASS` branch and the `CLASS_PLUS_OTHER` sub-branch, the single call at
+the tail of `formatRPr` is kept and guarded: it runs unless `runFormatting` is
+`CLASS_TO_STYLE_ONLY`, or the property is `true`.  Same effect, one call site.
+The property is read per run, like the other `ImportXHTMLProperties` keys, so
+tests can flip it.  (Commit hash: to be recorded when committed.)
+
 
 - `XHTMLImporterImpl.formatRPr`: move the `font-family` / `setRFont` call into
   the `IGNORE_CLASS` branch and the `CLASS_PLUS_OTHER` sub-branch; guard with
@@ -143,12 +151,17 @@ B (A + opt-out property).  Ship in 17.0.5.
 - `ImportXHTMLProperties`: add the key to the javadoc list of supported keys.
 - `docx4j-ImportXHTML-samples/src/main/resources/docx4j-ImportXHTML.properties`:
   the key, commented, with a one-line explanation.
-- `CHANGELOG.md` (17.0.5): "CLASS_TO_STYLE_ONLY now applies to fonts too
+- `CHANGELOG.md` (17.1.1): "CLASS_TO_STYLE_ONLY now applies to fonts too
   (previously CSS font-family always became w:rFonts); set
   `docx4j-ImportXHTML.Fonts.IgnoreRunFormattingOption=true` for the old
   behaviour."
 
 ### Phase 2 — tests (`docx4j-ImportXHTML-core-tests`, `org.docx4j.convert.in.xhtml.tests`)
+
+Done 2026-09-11: `RunFormattingFontTest`, the five cases below.  The `Strong`
+character style is added to the package in `@Before`, since
+`WordprocessingMLPackage.createPackage()` doesn't define one.  Full suite green.
+
 
 New `RunFormattingFontTest`, following `NumberingTest`'s pattern (fresh
 `XHTMLImporterImpl` per case, `set*Formatting`, `convert(xhtml, "")`):
@@ -169,7 +182,7 @@ Then the full suite: no existing test asserts `w:rFonts` under
 ### Phase 3 — docx4j CR-013
 
 Record there that "styles only" for fonts in OpenDoPE binding needs
-ImportXHTML ≥ 17.0.5, and that the docx4j-side wrapper guard is then merely
+ImportXHTML ≥ 17.1.1, and that the docx4j-side wrapper guard is then merely
 tidy (no `font-family` to leak) rather than necessary.  Done in the same
 session this CR was written (CR-013 interaction 1 / decision 2 amended).
 
@@ -185,9 +198,12 @@ session this CR was written (CR-013 interaction 1 / decision 2 amended).
 - **List-number symbol fonts** (`ListHelper`, Symbol/Wingdings bullets) are
   untouched — they come from the list style, not from CSS `font-family`.
 
-## Decisions needed
+## Decisions
 
-1. Property name / default: `docx4j-ImportXHTML.Fonts.IgnoreRunFormattingOption`
-   defaulting to `false`?
-2. Is option D (specified-vs-computed `font-family`) wanted as a follow-up
-   CR, or is "HTML default serif → Times New Roman" intended behaviour?
+1. Property name / default: `docx4j-ImportXHTML.Fonts.IgnoreRunFormattingOption`,
+   default `false`, as proposed.  Implemented on Jason's "if sensible, commit
+   then implement" (2026-09-11); rename before 17.1.1 ships if wanted.
+2. Option D (specified-vs-computed `font-family`): still open.  Not needed for
+   the binding case now that A is in; raise a separate CR if "HTML default
+   serif → Times New Roman" under `CLASS_PLUS_OTHER` / `IGNORE_CLASS` turns
+   out to be unwanted.

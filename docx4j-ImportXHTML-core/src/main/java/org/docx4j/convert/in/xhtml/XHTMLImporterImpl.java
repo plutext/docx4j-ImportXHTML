@@ -2482,9 +2482,14 @@ because "this.handler" is null
         	
     	} 
 				
-		// Font is handled separately.  TODO: review this
-        PropertyValue fontFamily = cssMap.get("font-family");
-		FontHandler.setRFont(fontFamily, rPr );
+		// CSS font-family -> w:rFonts is direct formatting like any other run
+		// property, so it follows runFormatting: not under CLASS_TO_STYLE_ONLY.
+		// Before 17.1.1 it was applied unconditionally (see CR-001); the
+		// property restores that.
+		if (!runFormatting.equals(FormattingOption.CLASS_TO_STYLE_ONLY)
+				|| ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.Fonts.IgnoreRunFormattingOption", false)) {
+			FontHandler.setRFont(cssMap.get("font-family"), rPr);
+		}
 
 	}
 	
