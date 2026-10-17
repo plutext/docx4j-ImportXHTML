@@ -654,7 +654,7 @@ because "this.handler" is null
         	renderer.setDocument( (Document)node, baseUrl );
         } else {
         	Document doc = XmlUtils.neww3cDomDocument();
-        	doc.importNode(node, true);
+        	doc.appendChild(doc.importNode(node, true));
         	renderer.setDocument( doc, baseUrl );
         }
         return layoutAndTraverse();

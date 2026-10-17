@@ -15,6 +15,9 @@ Changes in Version 17.1.1
   for the old behaviour.  CLASS_PLUS_OTHER and IGNORE_CLASS are unchanged.
   See docs/change-requests/CR-001.
 
+- convert(Node, baseUrl) given an Element (not a Document) imported nothing: the copy
+  of the node was never added to the new document.
+
 
 Version 17.0.4
 ===============
