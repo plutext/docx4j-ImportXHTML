@@ -1,7 +1,7 @@
 /*
  *  This file is part of the docx4j-ImportXHTML library.
  *
- *  Copyright 2022, Plutext Pty Ltd, and contributors.
+ *  Copyright 2022-2026, Plutext Pty Ltd, and contributors.
  *  Portions contributed before 15 July 2013 formed part of docx4j
  *  and were contributed under ASL v2 (a copy of which is incorporated
  *  herein by reference and applies to those portions).
@@ -27,6 +27,7 @@
  */
 package org.docx4j.convert.in.xhtml;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -37,14 +38,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This class allows us to get the body
- * 
+ * This class allows us to get the body: the first text/html part.
+ *
  * @author jharrop
  *
  */
 public class MHTContentHandler implements org.apache.james.mime4j.parser.ContentHandler {
-	
-	// TODO: extract charset
 
 	public static Logger log = LoggerFactory.getLogger(MHTContentHandler.class);	
 	
@@ -65,11 +64,13 @@ public class MHTContentHandler implements org.apache.james.mime4j.parser.Content
 		--___Actuate_Content_Boundary___--
 		
 		
-		from which we extract the body:
-		
-			=EF=BB=BF<html><head><style type=3D"text/css">.styleForeign{ font-family: serif; font-style: normal; font-variant: normal; font-weight: normal; font-size: 10pt; color: rgb(0, 0, 0); margin: 0; padding: 0; text-indent: 0pt; letter-spacing: 0; word-spacing: 0; text-transform: none; white-space: normal; line-height: normal;}</style></head><body><div class=3D"styleForeign">Dec 2, 2021 3:02 PM</div></body>
+		from which we extract the body, decoded by the parser (setContentDecoding(true)):
+
+			[EF BB BF]<html><head><style type="text/css">.styleForeign{ font-family: serif; font-style: normal; font-variant: normal; font-weight: normal; font-size: 10pt; color: rgb(0, 0, 0); margin: 0; padding: 0; text-indent: 0pt; letter-spacing: 0; word-spacing: 0; text-transform: none; white-space: normal; line-height: normal;}</style></head><body><div class="styleForeign">Dec 2, 2021 3:02 PM</div></body>
 			</html>
-		
+
+		Note the UTF-8 byte order mark, despite charset="gb2312".
+
  * 
  */	
 	
@@ -139,12 +140,25 @@ public class MHTContentHandler implements org.apache.james.mime4j.parser.Content
 		
 	}
 
-	private InputStream body = null;
-	
+	private byte[] body = null;
+
+	/**
+	 * @return the first text/html part (transfer-decoded if the parser was set to
+	 * decode content), or null if there was none
+	 */
 	public InputStream getBody() {
+		return body==null ? null : new ByteArrayInputStream(body);
+	}
+
+	/**
+	 * @return the first text/html part (transfer-decoded if the parser was set to
+	 * decode content), or null if there was none
+	 * @since 17.3.4
+	 */
+	public byte[] getBodyBytes() {
 		return body;
 	}
-	
+
 	private String charset;
 	public String getCharset() {
 		return charset;
@@ -159,13 +173,17 @@ public class MHTContentHandler implements org.apache.james.mime4j.parser.Content
 	@Override
 	public void body(BodyDescriptor bd, InputStream is) throws MimeException, IOException {
 
-		log.info("body");
-		charset = bd.getCharset();
-		mimeType = bd.getMimeType();
-		
-		//IOUtils.copy(is, System.out);
-		body=is;
-		
+		log.debug("body " + bd.getMimeType());
+
+		// Read the part now: mime4j closes the stream once body() returns,
+		// then reads on to the next boundary.
+		// In multipart/related, the first text/html part is the root; the other
+		// parts are the resources it refers to.
+		if (body==null && "text/html".equalsIgnoreCase(bd.getMimeType())) {
+			charset = bd.getCharset();
+			mimeType = bd.getMimeType();
+			body = is.readAllBytes();
+		}
 	}
 
 	@Override

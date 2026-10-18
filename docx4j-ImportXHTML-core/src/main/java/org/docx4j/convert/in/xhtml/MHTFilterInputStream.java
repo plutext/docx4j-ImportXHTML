@@ -1,7 +1,7 @@
 /*
  *  This file is part of the docx4j-ImportXHTML library.
  *
- *  Copyright 2022, Plutext Pty Ltd, and contributors.
+ *  Copyright 2022-2026, Plutext Pty Ltd, and contributors.
  *  Portions contributed before 15 July 2013 formed part of docx4j
  *  and were contributed under ASL v2 (a copy of which is incorporated
  *  herein by reference and applies to those portions).
@@ -35,10 +35,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 
+ *
  * @author jharrop
  *
+ * @deprecated no longer used: XHTMLImporterImpl.convertMHT has mime4j decode the
+ * quoted-printable.  This class only coped with BIRT's =3D before an attribute value;
+ * any other '=' (an encoded character, a soft line break, =3D in text) loses
+ * everything up to the next '"'.
  */
+@Deprecated
 public class MHTFilterInputStream extends FilterInputStream {
 	
 	/*

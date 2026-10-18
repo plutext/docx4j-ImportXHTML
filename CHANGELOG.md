@@ -18,6 +18,13 @@ Changes in Version 17.1.1
 - convert(Node, baseUrl) given an Element (not a Document) imported nothing: the copy
   of the node was never added to the new document.
 
+- convertMHT (used for an MHT altChunk) imported nothing: it read the text/html part
+  after mime4j had closed it ("Premature end of file"), broken since the mime4j 0.8.10
+  update.  The part is now read while it is parsed; the first text/html part is used,
+  not the last part; and mime4j decodes the quoted-printable or base64 (the
+  now-deprecated MHTFilterInputStream mangled anything but BIRT's =3D").  The encoding
+  comes from a byte order mark, else the part's declared charset.
+
 
 Version 17.0.4
 ===============

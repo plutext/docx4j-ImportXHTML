@@ -29,14 +29,17 @@ package org.docx4j.convert.in.xhtml;
 
 import java.awt.Rectangle;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.text.Bidi;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -57,6 +60,7 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 
+import org.apache.james.mime4j.MimeException;
 import org.apache.james.mime4j.parser.ContentHandler;
 import org.apache.james.mime4j.parser.MimeStreamParser;
 import org.apache.james.mime4j.stream.MimeConfig;
@@ -586,41 +590,59 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         return layoutAndTraverse();
     }
 
+    /**
+     * Convert the HTML in an MHT (MIME HTML, for example an altChunk): its first text/html 
+     * part, transfer-decoded (quoted-printable or base64).  The encoding is taken from a 
+     * byte order mark, else from the part's declared charset, else detected as for
+     * convert(InputStream, String).
+     * 
+     * @param is
+     * @param baseUrl
+     * @return
+     * @throws Docx4JException
+     */
     public List<Object> convertMHT(InputStream is, String baseUrl) throws Docx4JException {
     	
     	// First, extract HTML from the MHT
     	MHTContentHandler handler = new MHTContentHandler();
-         //MimeConfig config = new MimeConfig();
-         MimeStreamParser parser = new MimeStreamParser();
-         parser.setContentHandler(handler);    	
-         try {
-        	 parser.parse(is);
-        	 if (handler.getBody()==null) {
-        		 log.error("Couldn't get body from mht");
-        		 throw new Docx4JException("Couldn't get body from mht");
-        	 }
-        	 
-        	 log.info(handler.getCharset());  // eg gb2312 TODO - handle this
-        	 
-        	 if ("text/html".equals(handler.getMimeType())) {
-        		 log.info("Filtering html altChunk");
-            	 return convert(new MHTFilterInputStream(handler.getBody()), baseUrl);
-        	 } else {
-        		 throw new Docx4JException("Unexpected Mime type: " + handler.getMimeType());        		 
-        	 }
-        	 
-    	} catch (Exception e) {
-    		/*
-Caused by: org.docx4j.openpackaging.exceptions.Docx4JException: Cannot invoke "org.apache.james.mime4j.parser.ContentHandler.startMessage()" because "this.handler" is null
-	at docx4j_ImportXHTML/org.docx4j.convert.in.xhtml.XHTMLImporterImpl.convertMHT(XHTMLImporterImpl.java:547)
-	... 6 common frames omitted
-Caused by: java.lang.NullPointerException: Cannot invoke "org.apache.james.mime4j.parser.ContentHandler.startMessage()" 
-because "this.handler" is null
-	at apache.mime4j.core@0.8.7/org.apache.james.mime4j.parser.MimeStreamParser.parse(MimeStreamParser.java:168)
-	at docx4j_ImportXHTML/org.docx4j.convert.in.xhtml.XHTMLImporterImpl.convertMHT(XHTMLImporterImpl.java:545)
-	... 6 common frames omitted    		 */
+    	MimeStreamParser parser = new MimeStreamParser();
+    	parser.setContentDecoding(true);
+    	parser.setContentHandler(handler);
+    	try {
+    		parser.parse(is);
+    	} catch (MimeException | IOException e) {
     		throw new Docx4JException(e.getMessage(), e);
     	}
+    	byte[] html = handler.getBodyBytes();
+    	if (html==null) {
+    		log.error("No text/html part in mht");
+    		throw new Docx4JException("No text/html part in mht");
+    	}
+    	
+    	// A byte order mark wins over the declared charset: BIRT writes UTF-8 with a BOM,
+    	// but declares gb2312.  mime4j reports us-ascii where no charset is declared, so 
+    	// for that, let the XML parser detect the encoding (us-ascii is a subset of UTF-8).
+    	Charset charset = null;
+    	String declared = handler.getCharset();
+    	if (!startsWithBOM(html) 
+    			&& declared!=null && !"us-ascii".equalsIgnoreCase(declared)) {
+    		try {
+    			charset = Charset.forName(declared);
+    		} catch (IllegalArgumentException e) { // IllegalCharsetNameException, UnsupportedCharsetException
+    			log.warn("Unsupported charset '" + declared + "' in mht; detecting the encoding instead");
+    		}
+    	}
+    	if (charset==null) {
+    		return convert(new ByteArrayInputStream(html), baseUrl);
+    	} else {
+    		return convert(new InputStreamReader(new ByteArrayInputStream(html), charset), baseUrl);
+    	}
+    }
+    
+    private static boolean startsWithBOM(byte[] b) {
+    	return (b.length>=3 && (b[0]&0xFF)==0xEF && (b[1]&0xFF)==0xBB && (b[2]&0xFF)==0xBF) // UTF-8
+    			|| (b.length>=2 && (b[0]&0xFF)==0xFE && (b[1]&0xFF)==0xFF) // UTF-16BE
+    			|| (b.length>=2 && (b[0]&0xFF)==0xFF && (b[1]&0xFF)==0xFE); // UTF-16LE
     }
     
     /**
