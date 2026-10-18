@@ -25,6 +25,12 @@ Changes in Version 17.1.1
   now-deprecated MHTFilterInputStream mangled anything but BIRT's =3D").  The encoding
   comes from a byte order mark, else the part's declared charset.
 
+- New XHTMLImporterImpl.setExternalResourcesAllowed(boolean), default true.  When false,
+  nothing the document refers to is fetched, by any protocol, file: included: linked
+  and @import-ed stylesheets, images, fonts.  An img whose src isn't a data: URI is
+  left out, with no "[MISSING IMAGE ...]" text.  style elements and attributes, and
+  data: images, still apply.
+
 
 Version 17.0.4
 ===============

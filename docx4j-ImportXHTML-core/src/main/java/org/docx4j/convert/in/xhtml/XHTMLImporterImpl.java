@@ -67,6 +67,7 @@ import org.apache.james.mime4j.stream.MimeConfig;
 import org.docx4j.Docx4jProperties;
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.XmlUtils;
+import org.docx4j.convert.in.xhtml.renderer.Docx4jUserAgent;
 import org.docx4j.convert.in.xhtml.renderer.DocxRenderer;
 import org.docx4j.convert.out.html.HtmlCssHelper;
 import org.docx4j.jaxb.Context;
@@ -135,6 +136,7 @@ import com.openhtmltopdf.css.style.derived.NumberValue;
 import com.openhtmltopdf.css.style.derived.StringValue;
 import com.openhtmltopdf.layout.Styleable;
 import com.openhtmltopdf.newtable.TableBox;
+import com.openhtmltopdf.outputdevice.helper.ExternalResourceControlPriority;
 import com.openhtmltopdf.render.AnonymousBlockBox;
 import com.openhtmltopdf.render.BlockBox;
 import com.openhtmltopdf.render.BlockBox.ContentType;
@@ -295,6 +297,35 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	
 	private XHTMLImageHandler xHTMLImageHandler = new XHTMLImageHandlerDefault(this);
 	
+	/**
+	 * Whether the importer may fetch the resources a document refers to: stylesheets
+	 * (link and @import), images, fonts and so on, by any protocol, file: included.
+	 * Default true.
+	 *
+	 * <p>When false, nothing is fetched: the renderer's user agent refuses every
+	 * external resource, and an img whose src isn't a data: URI is left out, without
+	 * calling the XHTMLImageHandler and without "[MISSING IMAGE ...]" text.  data: images
+	 * are still added.  style elements and attributes, and the default stylesheet,
+	 * still apply.
+	 *
+	 * <p>This is not about the document itself: convert(URL) and convert(File) still
+	 * read the URL or file they are given.
+	 *
+	 * @since 17.3.4
+	 */
+	public void setExternalResourcesAllowed(boolean allowed) {
+		this.externalResourcesAllowed = allowed;
+	}
+
+	/**
+	 * @since 17.3.4
+	 */
+	public boolean isExternalResourcesAllowed() {
+		return externalResourcesAllowed;
+	}
+
+	private boolean externalResourcesAllowed = true;
+
 	@Override
 	public void setMaxWidth(int maxWidth, String tableStyle) {
 	    xHTMLImageHandler.setMaxWidth(maxWidth, tableStyle);
@@ -345,6 +376,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 				renderer = new DocxRenderer();
 			}
 			
+		}
+		
+		if (!externalResourcesAllowed) {
+			// Here rather than at creation, so it also covers a renderer given to setRenderer
+			Docx4jUserAgent userAgent = renderer.getDocx4jUserAgent();
+			for (ExternalResourceControlPriority priority : ExternalResourceControlPriority.values()) {
+				userAgent.setAccessController(priority, (uri, type) -> false);
+			}
 		}
 		
 		return renderer;
@@ -1987,6 +2026,12 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	*/
 	private void addImage(BlockBox box) throws CyclicStylesException {
 		
+		if (!externalResourcesAllowed
+				&& !box.getElement().getAttribute("src").regionMatches(true, 0, "data:", 0, 5)) {
+			log.debug("External resources not allowed; leaving out img " + box.getElement().getAttribute("src"));
+			return;
+		}
+
 		/*
 			com.openhtmltopdf.layout.SharedContext
 		     * 
