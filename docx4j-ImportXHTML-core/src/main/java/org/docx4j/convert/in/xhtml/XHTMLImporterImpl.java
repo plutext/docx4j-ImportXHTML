@@ -40,6 +40,7 @@ import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.Bidi;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -600,7 +601,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         
         try {
 			renderer.setDocument(
-					renderer.loadDocument(file.toURI().toURL().toExternalForm()),
+					loadDocument(file.toURI().toURL().toExternalForm()),
 			        (parent == null ? "" : parent.toURI().toURL().toExternalForm())
 			);
 		} catch (MalformedURLException e) {
@@ -774,9 +775,25 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         renderer = getRenderer();
         
         String urlString = url.toString();
-        Document dom =renderer.loadDocument(urlString);
+        Document dom =loadDocument(urlString);
         renderer.setDocument(dom, urlString);
         return layoutAndTraverse();
+    }
+
+    /**
+     * Read the document given to convert(File) or convert(URL).  The renderer's user
+     * agent reads it, except when external resources aren't allowed: that user agent
+     * then refuses every URI, this one included.  Read as UTF-8, as the user agent does.
+     */
+    private Document loadDocument(String uri) throws Docx4JException {
+        if (externalResourcesAllowed) {
+            return renderer.loadDocument(uri);
+        }
+        try (Reader reader = new InputStreamReader(new URL(uri).openStream(), StandardCharsets.UTF_8)) {
+            return XMLResource.load(reader).getDocument();
+        } catch (IOException e) {
+            throw new Docx4JException("Couldn't read " + uri, e);
+        }
     }
 
     /**

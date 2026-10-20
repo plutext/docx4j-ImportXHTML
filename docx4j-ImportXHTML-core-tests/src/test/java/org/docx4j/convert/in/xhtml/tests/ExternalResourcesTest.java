@@ -120,6 +120,28 @@ public class ExternalResourcesTest {
 		Assert.assertTrue(xml, xml.contains("<w:jc w:val=\"center\"/>")); // the default stylesheet's center
 	}
 
+	@Test
+	public void fileAndURLReadWhenNotAllowed() throws Exception {
+		Path doc = dir.resolve("doc.xhtml");
+		Files.write(doc, xhtml().getBytes(StandardCharsets.UTF_8));
+
+		XHTMLImporterImpl importer = new XHTMLImporterImpl(WordprocessingMLPackage.createPackage());
+		importer.setExternalResourcesAllowed(false);
+		String fromFile = marshal(importer.convert(doc.toFile(), null));
+
+		importer = new XHTMLImporterImpl(WordprocessingMLPackage.createPackage());
+		importer.setExternalResourcesAllowed(false);
+		String fromURL = marshal(importer.convert(doc.toUri().toURL()));
+
+		Assert.assertEquals(Collections.emptyList(), requested);
+		for (String xml : Arrays.asList(fromFile, fromURL)) {
+			Assert.assertTrue(xml, xml.contains(INLINE));
+			Assert.assertFalse(xml, xml.contains(LINKED));
+			Assert.assertFalse(xml, xml.contains(FILE));
+			Assert.assertEquals(xml, 1, count(xml, "<w:drawing>")); // data: only
+		}
+	}
+
 	private String convert(boolean allowed) throws Exception {
 		XHTMLImporterImpl importer = new XHTMLImporterImpl(WordprocessingMLPackage.createPackage());
 		importer.setExternalResourcesAllowed(allowed);
