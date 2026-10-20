@@ -1,7 +1,7 @@
 # CR-003: a table's row groups in source order, as Word imports an altChunk (docx4j CR-053's round 11)
 
 Status: ACCEPTED 2026-10-21 (Jason: "decisions agreed."), D1 to D4 as recommended. Phase 1
-implemented 2026-10-21 (suite 146/0/0; §9), commit (hash in the next), and installed as
+implemented 2026-10-21 (suite 146/0/0; §9), commit dd7b913, and installed as
 17.1.1-SNAPSHOT. §4's Word round (docx4j CR-053's round 12), which D2 asked for before it ships,
 confirms source order in all six cases. Proposed 2026-10-21, at Jason's request ("draft
 CR-003"), after docx4j-25's report from docx4j CR-053's round 11 Word probe (r11-8). Drafted by
