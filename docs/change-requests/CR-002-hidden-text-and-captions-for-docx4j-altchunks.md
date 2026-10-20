@@ -1,8 +1,8 @@
 # CR-002: display:none as hidden text, the elements it came from, and the table caption (docx4j CR-053's asks)
 
 Status: ACCEPTED 2026-10-20 (Jason: "CR-002 accept all recommendations. commit then implement."),
-D1 to D11 as recommended. Phases 1 to 3 implemented 2026-10-20 (suite 140/0/0; §11), in one
-commit (hash in the next); phase 2 installed as docx4j-ImportXHTML-core 17.1.1-SNAPSHOT for docx4j
+D1 to D11 as recommended. Phases 1 to 3 implemented 2026-10-20 (suite 140/0/0; §11), commit
+468a760 (the three together); phase 2 installed as docx4j-ImportXHTML-core 17.1.1-SNAPSHOT for docx4j
 CR-053 phase 2, and docx4j-25 told. Phase 4 (the release) next. Proposed 2026-10-20, at the
 request of the docx4j session (docx4j-25) for docx4j CR-053 §4a (accepted by Jason 2026-10-20,
 docx4j c69d4282d), whose phase 2 depends on items 1 and 2. Drafted by Claude Opus 5.5 in the
