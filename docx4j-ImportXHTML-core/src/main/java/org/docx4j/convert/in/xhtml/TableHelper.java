@@ -30,7 +30,11 @@ package org.docx4j.convert.in.xhtml;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl.TableProperties;
@@ -67,6 +71,7 @@ import org.docx4j.wml.TrPr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import com.openhtmltopdf.css.constants.CSSName;
 import com.openhtmltopdf.css.constants.IdentValue;
@@ -613,6 +618,50 @@ public class TableHelper {
 		}
 	}
 
+
+	/**
+	 * The table's row groups in the order the source has them.  openhtmltopdf moves
+	 * the first table-header-group to the top and the first table-footer-group to the
+	 * bottom (BoxBuilder.reorderTableContent), as a browser lays them out; Word's HTML
+	 * import keeps each where it is.  An anonymous row group (rows directly in the
+	 * table) is placed by its first row.  If a group can't be placed, the order is
+	 * openhtmltopdf's.
+	 */
+	protected static List<Box> rowGroupsInSourceOrder(TableBox table) {
+		List<Box> groups = new ArrayList<Box>(table.getChildren());
+		Element tableElement = table.getElement();
+		if (tableElement == null) return groups;
+
+		Map<Node, Integer> position = new IdentityHashMap<Node, Integer>();
+		int i = 0;
+		for (Node n = tableElement.getFirstChild(); n != null; n = n.getNextSibling()) {
+			position.put(n, i++);
+		}
+		final Map<Box, Integer> order = new IdentityHashMap<Box, Integer>();
+		for (Box group : groups) {
+			Integer at = position.get(childOfTable(group, tableElement));
+			if (at == null) {
+				log.debug("Can't place a row group of <" + tableElement.getNodeName() + ">; openhtmltopdf's order kept");
+				return groups;
+			}
+			order.put(group, at);
+		}
+		groups.sort(Comparator.comparing(order::get)); // stable
+		return groups;
+	}
+
+	/**
+	 * The child of the table element a row group comes from: its own element, or for
+	 * an anonymous group, its first row's (or that row's first cell's).
+	 */
+	private static Node childOfTable(Box box, Element tableElement) {
+		for (Box b = box; b != null; b = b.getChildCount() == 0 ? null : b.getChild(0)) {
+			if (b.getElement() != null && b.getElement().getParentNode() == tableElement) {
+				return b.getElement();
+			}
+		}
+		return null;
+	}
 
 	/**
 	 * nested tables XHTML renderer seems to construct a tree: table/table

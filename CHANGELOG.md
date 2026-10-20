@@ -41,14 +41,19 @@ Changes in Version 17.1.1
 - New XHTMLImporterImpl.setDisplayNoneAsHidden(boolean), default false.  When true,
   what CSS display: none hides is imported as hidden text (w:vanish), as Word imports
   it from an HTML altChunk, rather than left out: hidden runs in a visible paragraph,
-  hidden paragraphs (their marks included), and for a hidden tr, thead, tbody or table,
-  rows with w:trPr/w:hidden.  Only display: none from the author counts (a style
+  hidden paragraphs (their marks included), and for a hidden tr, thead, tbody, tfoot or
+  table, rows with w:trPr/w:hidden.  Only display: none from the author counts (a style
   attribute, a style element or a linked stylesheet), not the default stylesheet's, so
   head and script stay out.  An element inside a hidden one whose display the author
   sets to anything but none or inherit shows again, as in Word.  The new
   getHiddenContent() reports what the last convert hid, by the outermost hidden element
   it came from.  The document's style attributes are changed during the convert, and
   restored.  See docs/change-requests/CR-002.
+
+- New XHTMLImporterImpl.setTableRowGroupsInSourceOrder(boolean), default false.  When
+  true, a table's thead, tbody and tfoot come out in the order the source has them, as
+  Word imports an HTML altChunk, rather than with the first thead first and the first
+  tfoot last, as a browser draws them.  See docs/change-requests/CR-003.
 
 - An hr's horizontal rule is now a fresh paragraph each time; one shared object went
   into every document.

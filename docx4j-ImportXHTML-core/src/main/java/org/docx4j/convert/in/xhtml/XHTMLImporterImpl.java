@@ -333,8 +333,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	 * attribute, a style element or a linked stylesheet; not the default stylesheet, so
 	 * head and script stay out) is laid out with its default display, and what it
 	 * produces gets w:vanish: on the runs, and on the paragraph marks of paragraphs it
-	 * produces wholly.  A row whose tr, thead, tbody or table is hidden also gets
-	 * w:trPr/w:hidden.  An element inside a hidden one whose display the author sets to
+	 * produces wholly.  A row whose tr, thead, tbody, tfoot or table is hidden also
+	 * gets w:trPr/w:hidden.  An element inside a hidden one whose display the author sets to
 	 * anything but none or inherit shows again, with its content, as in Word.
 	 * w:vanish is applied whatever the FormattingOption.
 	 *
@@ -358,6 +358,30 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	}
 
 	private boolean displayNoneAsHidden = false;
+
+	/**
+	 * Whether a table's row groups (thead, tbody, tfoot, and rows directly in the
+	 * table) are imported in the order the source has them, as Word imports an HTML
+	 * altChunk.  Default false: the first thead (or other display: table-header-group)
+	 * comes first and the first tfoot (or table-footer-group) last, as a browser lays
+	 * them out.  Only the order of the row groups changes; the rows in each, and their
+	 * cells, are as before.  With setDisplayNoneAsHidden, a hidden tfoot stays where
+	 * it is, too.
+	 *
+	 * @since 17.3.4
+	 */
+	public void setTableRowGroupsInSourceOrder(boolean tableRowGroupsInSourceOrder) {
+		this.tableRowGroupsInSourceOrder = tableRowGroupsInSourceOrder;
+	}
+
+	/**
+	 * @since 17.3.4
+	 */
+	public boolean isTableRowGroupsInSourceOrder() {
+		return tableRowGroupsInSourceOrder;
+	}
+
+	private boolean tableRowGroupsInSourceOrder = false;
 
 	private DisplayNoneHelper displayNoneHelper = new DisplayNoneHelper(false);
 
@@ -1779,7 +1803,12 @@ public class XHTMLImporterImpl implements XHTMLImporter {
                 case BLOCK:
                 	log.debug(".. which are BlockBox.CONTENT_BLOCK");
                 	addPageBreakBefore(blockBox);
-                    for (Object o : ((BlockBox)box).getChildren() ) {
+                	List<Box> children = ((BlockBox)box).getChildren();
+                	if (tableRowGroupsInSourceOrder
+                			&& box instanceof com.openhtmltopdf.newtable.TableBox) {
+                		children = TableHelper.rowGroupsInSourceOrder((com.openhtmltopdf.newtable.TableBox)box);
+                	}
+                    for (Object o : children ) {
                         log.debug("   processing child " + o.getClass().getName() );
                     	
                         traverse((Box)o,  box, tableProperties);                    
