@@ -100,6 +100,7 @@ import org.docx4j.wml.HpsMeasure;
 import org.docx4j.wml.P;
 import org.docx4j.wml.P.Hyperlink;
 import org.docx4j.wml.PPr;
+import org.docx4j.wml.PPrBase;
 import org.docx4j.wml.PPrBase.Ind;
 import org.docx4j.wml.PPrBase.NumPr;
 import org.docx4j.wml.PPrBase.PStyle;
@@ -257,10 +258,6 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		
 		initStyleMap(wordMLPackage.getMainDocumentPart().getStyleDefinitionsPart());
 		
-		if (ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.Element.Heading.MapToStyle", false)) {
-			headingHandler = new HeadingHandler(wordMLPackage.getMainDocumentPart().getStyleDefinitionsPart().getJaxbElement());
-		}
-		
 		imports = Context.getWmlObjectFactory().createBody();
 		contentContextStack.push(imports);
 		
@@ -326,6 +323,67 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	}
 
 	private boolean externalResourcesAllowed = true;
+
+	/**
+	 * Whether content which CSS display: none hides is imported as hidden text
+	 * (w:vanish), as Word imports it from an HTML altChunk.  Default false: such content
+	 * is left out, as before.
+	 *
+	 * <p>When true, each element whose display: none comes from the author (a style
+	 * attribute, a style element or a linked stylesheet; not the default stylesheet, so
+	 * head and script stay out) is laid out with its default display, and what it
+	 * produces gets w:vanish: on the runs, and on the paragraph marks of paragraphs it
+	 * produces wholly.  A row whose tr, thead, tbody or table is hidden also gets
+	 * w:trPr/w:hidden.  An element inside a hidden one whose display the author sets to
+	 * anything but none or inherit shows again, with its content, as in Word.
+	 * w:vanish is applied whatever the FormattingOption.
+	 *
+	 * <p>The cascade is openhtmltopdf's, for print media; a caller who wants Word's
+	 * rules (which apply no @media rule, and ignore some selectors) rewrites the style
+	 * elements first.  The style attributes of the document being converted are changed
+	 * for the length of the convert, and restored.
+	 *
+	 * @see #getHiddenContent()
+	 * @since 17.3.4
+	 */
+	public void setDisplayNoneAsHidden(boolean displayNoneAsHidden) {
+		this.displayNoneAsHidden = displayNoneAsHidden;
+	}
+
+	/**
+	 * @since 17.3.4
+	 */
+	public boolean isDisplayNoneAsHidden() {
+		return displayNoneAsHidden;
+	}
+
+	private boolean displayNoneAsHidden = false;
+
+	private DisplayNoneHelper displayNoneHelper = new DisplayNoneHelper(false);
+
+	/**
+	 * What the last convert imported as hidden text (see setDisplayNoneAsHidden), by the
+	 * element it came from.
+	 *
+	 * <p>Each key is an outermost hidden element which produced content, in document
+	 * order: an element inside a hidden one is reported through the outer one, unless an
+	 * element between them shows its content again.  An element which produced nothing is
+	 * absent.  Each value is what that element produced, in order: the paragraphs and
+	 * tables it produced wholly (not again the paragraphs inside such a table), and its
+	 * hidden runs in other paragraphs.
+	 *
+	 * <p>The keys are elements of the document laid out: the caller's own, when
+	 * convert(Node) is given a Document; for any other Node, the importer lays out a copy
+	 * (importNode), so they are the copy's; for the other convert methods, the importer's
+	 * own parse.
+	 *
+	 * <p>Empty when the option is off; replaced by each convert.
+	 *
+	 * @since 17.3.4
+	 */
+	public Map<Element, List<Object>> getHiddenContent() {
+		return displayNoneHelper.getHiddenContent();
+	}
 
 	@Override
 	public void setMaxWidth(int maxWidth, String tableStyle) {
@@ -492,6 +550,33 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	
 	private HeadingHandler headingHandler = null;
 	
+	/**
+	 * Whether h1 to h6 get Word's heading styles: hN gets the paragraph style named
+	 * "heading N", whatever its id (so a localised template works too), where the
+	 * package defines one; otherwise w:outlineLvl N-1, so that the heading still shows
+	 * in the navigation pane and a table of contents.  No style is added to the package.
+	 * 
+	 * <p>A heading whose @class names a paragraph style keeps that style instead.  Under
+	 * CLASS_PLUS_OTHER, the CSS (including the default stylesheet's font size and 
+	 * weight) is still applied as direct formatting over the style.
+	 * 
+	 * <p>Default: the property docx4j-ImportXHTML.Element.Heading.MapToStyle, else false.
+	 * 
+	 * @since 17.3.4
+	 */
+	public void setMapHeadingsToStyles(boolean mapHeadingsToStyles) {
+		this.mapHeadingsToStyles = mapHeadingsToStyles;
+	}
+	
+	/**
+	 * @since 17.3.4
+	 */
+	public boolean isMapHeadingsToStyles() {
+		return mapHeadingsToStyles;
+	}
+	
+	private boolean mapHeadingsToStyles = ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.Element.Heading.MapToStyle", false);
+	
 	private BookmarkHelper bookmarkHelper; 
 	
 	//@Override
@@ -636,6 +721,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      * byte order mark, else from the part's declared charset, else detected as for
      * convert(InputStream, String).
      * 
+     * <p>The part is parsed as XML.  Where it isn't well-formed (Word's own MHT is HTML, 
+     * not XHTML), it is parsed as HTML with jsoup, an optional dependency, if jsoup is 
+     * on the classpath (on the module path: --add-modules org.jsoup); otherwise this 
+     * throws a Docx4JException.  (Since 17.3.4.)
+     * 
      * @param is
      * @param baseUrl
      * @return
@@ -672,10 +762,37 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     			log.warn("Unsupported charset '" + declared + "' in mht; detecting the encoding instead");
     		}
     	}
-    	if (charset==null) {
-    		return convert(new ByteArrayInputStream(html), baseUrl);
-    	} else {
-    		return convert(new InputStreamReader(new ByteArrayInputStream(html), charset), baseUrl);
+    	Document dom;
+    	try {
+    		dom = (charset==null ? XMLResource.load(new ByteArrayInputStream(html))
+    				: XMLResource.load(new InputStreamReader(new ByteArrayInputStream(html), charset))).getDocument();
+    	} catch (com.openhtmltopdf.util.XRRuntimeException xre) {
+    		// Not well-formed XML; Word's own MHT, for one, is HTML
+    		if (!isJsoupAvailable()) {
+    			throw new Docx4JException("The HTML in the mht isn't well-formed XML; to read it as HTML, "
+    					+ "add jsoup (org.jsoup:jsoup) to the classpath", xre);
+    		}
+    		log.info("The HTML in the mht isn't well-formed XML (" + xre.getMessage() + "), so reading it with jsoup");
+    		try {
+    			dom = JsoupHtml.parse(html, charset, baseUrl);
+    		} catch (IOException ioe) {
+    			throw new Docx4JException(ioe.getMessage(), ioe);
+    		}
+    	}
+    	return convert(dom, baseUrl);
+    }
+    
+    /**
+     * Whether jsoup, an optional dependency, is on the classpath (or, on the module path,
+     * resolved, for example with --add-modules org.jsoup).  Named as a string, so that
+     * nothing here needs jsoup.
+     */
+    private static boolean isJsoupAvailable() {
+    	try {
+    		Class.forName("org.jsoup.Jsoup", false, XHTMLImporterImpl.class.getClassLoader());
+    		return true;
+    	} catch (ClassNotFoundException | LinkageError e) {
+    		return false;
     	}
     }
     
@@ -868,12 +985,19 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      */
     private List<Object> layoutAndTraverse() throws Docx4JException {
 
+        displayNoneHelper = new DisplayNoneHelper(displayNoneAsHidden);
+        int start = imports.getContent().size();
         try {
+            displayNoneHelper.prepare(renderer); // before layout
             renderer.layout();
 
             traverse(renderer.getRootBox(), null);
 
+            listHelper.refreshNumberingDefinitions();
+            displayNoneHelper.apply(imports.getContent().subList(start, imports.getContent().size()));
+
         } finally {
+            displayNoneHelper.restore();
             renderer.close();
             // so that a subsequent convert doesn't reuse the closed renderer
             renderer = null;
@@ -1053,12 +1177,16 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     P.Hyperlink attachmentPointH = null;
     private P getCurrentParagraph(boolean create) {
     	
-    	if (attachmentPointP !=null) return attachmentPointP;  
+    	if (attachmentPointP !=null) {
+    		if (create) displayNoneHelper.paragraph(attachmentPointP); // a block may take over its parent's paragraph
+    		return attachmentPointP;  
+    	}
     	if (create) {
 //    		log.debug("defining new p", new Throwable());
 			P newP = Context.getWmlObjectFactory().createP();
 			attachmentPointP = newP;
 			this.contentContextStack.peek().getContent().add(newP);
+			displayNoneHelper.paragraph(newP);
             return newP;
     	} else {
     		return null;
@@ -1085,7 +1213,12 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         log.debug(box.getClass().getName() );
         if (box instanceof BlockBox) {
         	        	
-            traverseBlockBox( box,   parent,  tableProperties);
+        	displayNoneHelper.enter((BlockBox)box);
+        	try {
+        		traverseBlockBox( box,   parent,  tableProperties);
+        	} finally {
+        		displayNoneHelper.leave();
+        	}
             
         } else if (box instanceof AnonymousBlockBox) {
             log.debug("AnonymousBlockBox");            
@@ -1112,9 +1245,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         
         // bookmark start?
         CTMarkupRange markupRangeForID = null;
-        if (box instanceof com.openhtmltopdf.newtable.TableSectionBox) {
+        if (box instanceof com.openhtmltopdf.newtable.TableSectionBox
+        		|| blockBox.isFromCaptionedTable()) {
         	// ignore, since <table id = ..
         	// generates TableBox<table and TableSectionBox<table
+        	// (and, for a table with a caption, the wrapper below)
         	// but we only want a single bookmark
         } else if(box instanceof com.openhtmltopdf.newtable.TableBox) {
 
@@ -1147,7 +1282,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             	}
             */
         	// So do it this way ...
-            if (e.getNodeName().equals("div") &&
+            if (blockBox.isFromCaptionedTable()) {
+            	// openhtmltopdf (BoxBuilder.reorderTableContent) wraps a table which has a
+            	// <caption> in an anonymous block box carrying the table element: its children
+            	// are the top caption(s), the TableBox, then the bottom caption(s).
+            	// Emit nothing for the wrapper: its children yield the caption paragraph(s)
+            	// and the w:tbl as siblings, in caption-side order.
+            	log.debug("captioned table wrapper");
+            } else if (e.getNodeName().equals("div") &&
 				!tableElements.contains(display)) {
             	
             	if (divHandler!=null) {
@@ -1222,20 +1364,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         		log.debug(".. processing table");  // what happened to <colgroup><col style="width: 2.47in;" /><col style="width: 2.47in;" /> 
         		
         		/*
-        		 * BEWARE: xhtmlrenderer seems to parse tables differently,
-        		 * depending on whether:
-        		 * 
-        		 * (i) the table is contained within a <div>
-        		 * 
-        		 * (ii) the table contains <caption>
-        		 * 
-        		 * See https://github.com/plutext/flyingsaucer/issues/1
-        		 * 
-        		 * Bare table with caption: BlockBox cannot be cast to TableSectionBox in xhtmlrenderer
-        		 * 
-        		 * div/table[count(caption)=1] ... table becomes TableBox, children are CONTENT_BLOCK
-        		 * 
-        		 * div/table[count(caption)=0] ... table becomes TableBox, children are CONTENT_BLOCK
+        		 * A table with a <caption> reaches here as a child of an anonymous
+        		 * BlockBox carrying the same table element (isFromCaptionedTable),
+        		 * whose other children are the caption(s); that wrapper is handled
+        		 * above as transparent, so the caption is a paragraph beside this w:tbl.
+        		 * (Older notes: https://github.com/plutext/flyingsaucer/issues/1)
         		 */
 
         		// eg <table color: #000000; background-color: transparent; background-image: none; background-repeat: repeat; background-attachment: scroll; background-position: [0%, 0%]; background-size: [auto, auto]; 
@@ -1262,6 +1395,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         		
         		Tbl tbl = Context.getWmlObjectFactory().createTbl();
         		contentContext.getContent().add(tbl);
+        		displayNoneHelper.created(tbl);
 	            pushBlockStack(tbl);
 	            mustPop = true;
 	            
@@ -1316,6 +1450,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         		
         		Tbl tbl = Context.getWmlObjectFactory().createTbl();
         		contentContext.getContent().add(tbl);
+        		displayNoneHelper.created(tbl);
 	            pushBlockStack(tbl);
 	            mustPop = true;
 	            
@@ -1334,6 +1469,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         		
         		Tr tr = Context.getWmlObjectFactory().createTr();
         		this.contentContextStack.peek().getContent().add(tr);
+        		displayNoneHelper.row(tr, e);
 	            pushBlockStack(tr);
 	            mustPop = true;
 	            	            
@@ -1549,8 +1685,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 
         	} else if  (e.getNodeName().equals("hr")) {
             	
-        		this.contentContextStack.peek().getContent().add(
-        				getPforHR());
+        		P hrP = getPforHR();
+        		this.contentContextStack.peek().getContent().add(hrP);
+        		displayNoneHelper.created(hrP);
 
         	} else if  (e.getNodeName().equals("math")) {
         		
@@ -1587,6 +1724,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	                
 	        		// Attach it to the document
 	        		this.contentContextStack.peek().getContent().add(wP); 
+	        		displayNoneHelper.created(wP);
 	        		
 				} catch (Exception e1) {
 					throw new Docx4JException("Error processing MathML", e1);
@@ -1661,7 +1799,12 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 //                                    && ((InlineBox)o).getElement()!=null // skip these (pseudo-elements?)
 //                                    && ((InlineBox)o).isStartsHere()) {
                                 
-                            	processInlineBox( (InlineBox)o);
+                            	displayNoneHelper.enter((InlineBox)o);
+                            	try {
+                            		processInlineBox( (InlineBox)o);
+                            	} finally {
+                            		displayNoneHelper.leave();
+                            	}
                             		                            	
                             } else if (o instanceof BlockBox ) {
                             	
@@ -1723,8 +1866,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         	
         	if (tc.getContent().size()==0
         			|| tc.getContent().get(tc.getContent().size()-1) instanceof Tbl) {
-        		tc.getContent().add(
-        				Context.getWmlObjectFactory().createP());
+        		P p = Context.getWmlObjectFactory().createP();
+        		tc.getContent().add(p);
+        		displayNoneHelper.paragraph(p);
         	}
         }
 
@@ -1770,6 +1914,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             r.getContent().add(br);
 
             getListForRun().getContent().add(r);
+            displayNoneHelper.created(r);
         }
     }
 
@@ -1786,6 +1931,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             r.getContent().add(br);
 
             getListForRun().getContent().add(r);
+            displayNoneHelper.created(r);
         }
     }
     
@@ -1855,6 +2001,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	text.setValue(sequenceName);
     	text.setSpace("preserve");
     	currentP.getContent().add(figureRun);
+    	displayNoneHelper.created(figureRun);
     	
     	CTSimpleField simpleField = new CTSimpleField();
     	simpleField.setInstr(" SEQ " + sequenceName + " \\* ARABIC ");
@@ -1868,6 +2015,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	resultRun.getContent().add(result);
     	
     	simpleField.getContent().add(resultRun);
+    	displayNoneHelper.created(resultRun);
     }
 
     protected PPr getPPr(BlockBox blockBox, Map<String, PropertyValue> cssMap) throws Docx4JException {
@@ -2008,8 +2156,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     
     private void handleHeadingElement(PPr pPr, Styleable blockBox) {
     	
-    	if (headingHandler==null 
+    	if (!mapHeadingsToStyles
     			|| !isHeading(blockBox)) return;
+    	
+    	if (headingHandler==null) {
+    		StyleDefinitionsPart sdp = wordMLPackage.getMainDocumentPart().getStyleDefinitionsPart();
+    		headingHandler = new HeadingHandler(sdp==null ? 
+    				Context.getWmlObjectFactory().createStyles() : sdp.getJaxbElement());
+    	}
     	
     	// Its a heading; set the style
     	String styleId = headingHandler.getStyle(blockBox.getElement().getLocalName());
@@ -2018,7 +2172,13 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 			PStyle pStyle = Context.getWmlObjectFactory().createPPrBasePStyle();
 			pPr.setPStyle(pStyle);
 			pStyle.setVal(styleId);
-    	}    	
+    	} else {
+    		// No heading style; at least make it a heading for navigation
+    		int level = Integer.parseInt(blockBox.getElement().getLocalName().substring(1));
+    		PPrBase.OutlineLvl outlineLvl = Context.getWmlObjectFactory().createPPrBaseOutlineLvl();
+    		outlineLvl.setVal(BigInteger.valueOf(level-1));
+    		pPr.setOutlineLvl(outlineLvl);
+    	}
     }
     
     private boolean isHeading(Styleable blockBox) {
@@ -2105,8 +2265,11 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		Long cx = contentBounds.width==0 ? null : 
 			UnitsOfMeasurement.twipToEMU( dotsToTwip(contentBounds.width) );
 		
+		P p = this.getCurrentParagraph(true);
+		int runsBefore = p.getContent().size();
 		xHTMLImageHandler.addImage( renderer.getDocx4jUserAgent(), wordMLPackage, 
-				this.getCurrentParagraph(true), box.getElement(), cx, cy);
+				p, box.getElement(), cx, cy);
+		displayNoneHelper.createdRuns(p, runsBefore);
 		
 		// reset maxWidth
 		if ( (xHTMLImageHandler instanceof XHTMLImageHandlerDefault) 
@@ -2386,6 +2549,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             R run = Context.getWmlObjectFactory().createR();
             getListForRun().getContent().add(run);                
        		run.getContent().add(Context.getWmlObjectFactory().createBr());
+       		displayNoneHelper.created(run);
         	
         } else if (inlineBox.getText()==null 
         		|| inlineBox.getText().length()==0
@@ -2514,6 +2678,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		run.getContent().add(text);
 		
 		getListForRun().getContent().add(run);
+		displayNoneHelper.created(run);
 		
 		// Run level styling
         RPr rPr =  Context.getWmlObjectFactory().createRPr();
@@ -2953,6 +3118,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 			Hyperlink hyperlink = (Hyperlink)XmlUtils.unmarshalString(hpl);
 			R r = (R)hyperlink.getContent().get(0);
 			r.setRPr(rPr);
+			displayNoneHelper.created(r);
 			
 			// Style the hyperlink with hyperlinkStyleId,
 			// unless another style is already in use
@@ -3003,7 +3169,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 				HR_P = (P)XmlUtils.unmarshalString(HR_XML);
 			} catch (JAXBException e) {}
     	}
-    	return HR_P;
+    	return XmlUtils.deepCopy(HR_P); // a copy, since it goes into the document, and may be changed there
     }
 
 	

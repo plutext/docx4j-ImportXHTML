@@ -1,7 +1,7 @@
 /*
  *  This file is part of the docx4j-ImportXHTML library.
  *
- *  Copyright 2011-2022, Plutext Pty Ltd, and contributors.
+ *  Copyright 2011-2026, Plutext Pty Ltd, and contributors.
  *  Portions contributed before 15 July 2013 formed part of docx4j 
  *  and were contributed under ASL v2 (a copy of which is incorporated
  *  herein by reference and applies to those portions). 
@@ -461,25 +461,35 @@ public class ListHelper {
 		Lvl.Start lvlstart = wmlObjectFactory.createLvlStart();
 		lvl.setStart(lvlstart);
 
-		BlockBox list = listStack.peek();
-		Element listEl = list.getElement();
-		BigInteger startVal = null;
-		if (listEl.hasAttribute("start") ) {
-			try {
-				startVal = BigInteger.valueOf(Long.parseLong(listEl.getAttribute("start")));
-			} catch (NumberFormatException nfe) {
-				log.warn("Can't parse number from @start=" + listEl.getAttribute("start"));
-			}
-		}
-		if (startVal==null) {
-			lvlstart.setVal( BigInteger.valueOf( 1) );
-		} else {
-			lvlstart.setVal( startVal );
-
-		}
+		lvlstart.setVal( BigInteger.valueOf( getStart()) );
 
 		return lvl;
 
+	}
+	
+	/**
+	 * The current list's @start, else 1.
+	 */
+	private long getStart() {
+		Element listEl = listStack.peek().getElement();
+		if (listEl.hasAttribute("start") ) {
+			Long start = parseNumber(listEl.getAttribute("start"));
+			if (start!=null) return start;
+			log.warn("Can't parse number from @start=" + listEl.getAttribute("start"));
+		}
+		return 1;
+	}
+	
+	/**
+	 * A number Word can start a list at (0 or more), or null
+	 */
+	private static Long parseNumber(String s) {
+		try {
+			long n = Long.parseLong(s.trim());
+			return n<0 ? null : n;
+		} catch (NumberFormatException nfe) {
+			return null;
+		}
 	}
 	
 	private LvlOverride findOverride(int lvl) {
@@ -504,6 +514,7 @@ public class ListHelper {
 			// We've just entered a list, so create a new one
 			abstractList = createNewAbstractList();
 			listItemStateStack.peek().concreteList = ndp.addAbstractListNumberingDefinition(abstractList); 
+			numberingChanged = true;
 
 			log.debug("Using abstractList " + abstractList.getAbstractNumId().intValue());
 		}
@@ -519,6 +530,7 @@ public class ListHelper {
 			// Nope, need to create it
 			int level = listStack.size()-1;
 			ndp.addAbstractListNumberingDefinitionLevel(abstractList, createLevel(level, cssMap));
+			numberingChanged = true;
 			//log.debug("ADDED LEVEL " + level);
 			//lvl = getLevel(abstractList, listStack.size()-1);
 			
@@ -536,7 +548,7 @@ public class ListHelper {
 				// That looks at the current concrete list.
 				// We could also look at other concrete lists pointing at the same abstract list, 
 				// but that's a TODO if necessary
-			if (lo!=null) {
+			if (lo!=null && lo.getLvl()!=null) { // an override may be a startOverride alone
 				Lvl overrideLvlTmp = lo.getLvl();
 				if (overrideLvlTmp.getNumFmt()!=null) {
 					numfmtExisting = overrideLvlTmp.getNumFmt();
@@ -600,7 +612,8 @@ public class ListHelper {
 				int ilvl = lvl.getIlvl().intValue();
 				log.debug("concrete list points at abstract " + getConcreteList().getAbstractNumId().getVal().longValue());
 				long newNumId = ndp.restart(getConcreteList().getNumId().longValue(), ilvl,
-			    		/* restart at */ 1);
+			    		/* restart at */ getStart());
+				numberingChanged = true;
 				// retrieve it
 				ListNumberingDefinition listDef = ndp.getInstanceListDefinitions().get(""+newNumId);
 
@@ -649,10 +662,62 @@ public class ListHelper {
 
 		}
 
+		// An li's @value: this item, and the ones after it, number on from there
+		if (e!=null 
+				&& e.hasAttribute("value")
+				&& listStack.peek().getElement().getNodeName().equals("ol")) {
+			Long value = parseNumber(e.getAttribute("value"));
+			if (value==null) {
+				log.warn("Can't parse number from @value=" + e.getAttribute("value"));
+			} else {
+				restartAt(Math.min(listStack.size()-1, 8), value);
+			}
+		}
+
 		setNumbering(p.getPPr(), getConcreteList().getNumId());
 
 	}
+	
+	/**
+	 * Continue the current list in a new w:num, which starts level ilvl at value.
+	 * The current num's level overrides come too, so that its formatting carries on.
+	 */
+	private void restartAt(int ilvl, long value) {
+		
+		Numbering.Num current = getConcreteList();
+		long newNumId = ndp.restart(current.getNumId().longValue(), ilvl, value);
+		numberingChanged = true;
+		Numbering.Num newNum = ndp.getInstanceListDefinitions().get(""+newNumId).getNumNode();
+		LvlOverride restart = newNum.getLvlOverride().get(0);
+		
+		for (LvlOverride lo : current.getLvlOverride()) {
+			if (lo.getIlvl().intValue()==ilvl) {
+				if (lo.getLvl()!=null) {
+					restart.setLvl(XmlUtils.deepCopy(lo.getLvl()));
+				}
+			} else {
+				newNum.getLvlOverride().add(XmlUtils.deepCopy(lo));
+			}
+		}
+		listItemStateStack.peek().concreteList = newNum;
+	}
 
+
+	private boolean numberingChanged = false;
+	
+	/**
+	 * docx4j's NumberingDefinitionsPart caches a definition for each w:num, made from its
+	 * abstract numbering's levels and its own overrides as they were then.  We add levels
+	 * and overrides after the w:num, so once a convert has changed the numbering, rebuild
+	 * that cache; otherwise docx4j's own numbering (its Emulator, its text extraction) 
+	 * finds no levels for these lists.
+	 */
+	protected void refreshNumberingDefinitions() {
+		if (numberingChanged) {
+			ndp.initialiseMaps();
+			numberingChanged = false;
+		}
+	}
 
 	protected void setNumbering(PPr pPr, BigInteger numId) {
 

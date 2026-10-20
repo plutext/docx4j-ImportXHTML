@@ -33,7 +33,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 
 import org.docx4j.UnitsOfMeasurement;
-import org.docx4j.XmlUtils;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl.TableProperties;
 import org.docx4j.jaxb.Context;
 import org.docx4j.model.properties.table.tr.TrHeight;
@@ -79,6 +78,7 @@ import com.openhtmltopdf.css.style.derived.LengthValue;
 import com.openhtmltopdf.newtable.TableBox;
 import com.openhtmltopdf.newtable.TableCellBox;
 import com.openhtmltopdf.newtable.TableSectionBox;
+import com.openhtmltopdf.render.BlockBox;
 import com.openhtmltopdf.render.Box;
 
 import jakarta.xml.bind.JAXBElement;
@@ -620,40 +620,28 @@ public class TableHelper {
 	 * TODO fix this upstream.
 	 * TestCase is http://en.wikipedia.org/wiki/Office_Open_XML
 	 * 
+	 * A table with a caption is not nested: openhtmltopdf wraps it in an anonymous
+	 * block box carrying the table element (isFromCaptionedTable), which the importer
+	 * treats as transparent, so the caption comes out as a paragraph beside the w:tbl.
+	 * 
 	 * @param contentContext
 	 * @param parent
-	 * @return
 	 */
 	protected void nestedTableHierarchyFix(ContentAccessor contentContext,
 			Box parent) {
 		
 		if (parent==null) return; // where importing a table fragment 
 		
+		if (parent instanceof BlockBox
+				&& ((BlockBox)parent).isFromCaptionedTable()) {
+			// the anonymous wrapper openhtmltopdf creates for a table with a caption;
+			// the table is not nested
+			return;
+		}
+		
 		if (parent instanceof TableBox
 				|| parent.getElement().getNodeName().equals("table") ) {
 			log.warn("table: Constructing missing w:tr/w:td..");
-			
-			//if table was with caption move P (generated for caption) to nested column
-			P captionP = null;
-//			Iterator<Object> contentIterator = contentContext.iterator();
-//			Object next;
-//			while(contentIterator.hasNext()){
-//			    next = contentIterator.next();
-//			    if(next instanceof P){
-//			        captionP = (P)XmlUtils.deepCopy((P)next);
-//			        contentIterator.remove();
-//			        break;
-//			    }
-//			}
-			Object next;
-			for (int i=0; i<contentContext.getContent().size(); i++) {
-			    next = contentContext.getContent().get(i);
-			    if(next instanceof P){
-			        captionP = (P)XmlUtils.deepCopy((P)next);
-			        contentContext.getContent().remove(i);
-			        break;
-			    }
-			}
 			
 			TblPr tblPr = Context.getWmlObjectFactory().createTblPr();
             contentContext.getContent().add(tblPr);
@@ -672,14 +660,10 @@ public class TableHelper {
 			
 			Tc tc = Context.getWmlObjectFactory().createTc();
 			contentContext.getContent().add(tc);
-		    contentContext = tc;
-		    
-		    //if caption was found add it
-		    if(captionP != null){
-		        contentContext.getContent().add(captionP);
-		    }
+			// TODO the caller never makes this w:tc the place the inner table goes
+			// (lost in 0cd7a41, 2013), so <table><table> still gives a w:tbl directly
+			// inside a w:tbl.  See docs/change-requests/CR-002 section 4.
 		}
-//		return contentContext;
 	}
 	
 	private void setTableStyle(TblPr tblPr, String cssClass) {

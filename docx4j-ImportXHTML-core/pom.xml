@@ -184,6 +184,14 @@
 			<version>0.8.13</version>
 		</dependency>
 
+		<!-- optional: convertMHT reads HTML which isn't well-formed XML (eg Word's own MHT) with it, where present -->
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>1.22.1</version>
+			<optional>true</optional>
+		</dependency>
+
 		<!--  docx4j v11.5.0 and later use JAXB 4.0 -->
 		<dependency>
 			<groupId>jakarta.xml.bind</groupId>

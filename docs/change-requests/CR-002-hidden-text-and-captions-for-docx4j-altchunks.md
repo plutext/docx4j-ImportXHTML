@@ -1,10 +1,13 @@
 # CR-002: display:none as hidden text, the elements it came from, and the table caption (docx4j CR-053's asks)
 
 Status: ACCEPTED 2026-10-20 (Jason: "CR-002 accept all recommendations. commit then implement."),
-D1 to D11 as recommended; phase 1 next. Proposed 2026-10-20, at the request of the docx4j
-session (docx4j-25) for docx4j CR-053 §4a (accepted by Jason 2026-10-20, docx4j c69d4282d), whose
-phase 2 depends on items 1 and 2. Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session, with
-openhtmltopdf's cascade, the caption defect and the extras measured first (§2 to §6).
+D1 to D11 as recommended. Phases 1 to 3 implemented 2026-10-20 (suite 140/0/0; §11), in one
+commit (hash in the next); phase 2 installed as docx4j-ImportXHTML-core 17.1.1-SNAPSHOT for docx4j
+CR-053 phase 2, and docx4j-25 told. Phase 4 (the release) next. Proposed 2026-10-20, at the
+request of the docx4j session (docx4j-25) for docx4j CR-053 §4a (accepted by Jason 2026-10-20,
+docx4j c69d4282d), whose phase 2 depends on items 1 and 2. Drafted by Claude Opus 5.5 in the
+docx4j-ImportXHTML session, with openhtmltopdf's cascade, the caption defect and the extras
+measured first (§2 to §6).
 Scope: `XHTMLImporterImpl`, `TableHelper`, and a pre-pass over the DOM before layout; phase 3 also
 `ListHelper`, `HeadingHandler`, `DocxRenderer`, a namespace handler of our own, and jsoup as an
 optional dependency. Phase 2 changes nothing unless its option is set. Otherwise output changes only
@@ -405,7 +408,7 @@ scratch: a Word-style MHT part through jsoup and `convert(Node)` gives its six b
 - **`convert(File)` and `convert(URL)` threw a `NullPointerException` with external resources
   disallowed,** contrary to c8dc938's javadoc. The deny-all user agent refused the document itself
   (`DocxRenderer.loadDocument`).
-  - Fixed in the working tree, uncommitted: with the option off, the importer reads the document
+  - Fixed in b580262: with the option off, the importer reads the document
     itself, as UTF-8, as the user agent does.
   - The fix comes with a test (`ExternalResourcesTest.fileAndURLReadWhenNotAllowed`); the suite is
     106/0/0.
@@ -581,3 +584,53 @@ commit then implement.").
   are Word's to confirm.
 - **The pre-pass edits the caller's `Document`** for the length of the convert; it is restored in a
   `finally`, but another thread reading that `Document` meanwhile would see the edits.
+
+## 11. Implementation notes (2026-10-20)
+
+As §8, with these differences and findings:
+
+- **Phase 1.** As prototyped. `nestedTableHierarchyFix` keeps a TODO for `<table><table>`, which
+  still gives a `w:tbl` directly inside a `w:tbl` (§4, a later CR).
+- **Phase 2: a shared paragraph.** The importer lets a block's first child block use the block's
+  paragraph (`attachmentPointP` is only reset when a block ends), so `<body><div none><p>x</p>`
+  writes into the body's paragraph. A paragraph therefore belongs to the last block that takes it
+  over (`getCurrentParagraph(true)`) before it has a run. An `li`'s merged first `p` doesn't take
+  it over, so it keeps the hidden-runs-in-a-numbered-paragraph shape of §2.3.
+- **Phase 2: what records what.**
+  - A paragraph is recorded against the owner of the enclosing block, not of the box that caused
+    it: an `img` or an inline box can create a `td`'s paragraph lazily.
+  - The `img` box, which the importer doesn't end a paragraph after, doesn't count as a block.
+  - Runs and paragraphs with no hidden owner are recorded too. A run an author shows again
+    inside a hidden paragraph stays visible, and that paragraph's mark is hidden without the
+    paragraph being reported whole.
+  - Anything unrecorded (a cell, a field, a dummy merged cell's paragraph) takes its parent's
+    owner.
+  - The cell-closing `w:p`, the `hr` paragraph and the math paragraph are recorded as well.
+    Equations get `w:rPr/w:vanish` in each `m:r`.
+- **D9's fresh `hr` copy came with phase 2,** since a hidden `hr` gets `w:vanish` on the shared
+  object otherwise.
+- **Phase 3, `Docx4jNamespaceHandler`:** openhtmltopdf reads its default stylesheet with
+  `getClass().getResourceAsStream`.
+  - For a subclass in another JPMS module (the suite runs on the module path) that finds nothing,
+    and the failure is cached in a static for the JVM, so every later convert loses the default
+    stylesheet.
+  - The subclass hands `getDefaultStylesheet` to a stock `XhtmlNamespaceHandler`.
+- **Phase 3, `li value`:** an override can now be a `startOverride` alone. `addNumbering`
+  assumed every override had a `w:lvl`, and is guarded.
+- **docx4j's numbering cache** (found by docx4j-25 after an `li value`; older than this CR).
+  - `NumberingDefinitionsPart` makes each `w:num`'s definition from its abstract's levels as
+    they are then, but `ListHelper` adds the levels afterwards.
+  - So docx4j's in-memory numbering had no levels for the lists an import added, until something
+    rebuilt the maps. `restart()` does that once, through `getEmulator()`, which is why an
+    `li value` showed it: the lists after the restart lost their labels.
+  - The importer now calls `initialiseMaps()` at the end of any convert that changed the
+    numbering (`ListTypeAndValueTest.docx4jsNumberingModelSeesEveryList`).
+- **D8:** `w:outlineLvl` applies only with heading mapping on, where no "heading N" style exists.
+  Setting it with mapping off would change every user's TOC and navigation pane, which D8 keeps
+  off by default.
+- **D10:** the availability check is in `XHTMLImporterImpl` (a class name as a string), so
+  `JsoupHtml` is loaded only when jsoup is there.
+- **The snapshot is 17.1.1-SNAPSHOT,** the pom's `revision`. 17.3.4 is phase 4's version commit.
+- **For docx4j (told):** `Jsoup.parse(String)` keeps a leading U+FEFF as text. The `head` then
+  closes early, its `style` elements land in the `body`, and openhtmltopdf ignores them there.
+  Chunks docx4j writes may now start with a BOM.

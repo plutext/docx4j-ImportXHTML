@@ -51,7 +51,6 @@ import com.openhtmltopdf.pdfboxout.PdfRendererBuilder.PdfAConformance;
 import com.openhtmltopdf.render.BlockBox;
 import com.openhtmltopdf.render.PageBox;
 import com.openhtmltopdf.render.ViewportBox;
-import com.openhtmltopdf.simple.extend.XhtmlNamespaceHandler;
 import org.w3c.dom.CharacterData;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -214,13 +213,22 @@ public class DocxRenderer {
 		return _sharedContext;
 	}
 
+	/**
+	 * The document given to setDocument.
+	 *
+	 * @since 17.3.4
+	 */
+	public Document getDocument() {
+		return _doc;
+	}
+
 
 	public Document loadDocument(final String uri) {
 		return _sharedContext.getUac().getXMLResource(uri).getDocument();
 	}
 
 	public void setDocument(Document doc, String url) {
-		setDocument(doc, url, new XhtmlNamespaceHandler());
+		setDocument(doc, url, new Docx4jNamespaceHandler());
 	}
 
 	private void setDocument(Document doc, String url, NamespaceHandler nsh) {

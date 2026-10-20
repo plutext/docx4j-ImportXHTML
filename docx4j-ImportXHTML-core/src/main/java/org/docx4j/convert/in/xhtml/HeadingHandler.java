@@ -1,7 +1,7 @@
 /*
  *  This file is part of the docx4j-ImportXHTML library.
  *
- *  Copyright 2014-2022, Plutext Pty Ltd, and contributors.
+ *  Copyright 2014-2026, Plutext Pty Ltd, and contributors.
  *  Portions contributed before 15 July 2013 formed part of docx4j
  *  and were contributed under ASL v2 (a copy of which is incorporated
  *  herein by reference and applies to those portions).
@@ -56,7 +56,9 @@ public class HeadingHandler {
 		
 		for (Style s : styles.getStyle()) {
 			
-			if (s.getName().getVal().startsWith(HEADING_NAME_PREFIX)) {
+			if (s.getName()!=null // w:name is optional
+					&& s.getName().getVal()!=null
+					&& s.getName().getVal().startsWith(HEADING_NAME_PREFIX)) {
 				
 				// We may wish to map this
 				String styleName= s.getName().getVal();

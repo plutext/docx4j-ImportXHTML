@@ -11,6 +11,7 @@ module docx4j_ImportXHTML {
 	requires org.apache.pdfbox.io;
 	requires apache.mime4j.core;
 	requires org.apache.commons.codec;
+	requires static org.jsoup; // optional, for convertMHT
 //	requires org.apache.commons.lang3;
 	
 	//requires transitive java.xml.Node;

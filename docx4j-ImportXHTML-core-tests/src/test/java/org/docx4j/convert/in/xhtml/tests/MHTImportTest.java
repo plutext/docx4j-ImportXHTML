@@ -158,6 +158,35 @@ public class MHTImportTest {
 		Assert.assertTrue(xml, xml.contains("BASE64_TEXT"));
 	}
 
+	/**
+	 * Word's own MHT is HTML, not XHTML (unquoted attributes, unclosed li, &amp;nbsp;, an
+	 * empty o:p), so the XML parse fails ("Open quote is expected for attribute
+	 * http-equiv"); jsoup reads it instead.
+	 */
+	@Test
+	public void wordHtmlThroughJsoup() throws Exception {
+		String html = "<html xmlns:o=\"urn:schemas-microsoft-com:office:office\">"
+				+ "<head><meta http-equiv=Content-Type content=\"text/html; charset=utf-8\">"
+				+ "<style><!-- p.MsoNormal {margin:0cm; font-size:12.0pt} --></style></head>"
+				+ "<body lang=EN-AU><div class=WordSection1>"
+				+ "<p class=MsoNormal>Hello&nbsp;world<o:p></o:p></p>"
+				+ "<p>line<br>break</p><ul><li>one<li>two</ul><hr>"
+				+ "</div></body></html>";
+
+		String xml = convertMHT(MULTIPART_HEADER
+				+ "--BOUNDARY\r\n"
+				+ "Content-Type: text/html; charset=\"utf-8\"\r\n"
+				+ "Content-Transfer-Encoding: 8bit\r\n"
+				+ "\r\n"
+				+ html + "\r\n"
+				+ "--BOUNDARY--\r\n");
+		Assert.assertTrue(xml, xml.contains("Hello\u00A0world"));
+		Assert.assertTrue(xml, xml.contains("<w:sz w:val=\"24\"/>")); // p.MsoNormal's 12pt
+		Assert.assertTrue(xml, xml.contains("<w:br/>"));
+		Assert.assertEquals(xml, 2, count(xml, "<w:numPr>")); // the unclosed li, numbered
+		Assert.assertTrue(xml, xml.contains("o:hr=\"t\""));
+	}
+
 	@Test(expected = Docx4JException.class)
 	public void noHtmlPart() throws Exception {
 		convertMHT(MULTIPART_HEADER
@@ -192,6 +221,12 @@ public class MHTImportTest {
 			}
 		}
 		return sb.toString();
+	}
+
+	private static int count(String s, String sub) {
+		int n = 0;
+		for (int i = s.indexOf(sub); i >= 0; i = s.indexOf(sub, i + 1)) n++;
+		return n;
 	}
 
 	private static String marshal(List<Object> content) {

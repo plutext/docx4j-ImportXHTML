@@ -31,6 +31,52 @@ Changes in Version 17.1.1
   left out, with no "[MISSING IMAGE ...]" text.  style elements and attributes, and
   data: images, still apply.
 
+- A table with a caption came out as a w:tbl directly inside a w:tbl (schema-invalid,
+  and the outer table had no w:tblGrid), broken since 2013.  The caption is now its own
+  paragraph before the table, or after it for caption-side: bottom, with its
+  properties unchanged (centred by the default stylesheet; class="Caption" gives the
+  Caption style).  A table id on a captioned table gives one bookmark, not two.
+  See docs/change-requests/CR-002.
+
+- New XHTMLImporterImpl.setDisplayNoneAsHidden(boolean), default false.  When true,
+  what CSS display: none hides is imported as hidden text (w:vanish), as Word imports
+  it from an HTML altChunk, rather than left out: hidden runs in a visible paragraph,
+  hidden paragraphs (their marks included), and for a hidden tr, thead, tbody or table,
+  rows with w:trPr/w:hidden.  Only display: none from the author counts (a style
+  attribute, a style element or a linked stylesheet), not the default stylesheet's, so
+  head and script stay out.  An element inside a hidden one whose display the author
+  sets to anything but none or inherit shows again, as in Word.  The new
+  getHiddenContent() reports what the last convert hid, by the outermost hidden element
+  it came from.  The document's style attributes are changed during the convert, and
+  restored.  See docs/change-requests/CR-002.
+
+- An hr's horizontal rule is now a fresh paragraph each time; one shared object went
+  into every document.
+
+- An ol's type attribute (1, a, A, i, I) now sets its numbering format, as a
+  presentational hint, so CSS list-style-type still wins; it used to be ignored.  An
+  li's value attribute now numbers that item, and the ones after it, on from there; and
+  a nested ol's start is honoured where the list restarts (it got 1).
+
+- After a convert that adds lists, docx4j's NumberingDefinitionsPart has current
+  definitions for them (the importer calls initialiseMaps()).  docx4j caches a
+  definition per w:num from its abstract numbering's levels at the time, and the
+  importer adds the levels afterwards, so docx4j's own numbering (its Emulator, its text
+  extraction) could find no levels for these lists, unless something rebuilt the maps.
+  The saved docx was always right.
+
+- New XHTMLImporterImpl.setMapHeadingsToStyles(boolean), defaulting as before to
+  docx4j-ImportXHTML.Element.Heading.MapToStyle (else false).  When on, hN gets the
+  style named "heading N" as before, or, where the package has none (createPackage()
+  defines Heading 1 to 4), w:outlineLvl N-1.  A style with no w:name no longer causes a
+  NullPointerException.
+
+- convertMHT now reads HTML which isn't well-formed XML, such as Word's own MHT, with
+  jsoup, if jsoup (org.jsoup:jsoup, now an optional dependency) is on the classpath; on
+  the module path, add --add-modules org.jsoup.  Without it, such an MHT gives a
+  Docx4JException naming jsoup, rather than an unchecked XRRuntimeException.
+  Well-formed HTML is parsed as XML, as before.
+
 
 Version 17.0.4
 ===============
