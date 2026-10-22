@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+  <parent>
+	<groupId>org.docx4j</groupId>
+	<artifactId>docx4j-ImportXHTML-parent</artifactId>
+	<version>${revision}</version>
+  </parent>
+
+	<artifactId>docx4j-ImportXHTML-bundle</artifactId>
+	<packaging>jar</packaging>
+
+	<name>docx4j-ImportXHTML-bundle</name>
+	<description>
+		A fat jar to put beside docx4j-bundle: docx4j-ImportXHTML (XHTML to docx) with openhtmltopdf,
+		PDFBox, xmpbox, graphics2d, apache-mime4j and jsoup, without what docx4j-bundle already holds.
+		Use it with docx4j-bundle of the same version.  See docs/change-requests/CR-004.
+	</description>
+
+	<!-- The jar carries code under all three; the parent's list is LGPL only -->
+	<licenses>
+		<license>
+			<name>LGPL v2.1</name>
+			<url>http://www.gnu.org/licenses/lgpl-2.1.html</url>
+			<distribution>repo</distribution>
+			<comments>docx4j-ImportXHTML and openhtmltopdf.  See META-INF/NOTICE in the jar.</comments>
+		</license>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<distribution>repo</distribution>
+			<comments>PDFBox, xmpbox, graphics2d and apache-mime4j.</comments>
+		</license>
+		<license>
+			<name>MIT License</name>
+			<url>https://opensource.org/licenses/MIT</url>
+			<distribution>repo</distribution>
+			<comments>jsoup.</comments>
+		</license>
+	</licenses>
+
+	<build>
+		<outputDirectory>bin</outputDirectory>
+		<testOutputDirectory>bin-testOutput</testOutputDirectory>
+
+		<plugins>
+			<!-- forceCreation: shade replaces target/<module>.jar in place, and without this a
+			     build without clean finds that fat jar up to date, so the next shade starts
+			     from it, and BundleIT tests the old includes rather than these. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>${version.maven-jar-plugin}</version>
+				<configuration>
+					<forceCreation>true</forceCreation>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.1.0</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<!-- Only what docx4j-bundle doesn't hold.  fontbox and pdfbox-io are
+							     in docx4j-bundle (same version), as is docx4j-core's tree; a
+							     provided scope alone would still shade the transitive tree, so
+							     the list is positive.  BundleIT fails if this jar and
+							     docx4j-bundle (or -extras) share a file. -->
+							<artifactSet>
+								<includes>
+									<include>org.docx4j:docx4j-ImportXHTML-core</include>
+									<include>io.github.openhtmltopdf:openhtmltopdf-core</include>
+									<include>io.github.openhtmltopdf:openhtmltopdf-pdfbox</include>
+									<include>de.rototor.pdfbox:graphics2d</include>
+									<include>org.apache.pdfbox:pdfbox</include>
+									<include>org.apache.pdfbox:xmpbox</include>
+									<include>org.apache.james:apache-mime4j-core</include>
+									<include>org.jsoup:jsoup</include>
+								</includes>
+							</artifactSet>
+							<shadedArtifactAttached>false</shadedArtifactAttached>
+							<createDependencyReducedPom>false</createDependencyReducedPom>
+							<filters>
+								<filter>
+									<artifact>*:*</artifact>
+									<excludes>
+										<exclude>META-INF/*.SF</exclude>
+										<exclude>META-INF/*.DSA</exclude>
+										<exclude>META-INF/*.RSA</exclude>
+										<exclude>module-info.class</exclude>
+										<exclude>META-INF/versions/*/module-info.class</exclude>
+									</excludes>
+								</filter>
+							</filters>
+							<transformers>
+								<!-- No projectName and no header: with a projectName, the
+								     transformer writes its own "Copyright 2006-<year>" entry,
+								     naming its organizationName, which defaults to The Apache
+								     Software Foundation.  So the NOTICE is ours (from
+								     src/main/resources) followed by the bundled ones. -->
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer">
+									<addHeader>false</addHeader>
+								</transformer>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+								<!-- Multi-Release: jsoup is a multi-release jar, and without the
+								     attribute the JVM ignores its classes under META-INF/versions/. -->
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<manifestEntries>
+										<Multi-Release>true</Multi-Release>
+									</manifestEntries>
+								</transformer>
+							</transformers>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- sets ${org.docx4j:docx4j-bundle:jar} and ${org.docx4j:docx4j-bundle-extras:jar}, for BundleIT -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>3.7.0</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>properties</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- BundleIT runs after the shade, on the jar itself -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>3.2.5</version>
+				<configuration>
+					<systemPropertyVariables>
+						<bundle.jar>${project.build.directory}/${project.build.finalName}.jar</bundle.jar>
+						<docx4j.bundle.jar>${org.docx4j:docx4j-bundle:jar}</docx4j.bundle.jar>
+						<docx4j.bundle.extras.jar>${org.docx4j:docx4j-bundle-extras:jar}</docx4j.bundle.extras.jar>
+						<test.classes>${project.build.testOutputDirectory}</test.classes>
+					</systemPropertyVariables>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- direct: the published pom has docx4j-bundle only.  The parent's "all" would
+			     hoist -core's tree, docx4j-core's included, which is what this jar avoids. -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>flatten-maven-plugin</artifactId>
+				<configuration>
+					<flattenMode>ossrh</flattenMode>
+					<flattenDependencyMode>direct</flattenDependencyMode>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.docx4j</groupId>
+			<artifactId>docx4j-bundle</artifactId>
+			<version>${version.docx4j}</version>
+		</dependency>
+
+		<!-- in docx4j-bundle; provided, so that they are neither shaded nor published -->
+		<dependency>
+			<groupId>org.docx4j</groupId>
+			<artifactId>docx4j-core</artifactId>
+			<version>${version.docx4j}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.docx4j</groupId>
+			<artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
+			<version>${version.docx4j}</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- shaded into this jar; optional, so that the published pom doesn't carry them -->
+		<dependency>
+			<groupId>org.docx4j</groupId>
+			<artifactId>docx4j-ImportXHTML-core</artifactId>
+			<version>${project.version}</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>1.22.1</version>
+			<optional>true</optional>
+		</dependency>
+
+		<!-- for BundleIT -->
+		<dependency>
+			<groupId>org.docx4j</groupId>
+			<artifactId>docx4j-bundle-extras</artifactId>
+			<version>${version.docx4j}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.13.2</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+</project>

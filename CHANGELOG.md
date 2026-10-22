@@ -82,6 +82,15 @@ Changes in Version 17.1.1
   Docx4JException naming jsoup, rather than an unchecked XRRuntimeException.
   Well-formed HTML is parsed as XML, as before.
 
+- New artifact docx4j-ImportXHTML-bundle, a fat jar to put beside docx4j-bundle: it
+  holds docx4j-ImportXHTML, openhtmltopdf, PDFBox, xmpbox, graphics2d, apache-mime4j and
+  jsoup, and nothing docx4j-bundle holds (fontbox and pdfbox-io come from there).  Its
+  published pom depends on docx4j-bundle alone, so a docx4j-bundle user no longer gets
+  docx4j-core's tree a second time from -core's pom.  Every build checks, in BundleIT,
+  that it shares no file with docx4j-bundle or docx4j-bundle-extras, and that the two
+  jars alone convert XHTML and an HTML altChunk.  Use it with the docx4j-bundle version
+  its pom names; on the module path, use -core.  See docs/change-requests/CR-004.
+
 
 Version 17.0.4
 ===============

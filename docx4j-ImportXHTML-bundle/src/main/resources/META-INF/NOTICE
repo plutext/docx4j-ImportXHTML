@@ -1,0 +1,26 @@
+docx4j XHTML Import
+Copyright Plutext Pty Ltd
+
+docx4j XHTML Import contains code previously contained in files published as part of the docx4j project,
+at https://github.com/plutext/docx4j/tree/master/src/main/java/org/docx4j/convert/in/xhtml
+   
+docx4j XHTML Import relies on openhtmltopdf, which is licensed under the GNU Lesser General
+Public License (LGPL); you can redistribute it and/or modify it under the terms
+of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 2.1 of the License, or (at your option) any later version.
+See further https://github.com/plutext/flyingsaucer/blob/master/LICENSE
+
+docx4j XHTML Import also relies on:
+
++- io.github.openhtmltopdf:openhtmltopdf-core         (LGPL 2.1 or later)
++- io.github.openhtmltopdf:openhtmltopdf-pdfbox       (LGPL 2.1 or later)
+|  \- de.rototor.pdfbox:graphics2d                    (Apache License 2.0)
++- org.apache.pdfbox:pdfbox                           (Apache License 2.0)
+|  +- org.apache.pdfbox:fontbox                       (Apache License 2.0)
+|  \- org.apache.pdfbox:pdfbox-io                     (Apache License 2.0)
++- org.apache.pdfbox:xmpbox                           (Apache License 2.0)
++- org.apache.james:apache-mime4j-core                (Apache License 2.0)
+\- org.jsoup:jsoup, optional                          (MIT License)
+
+together with docx4j and its dependencies.
+ 	
