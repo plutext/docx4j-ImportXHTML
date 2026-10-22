@@ -6,7 +6,7 @@ as recommended. Proposed 2026-10-22, at Jason's request relayed by docx4j-25 (it
 ships in your 17.3.4"). Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session. The module
 was prototyped outside the repository and measured against docx4j-bundle and
 docx4j-bundle-extras, 17.3.4-SNAPSHOT first and then the released 17.3.4 (§3, §4). Phase 1
-implemented 2026-10-23 (suite 146/0/0, BundleIT 3/0/0; §6), uncommitted, and installed as
+implemented 2026-10-23 (suite 146/0/0, BundleIT 3/0/0; §6), commit 34089b9, and installed as
 17.1.1-SNAPSHOT.
 Scope: a new module, `docx4j-ImportXHTML-bundle`, with a pom, a marker class, licence files and an
 integration test. Also the parent pom's `<modules>` and release notes, the README and the
@@ -200,7 +200,7 @@ The prototype was built against docx4j-bundle 17.3.4-SNAPSHOT (installed 21 Octo
 - `legals/NOTICE` refreshed (D3).
 - Install as 17.1.1-SNAPSHOT, then tell docx4j-25 so `Docx4j_from_Python.md` can name the jar.
 
-**Done 2026-10-23** (uncommitted):
+**Done 2026-10-23** (commit 34089b9):
 - **Files.**
   - `docx4j-ImportXHTML-bundle/`: the module, as §3.
     - The pom is the prototype's, with a `${revision}` parent.
