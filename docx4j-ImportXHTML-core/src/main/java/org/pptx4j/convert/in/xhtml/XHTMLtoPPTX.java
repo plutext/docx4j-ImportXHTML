@@ -1,7 +1,7 @@
 /*
  *  This file is part of the docx4j-ImportXHTML library.
  *
- *  Copyright 2011-2022, Plutext Pty Ltd, and contributors.
+ *  Copyright 2011-2026, Plutext Pty Ltd, and contributors.
  *  Portions contributed before 15 July 2013 formed part of docx4j 
  *  and were contributed under ASL v2 (a copy of which is incorporated
  *  herein by reference and applies to those portions). 
@@ -41,6 +41,7 @@ import jakarta.xml.bind.JAXBException;
 import org.docx4j.XmlUtils;
 import org.docx4j.convert.in.xhtml.DomCssValueAdaptor;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
+import org.docx4j.convert.in.xhtml.LinkSchemes;
 import org.docx4j.convert.in.xhtml.renderer.DocxRenderer;
 //import org.docx4j.convert.in.xhtml.FormattingOption;
 import org.docx4j.dml.CTGraphicalObjectFrameLocking;
@@ -197,6 +198,31 @@ public class XHTMLtoPPTX {
     public List<Object> convertSingleSlide() throws Exception {
         return this.traverse();
     }
+
+    /**
+     * Whether an a/@href is checked before it becomes a link, as
+     * {@link org.docx4j.convert.in.xhtml.XHTMLImporterImpl#setLinkSchemesChecked(boolean)}
+     * does for docx.  Default true: a target whose scheme
+     * {@link org.docx4j.convert.in.xhtml.LinkSchemes} doesn't allow gives no link, its text
+     * kept.  Set before convertSingleSlide.  See docs/change-requests/CR-005.
+     *
+     * @since 17.3.4
+     */
+    public void setLinkSchemesChecked(boolean checked) {
+        this.linkSchemesChecked = checked;
+    }
+
+    /**
+     * @since 17.3.4
+     */
+    public boolean isLinkSchemesChecked() {
+        return linkSchemesChecked;
+    }
+
+    private boolean linkSchemesChecked = true;
+
+    /** Whether a refused link has been logged yet */
+    private boolean linkRefused;
 
     private static DocxRenderer createRenderer(String content, String baseUrl) {
         DocxRenderer pptxRenderer = new DocxRenderer();
@@ -452,6 +478,16 @@ public class XHTMLtoPPTX {
         String hrefAttr = inlineBox.getElement().getAttribute("href");
         
         if(inlineBox.isStartsHere()) {
+            if (linkSchemesChecked && !LinkSchemes.isAllowed(hrefAttr)) {
+                // no link; the text is kept
+                if (linkRefused) {
+                    log.debug("Not a link, since its scheme isn't allowed: " + hrefAttr);
+                } else {
+                    log.warn("Not a link, since its scheme isn't allowed (see LinkSchemes; others may follow): " + hrefAttr);
+                    linkRefused = true;
+                }
+                hrefAttr = null;
+            }
             settings.setHyperlink(hrefAttr);
         }
         

@@ -27,7 +27,9 @@ package org.docx4j.convert.in.xhtml.renderer;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
 import org.slf4j.Logger;
@@ -44,6 +46,13 @@ import com.openhtmltopdf.util.LogMessageId;
 public class Docx4jUserAgent extends NaiveUserAgent {
 	
 	public static Logger log = LoggerFactory.getLogger(Docx4jUserAgent.class);		
+
+    /**
+     * The images that couldn't be read.  Layout and the image handler each ask for an
+     * image, so a failure was fetched four times; a user agent lasts one convert, so
+     * this is asked once per convert (CR-005).
+     */
+    private final Set<String> failed = new HashSet<String>();
 
 
 //    private static final int IMAGE_CACHE_CAPACITY = 32;
@@ -102,6 +111,10 @@ public class Docx4jUserAgent extends NaiveUserAgent {
         }
 
 
+        if (failed.contains(uriResolved)) {
+            return new ImageResource(uriStr, null);
+        }
+
         InputStream is = null;
         try {
         	is = openStream(uriResolved);
@@ -147,6 +160,7 @@ public class Docx4jUserAgent extends NaiveUserAgent {
         if (resource != null) {
             resource = new ImageResource(resource.getImageUri(), resource.getImage());
         } else {
+            failed.add(uriResolved);
             resource = new ImageResource(uriStr, null);
         }
 

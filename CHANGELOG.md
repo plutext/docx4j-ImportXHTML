@@ -91,6 +91,28 @@ Changes in Version 17.1.1
   jars alone convert XHTML and an HTML altChunk.  Use it with the docx4j-bundle version
   its pom names; on the module path, use -core.  See docs/change-requests/CR-004.
 
+- An internal link (href="#...") and an image's alt text are now built as objects, not
+  pasted into XML text.  A quote in the fragment or the alt text added attributes to the
+  w:hyperlink or wp:docPr; a & or < in it lost the link or the image without an error
+  (<img alt="Profit &amp; Loss"> came out as "[MISSING IMAGE ...]"), and so did link text
+  with both "&amp;" and a bare "&" in it.  An image that can't be loaded is now requested
+  once per convert, not four times.  See docs/change-requests/CR-005.
+
+- New LinkSchemes, and XHTMLImporterImpl.setLinkSchemesChecked(boolean), default true (the
+  same on XHTMLtoPPTX).  An href whose scheme isn't allowed (javascript:, vbscript:, data:,
+  ms-msdt: and the like) now gives its text without a link, where it gave an External
+  hyperlink with that target; the first one refused in a convert is logged at WARN.
+  Allowed: no scheme (relative paths, fragments, UNC paths), drive paths (C:\), and http,
+  https, ftp, mailto, file, news and tel, as in POI and docx4j's HTML output.  The property
+  docx4j-ImportXHTML.Hyperlink.Schemes, a comma-separated list, adds schemes.  Set it false
+  to keep every target as written, as Word does for an HTML altChunk.
+  See docs/change-requests/CR-005.
+
+- convert(InputStream), convert(Reader), convert(InputSource), convert(File) and
+  convert(URL) now throw a Docx4JException, with the line and column, where the XHTML
+  isn't well-formed, as convert(String) did; they let openhtmltopdf's unchecked
+  XRRuntimeException out.  See docs/change-requests/CR-005.
+
 
 Version 17.0.4
 ===============

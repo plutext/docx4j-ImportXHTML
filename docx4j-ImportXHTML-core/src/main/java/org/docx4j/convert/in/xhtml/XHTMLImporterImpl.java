@@ -325,6 +325,53 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	private boolean externalResourcesAllowed = true;
 
 	/**
+	 * Whether an a/@href is checked before it becomes a link.  Default true: a target whose
+	 * scheme {@link LinkSchemes} doesn't allow (javascript:, vbscript:, data:, ms-msdt: and
+	 * the like) gives no link, its text kept, as if the a had no href; the first one refused
+	 * in each convert is logged at WARN.  A fragment (#name) is always allowed.
+	 *
+	 * <p>Set false to keep every target as written, as Word does when it imports an HTML
+	 * altChunk: for example to inspect a document's links, rather than to pass them on.
+	 * See docs/change-requests/CR-005.
+	 *
+	 * @since 17.3.4
+	 */
+	public void setLinkSchemesChecked(boolean checked) {
+		this.linkSchemesChecked = checked;
+	}
+
+	/**
+	 * @since 17.3.4
+	 */
+	public boolean isLinkSchemesChecked() {
+		return linkSchemesChecked;
+	}
+
+	private boolean linkSchemesChecked = true;
+
+	/** Whether this convert has logged a refused link yet */
+	private boolean linkRefused;
+
+	/**
+	 * @return href, or "" where its scheme isn't allowed, so that the a is imported as if it had
+	 * no href
+	 */
+	private String checkedHref(String href) {
+		if (!linkSchemesChecked
+				|| href == null || href.trim().equals("")
+				|| LinkSchemes.isAllowed(href)) {
+			return href;
+		}
+		if (linkRefused) {
+			log.debug("Not a link, since its scheme isn't allowed: " + href);
+		} else {
+			log.warn("Not a link, since its scheme isn't allowed (see LinkSchemes; others may follow): " + href);
+			linkRefused = true;
+		}
+		return "";
+	}
+
+	/**
 	 * Whether content which CSS display: none hides is imported as hidden text
 	 * (w:vanish), as Word imports it from an HTML altChunk.  Default false: such content
 	 * is left out, as before.
@@ -700,7 +747,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      * @param baseUrl
      * @param wordMLPackage
      * @return
-     * @throws IOException
+     * @throws Docx4JException if the XHTML isn't well-formed (from 17.3.4; before, openhtmltopdf's
+     *         unchecked XRRuntimeException), or can't be converted
      */
     public List<Object> convert(File file, String baseUrl) throws Docx4JException {
 
@@ -727,13 +775,19 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      * @param baseUrl
      * @param wordMLPackage
      * @return
-     * @throws IOException
+     * @throws Docx4JException if the XHTML isn't well-formed (from 17.3.4; before, openhtmltopdf's
+     *         unchecked XRRuntimeException), or can't be converted
      */
     public List<Object> convert(InputSource is,  String baseUrl) throws Docx4JException {
 
         renderer = getRenderer();
         
-        Document dom = XMLResource.load(is).getDocument();        
+        Document dom;
+        try {
+        	dom = XMLResource.load(is).getDocument();
+        } catch (com.openhtmltopdf.util.XRRuntimeException xre) {
+        	throw notWellFormed(xre);
+        }
         renderer.setDocument(dom, baseUrl);
         
         return layoutAndTraverse();
@@ -831,13 +885,19 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      * @param baseUrl
      * @param wordMLPackage
      * @return
-     * @throws IOException
+     * @throws Docx4JException if the XHTML isn't well-formed (from 17.3.4; before, openhtmltopdf's
+     *         unchecked XRRuntimeException), or can't be converted
      */
     public List<Object> convert(InputStream is, String baseUrl) throws Docx4JException {
     	
         renderer = getRenderer();
         
-        Document dom = XMLResource.load(is).getDocument();        
+        Document dom;
+        try {
+        	dom = XMLResource.load(is).getDocument();
+        } catch (com.openhtmltopdf.util.XRRuntimeException xre) {
+        	throw notWellFormed(xre);
+        }
         renderer.setDocument(dom, baseUrl);
 
         return layoutAndTraverse();
@@ -868,13 +928,19 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      * @param baseUrl
      * @param wordMLPackage
      * @return
-     * @throws IOException
+     * @throws Docx4JException if the XHTML isn't well-formed (from 17.3.4; before, openhtmltopdf's
+     *         unchecked XRRuntimeException), or can't be converted
      */
     public List<Object> convert(Reader reader,  String baseUrl) throws Docx4JException {
     	
         renderer = getRenderer();
         
-        Document dom = XMLResource.load(reader).getDocument();        
+        Document dom;
+        try {
+        	dom = XMLResource.load(reader).getDocument();
+        } catch (com.openhtmltopdf.util.XRRuntimeException xre) {
+        	throw notWellFormed(xre);
+        }
         renderer.setDocument(dom, baseUrl);
         
         return layoutAndTraverse();
@@ -910,6 +976,8 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      * @param url
      * @param wordMLPackage
      * @return
+     * @throws Docx4JException if the XHTML isn't well-formed (from 17.3.4; before, openhtmltopdf's
+     *         unchecked XRRuntimeException), or can't be converted
      */
     public List<Object> convert(URL url) throws Docx4JException {
 
@@ -927,14 +995,43 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      * then refuses every URI, this one included.  Read as UTF-8, as the user agent does.
      */
     private Document loadDocument(String uri) throws Docx4JException {
-        if (externalResourcesAllowed) {
-            return renderer.loadDocument(uri);
+        try {
+            if (externalResourcesAllowed) {
+                return renderer.loadDocument(uri);
+            }
+            try (Reader reader = new InputStreamReader(new URL(uri).openStream(), StandardCharsets.UTF_8)) {
+                return XMLResource.load(reader).getDocument();
+            } catch (IOException e) {
+                throw new Docx4JException("Couldn't read " + uri, e);
+            }
+        } catch (com.openhtmltopdf.util.XRRuntimeException xre) {
+            throw notWellFormed(xre);
         }
-        try (Reader reader = new InputStreamReader(new URL(uri).openStream(), StandardCharsets.UTF_8)) {
-            return XMLResource.load(reader).getDocument();
-        } catch (IOException e) {
-            throw new Docx4JException("Couldn't read " + uri, e);
-        }
+    }
+
+    /**
+     * The Docx4JException for a document openhtmltopdf's XMLResource couldn't parse, with the
+     * line and column where it isn't well-formed.  XMLResource throws its own unchecked
+     * XRRuntimeException; every convert that parses gives this instead (CR-005), as
+     * convert(String) always did.
+     */
+    private static Docx4JException notWellFormed(com.openhtmltopdf.util.XRRuntimeException xre) {
+    	// javax.xml.transform.TransformerException te
+    	Throwable t = xre.getCause();
+    	if (t instanceof javax.xml.transform.TransformerException) {
+        	log.error(t.getMessage(), t);
+        	// eg content of elements must consist of well-formed character data or markup.
+        	Throwable t2 = ((javax.xml.transform.TransformerException)t).getCause();
+        	if (t2 instanceof org.xml.sax.SAXParseException) {
+        		return new Docx4JException(
+	        			"issues at Line " + ((org.xml.sax.SAXParseException)t2).getLineNumber() 
+	        			+ ", Col " + ((org.xml.sax.SAXParseException)t2).getColumnNumber(), t);
+        	}
+    		return new Docx4JException(
+        			((javax.xml.transform.TransformerException)t).getLocationAsString(), t);
+    	}
+    	log.error(xre.getMessage(), xre);
+    	return new Docx4JException(xre.getMessage(), xre);
     }
 
     /**
@@ -968,27 +1065,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         try {
         	dom = XMLResource.load(is).getDocument();
         } catch  ( com.openhtmltopdf.util.XRRuntimeException xre) {
-        	// javax.xml.transform.TransformerException te
-        	Throwable t = xre.getCause();
-        	log.error(t.getMessage(), t);
-        	if (t instanceof javax.xml.transform.TransformerException) {
-	        	// eg content of elements must consist of well-formed character data or markup.
-        		
-        		
-	        	Throwable t2 = ((javax.xml.transform.TransformerException)t).getCause();
-	        	if (t2 instanceof org.xml.sax.SAXParseException) {
-	        		throw new Docx4JException(
-		        			"issues at Line " + ((org.xml.sax.SAXParseException)t2).getLineNumber() 
-		        			+ ", Col " + ((org.xml.sax.SAXParseException)t2).getColumnNumber(), t);
-	        		
-	        	}
-
-        		throw new Docx4JException(
-	        			((javax.xml.transform.TransformerException)t).getLocationAsString(), t);
-	        	
-        	} else {
-        		throw xre;
-        	}
+        	throw notWellFormed(xre);
         }
         
         
@@ -1010,6 +1087,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     private List<Object> layoutAndTraverse() throws Docx4JException {
 
         displayNoneHelper = new DisplayNoneHelper(displayNoneAsHidden);
+        linkRefused = false;
         int start = imports.getContent().size();
         try {
             displayNoneHelper.prepare(renderer); // before layout
@@ -2420,7 +2498,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
                 	log.debug("Processing <a>... with class " + cssClass);
             		
             		String name = s.getElement().getAttribute("name");
-            		String href = s.getElement().getAttribute("href"); 
+            		String href = checkedHref(s.getElement().getAttribute("href")); 
             		
             		if (name!=null
             				&& !name.trim().equals("")) {
@@ -3089,94 +3167,70 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	
 	private Hyperlink createHyperlink(String url, RPr rPr, String linkText, RelationshipsPart rp) {
 		
-		// Handle XML predefined entities - escape them so we can unmarshall
-		if (linkText.contains("&")
-				&& !linkText.contains("&amp;") ) {
-			linkText = linkText.replace("&", "&amp;");
-		}
-		if (linkText.contains("<") ) {
-			linkText = linkText.replace("<", "&lt;");  // no need to worry about embedded elements (ie <b>) here since there can't be any - any such are added to the hyperlink later
-		}
-		if (linkText.contains(">") ) {
-			linkText = linkText.replace(">", "&gt;");
-		}		
-		// No need for special handling for &apos; or &quot; 
+		// Built as objects, not parsed from a string, so that a quote, & or < in the
+		// fragment or the link text stays text: it neither adds attributes nor loses
+		// the link (CR-005)
+		Hyperlink hyperlink = Context.getWmlObjectFactory().createPHyperlink();
 		
-		try {
-			String hpl = null;
+		if (url.startsWith("#")) { // Internal link --> w:anchor
 			
-			if (url.startsWith("#")) { // Internal link --> w:anchor
-				
-				hpl = "<w:hyperlink w:anchor=\"" + bookmarkHelper.anchorToBookmarkName(bookmarkNamePrefix, url) + "\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" " +
-			            "xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" >" +
-			            "<w:r>" +
-			            "<w:t>" + linkText + "</w:t>" +
-			            "</w:r>" +
-			            "</w:hyperlink>";				
-				
-				
-			} else {                   // External link --> r:id
+			hyperlink.setAnchor(bookmarkHelper.anchorToBookmarkName(bookmarkNamePrefix, url));
+			
+		} else {                   // External link --> r:id
 
-				// We need to add a relationship to word/_rels/document.xml.rels
-				// but since its external, we don't use the 
-				// usual wordMLPackage.getMainDocumentPart().addTargetPart
-				// mechanism
-				org.docx4j.relationships.ObjectFactory factory =
-					new org.docx4j.relationships.ObjectFactory();
-				
-				org.docx4j.relationships.Relationship rel = factory.createRelationship();
-				rel.setType( Namespaces.HYPERLINK  );
-				rel.setTarget(url);
-				if (log.isDebugEnabled()) {
-					log.debug("target " + url);
-				}
-				rel.setTargetMode("External");  
-										
-				rp.addRelationship(rel);
-				
-				// addRelationship sets the rel's @Id
-				
-				hpl = "<w:hyperlink r:id=\"" + rel.getId() + "\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" " +
-	            "xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" >" +
-	            "<w:r>" +
-	            "<w:t>" + linkText + "</w:t>" +
-	            "</w:r>" +
-	            "</w:hyperlink>";
+			// We need to add a relationship to word/_rels/document.xml.rels
+			// but since its external, we don't use the 
+			// usual wordMLPackage.getMainDocumentPart().addTargetPart
+			// mechanism
+			org.docx4j.relationships.ObjectFactory factory =
+				new org.docx4j.relationships.ObjectFactory();
+			
+			org.docx4j.relationships.Relationship rel = factory.createRelationship();
+			rel.setType( Namespaces.HYPERLINK  );
+			rel.setTarget(url);
+			if (log.isDebugEnabled()) {
+				log.debug("target " + url);
 			}
-
-			Hyperlink hyperlink = (Hyperlink)XmlUtils.unmarshalString(hpl);
-			R r = (R)hyperlink.getContent().get(0);
-			r.setRPr(rPr);
-			displayNoneHelper.created(r);
+			rel.setTargetMode("External");  
+									
+			rp.addRelationship(rel);
 			
-			// Style the hyperlink with hyperlinkStyleId,
-			// unless another style is already in use
-			P currentP = getCurrentParagraph(false);
-			
-//			System.out.println("p/h:" + XmlUtils.marshaltoString(currentP));
-			
-			
-//			if (currentP.getPPr()!=null
-//					&& currentP.getPPr().getRPr()!=null
-//					&& currentP.getPPr().getRPr().getRStyle()!=null) {
-//				
-//				// Respect p/ppr/rpr
-//				
-//			} else 
-				
-			if (rPr.getRStyle()==null // don't set it if its set already
-					&& hyperlinkStyleId!=null) {
-				RStyle rStyle = Context.getWmlObjectFactory().createRStyle();
-				rStyle.setVal(hyperlinkStyleId);
-				rPr.setRStyle(rStyle );
-			}
-			return hyperlink;
-			
-		} catch (Exception e) {
-			// eg  org.xml.sax.SAXParseException: The reference to entity "ballot_id" must end with the ';' delimiter. 
-			log.error("Dodgy link text: '" + linkText + "'", e);
-			return null;
+			// addRelationship sets the rel's @Id
+			hyperlink.setId(rel.getId());
 		}
+
+		R r = Context.getWmlObjectFactory().createR();
+		Text t = Context.getWmlObjectFactory().createText();
+		t.setValue(linkText);
+		r.getContent().add(Context.getWmlObjectFactory().createRT(t));
+		t.setParent(r);
+		hyperlink.getContent().add(r);
+		r.setParent(hyperlink);
+		r.setRPr(rPr);
+		displayNoneHelper.created(r);
+		
+		// Style the hyperlink with hyperlinkStyleId,
+		// unless another style is already in use
+		P currentP = getCurrentParagraph(false);
+		
+//		System.out.println("p/h:" + XmlUtils.marshaltoString(currentP));
+		
+		
+//		if (currentP.getPPr()!=null
+//				&& currentP.getPPr().getRPr()!=null
+//				&& currentP.getPPr().getRPr().getRStyle()!=null) {
+//			
+//			// Respect p/ppr/rpr
+//			
+//		} else 
+			
+		if (rPr.getRStyle()==null // don't set it if its set already
+				&& hyperlinkStyleId!=null) {
+			RStyle rStyle = Context.getWmlObjectFactory().createRStyle();
+			rStyle.setVal(hyperlinkStyleId);
+			rPr.setRStyle(rStyle );
+		}
+		return hyperlink;
 		
 		
 	}

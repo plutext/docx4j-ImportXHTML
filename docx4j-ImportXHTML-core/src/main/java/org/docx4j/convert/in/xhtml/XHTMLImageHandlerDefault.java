@@ -215,9 +215,9 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
                         if(excessWidth > 0) {
                             log.debug("table style margins subtracted (twips): " + excessWidth);
                         }
-                        inline = imagePart.createImageInline(null, e.getAttribute("alt"), docPrId, 1, false, maxWidth - (int)excessWidth);
+                        inline = imagePart.createImageInline(null, "", docPrId, 1, false, maxWidth - (int)excessWidth);
                     } else {
-						inline = imagePart.createImageInline(null, e.getAttribute("alt"), docPrId, 1, false);
+						inline = imagePart.createImageInline(null, "", docPrId, 1, false);
 					}
 				} else {
 					
@@ -232,7 +232,7 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 								(cx / imagePart.getImageInfo().getSize().getWidthPx());
 						
 					}
-					inline = imagePart.createImageInline(null, e.getAttribute("alt"), 
+					inline = imagePart.createImageInline(null, "", 
 							docPrId, 1, cx, cy, false);
 					
 					/*
@@ -244,6 +244,11 @@ public class XHTMLImageHandlerDefault implements XHTMLImageHandler {
 					 * 
 					 */
 				}
+
+				// The alt text, set on the object: docx4j's createImageInline pastes it into
+				// its template unescaped, so a quote, & or < added an attribute, or lost the
+				// image (CR-005)
+				inline.getDocPr().setDescr(e.getAttribute("alt"));
 
 				// Now add the inline in w:p/w:r/w:drawing
 				org.docx4j.wml.R run = Context.getWmlObjectFactory().createR();
