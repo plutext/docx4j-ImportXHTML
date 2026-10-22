@@ -6,8 +6,8 @@ input"). He had pointed at apache/poi#1455 and asked "should we be testing what 
 Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session. Measured with probes against -core at
 d33581f, compiled against the released docx4j 17.3.4 (§1). Phases 1 and 2 implemented 2026-10-23,
 with the entry points' exceptions (§5, Jason: "fix please"; suite 162/0/0, BundleIT 3/0/0; §6),
-uncommitted and not installed. Phase 2 changes what docx4j's
-`HtmlChunkImport` gets, so the snapshot waits on docx4j-25 (§8).
+commit ca10f61, not installed. Phase 2 changes what docx4j's `HtmlChunkImport` gets, so the
+snapshot waits on docx4j-25 (§8).
 Scope: `XHTMLImporterImpl` (`createHyperlink`, and a link check with its setter),
 `XHTMLImageHandlerDefault` (alt text), `Docx4jUserAgent` (a failed image fetched once),
 `XHTMLtoPPTX` (the same link check), a new class for the check, a new test class in core-tests, the
@@ -234,7 +234,7 @@ please"):
 
 As §4. The CHANGELOG entry describes rows 2 to 6 as a fix.
 
-**Done 2026-10-23** (uncommitted, not installed):
+**Done 2026-10-23** (commit ca10f61, not installed):
 - **`createHyperlink`** builds the `P.Hyperlink`, `R` and `Text` as objects, with their parents
   set as unmarshalling set them. Two things are gone: the hand escaping of the link text, and the
   catch that logged "Dodgy link text" and returned null.
@@ -262,7 +262,7 @@ As §4, once D1 to D4 are decided. Then send docx4j-25 the commit. They take
 `setLinkSchemesChecked(false)` in `HtmlChunkImport`, for the inspector (§8), in CR-056 phase 3
 (agreed 2026-10-23).
 
-**Done 2026-10-23** (uncommitted, not installed):
+**Done 2026-10-23** (commit ca10f61, not installed):
 
 - **`LinkSchemes`** (new, LGPL header) holds `isAllowed`, `defaults()` and `PROPERTY`. It reads a
   scheme as POI's `isSafeHyperlink` does, written afresh: tabs and line breaks are dropped, and
