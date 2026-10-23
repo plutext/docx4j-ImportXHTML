@@ -7,7 +7,9 @@ ships in your 17.3.4"). Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML ses
 was prototyped outside the repository and measured against docx4j-bundle and
 docx4j-bundle-extras, 17.3.4-SNAPSHOT first and then the released 17.3.4 (§3, §4). Phase 1
 implemented 2026-10-23 (suite 146/0/0, BundleIT 3/0/0; §6), commit 34089b9, and installed as
-17.1.1-SNAPSHOT.
+17.1.1-SNAPSHOT. The 17.3.4 review (24439a2, by Claude Fable 5.1) moved the build's own
+dependencies into a profile that flatten removes, so the published pom now lists docx4j-bundle
+alone (§3, §6).
 Scope: a new module, `docx4j-ImportXHTML-bundle`, with a pom, a marker class, licence files and an
 integration test. Also the parent pom's `<modules>` and release notes, the README and the
 CHANGELOG. `-core` doesn't change.
@@ -113,7 +115,12 @@ Extras' pom with this project's parent:
   - docx4j-bundle-extras and junit, test scope (for the integration test).
 
   `flatten-maven-plugin` runs with `flattenDependencyMode=direct`. The parent's `all` would hoist
-  -core's tree into the published pom.
+  -core's tree into the published pom. Direct mode still lists the provided and optional four,
+  though Maven passes neither scope on to a consumer. So those four are in a profile,
+  `build-dependencies`, which is always active: it is activated by the absence of
+  `docx4j.ImportXHTML.bundle.published`, a property nothing sets. Flatten's `pomElements` removes
+  profiles, so the published pom lists docx4j-bundle alone (the 17.3.4 review, 24439a2). Test
+  dependencies aren't published in either mode.
 - **A marker class,** `org.docx4j.convert.in.xhtml.bundle.ImportXHTMLBundle`, with a
   `package-info.java`. Central requires sources and javadoc jars, and this gives them content, as
   extras' `BundleExtras` does.
@@ -241,6 +248,15 @@ The prototype was built against docx4j-bundle 17.3.4-SNAPSHOT (installed 21 Octo
   - **A scratch consumer** of `docx4j-ImportXHTML-bundle:17.1.1-SNAPSHOT` alone resolves two
     artifacts: the bundle, and docx4j-bundle 17.3.4.
 
+**Amended 2026-10-23 by the 17.3.4 review** (24439a2, Claude Fable 5.1):
+- **The published pom.** The flattened pom above listed -core, jsoup and the two docx4j modules. A
+  consumer doesn't resolve them, as the scratch consumer showed, but the pom said more than the
+  CHANGELOG's "depends on docx4j-bundle alone". The review moved the four into the
+  `build-dependencies` profile, and flatten now removes profiles (§3).
+- **Measured** on 24439a2's bundle pom, with `mvn -o clean verify -Dgpg.skip -pl
+  docx4j-ImportXHTML-bundle -am`: `BundleIT` 3/0/0. The flattened pom's one dependency is
+  docx4j-bundle 17.3.4 (compile), and it has no profiles.
+
 ### Phase 2: the release
 
 This goes with CR-002's phase 4 and CR-003's phase 2 as 17.3.4 (D6). docx4j 17.3.4 is on Central,
@@ -318,5 +334,8 @@ accepted").
   add-on to carry it (design-rationale.md: an add-on "can later carry LGPL code
   (docx4j-ImportXHTML) without touching the base artifact's licence story"). Whether the fat-jar
   form needs more, such as a note on replacing the LGPL parts, is Jason's call.
+- **The build's dependencies hang on a property.** Setting `docx4j.ImportXHTML.bundle.published`
+  turns the `build-dependencies` profile off, and with it -core and jsoup, so the shade has none of
+  this project's code to include. Nothing sets it; the name says what it is for.
 - **The module path isn't supported.** As with docx4j-bundle, there is no `module-info` (stripped)
   and no `Automatic-Module-Name`. -core stays the artifact for the module path.
