@@ -1,11 +1,23 @@
 CHANGELOG
 =========
 
-
-Version 17.1.1
+Version 17.3.4
 ===============
 
-Changes in Version 17.1.1
+Release date
+------------
+
+23 October 2026
+
+Contributors to this release
+----------------------------
+
+Jason Harrop
+
+Fable
+
+
+Changes in Version 17.0.4
 --------------------------
 
 - setRunFormatting(CLASS_TO_STYLE_ONLY) now applies to fonts too.  Previously
