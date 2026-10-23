@@ -1,15 +1,15 @@
 # CR-004: docx4j-ImportXHTML-bundle, a fat jar to put beside docx4j-bundle
 
-Status: ACCEPTED 2026-10-23 (Jason: "CR-004 decisions: all recommendations accepted"), D1 to D6
-as recommended. Proposed 2026-10-22, at Jason's request relayed by docx4j-25 (its brief of
-22 October: "ImportXHTML should offer its own bundle ... Jason decides naming and whether it
-ships in your 17.3.4"). Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session. The module
-was prototyped outside the repository and measured against docx4j-bundle and
-docx4j-bundle-extras, 17.3.4-SNAPSHOT first and then the released 17.3.4 (§3, §4). Phase 1
-implemented 2026-10-23 (suite 146/0/0, BundleIT 3/0/0; §6), commit 34089b9, and installed as
-17.1.1-SNAPSHOT. The 17.3.4 review (24439a2, by Claude Fable 5.1) moved the build's own
-dependencies into a profile that flatten removes, so the published pom now lists docx4j-bundle
-alone (§3, §6).
+Status: DONE 2026-10-23, released in docx4j-ImportXHTML 17.3.4 (§6). Accepted 2026-10-23 (Jason:
+"CR-004 decisions: all recommendations accepted"), D1 to D6 as recommended. Proposed 2026-10-22, at
+Jason's request relayed by docx4j-25 (its brief of 22 October: "ImportXHTML should offer its own
+bundle ... Jason decides naming and whether it ships in your 17.3.4"). Drafted by Claude Opus 5.5 in
+the docx4j-ImportXHTML session. The module was prototyped outside the repository and measured
+against docx4j-bundle and docx4j-bundle-extras, 17.3.4-SNAPSHOT first and then the released 17.3.4
+(§3, §4). Phase 1 implemented 2026-10-23 (suite 146/0/0, BundleIT 3/0/0; §6), commit 34089b9, and
+installed as 17.1.1-SNAPSHOT. The 17.3.4 review (24439a2, by Claude Fable 5.1) moved the build's own
+dependencies into a profile that flatten removes, so the published pom now lists docx4j-bundle alone
+(§3, §6).
 Scope: a new module, `docx4j-ImportXHTML-bundle`, with a pom, a marker class, licence files and an
 integration test. Also the parent pom's `<modules>` and release notes, the README and the
 CHANGELOG. `-core` doesn't change.
@@ -262,6 +262,12 @@ The prototype was built against docx4j-bundle 17.3.4-SNAPSHOT (installed 21 Octo
 This goes with CR-002's phase 4 and CR-003's phase 2 as 17.3.4 (D6). docx4j 17.3.4 is on Central,
 so nothing on docx4j's side holds it. `mvn clean install` runs `BundleIT` against the released
 docx4j-bundle before the deploy.
+
+**Done 2026-10-23:** released in 17.3.4 with CR-002's phase 4 (D6). CR-002 §8 has the release.
+- **The deploy** names both modules: `-pl docx4j-ImportXHTML-core,docx4j-ImportXHTML-bundle`.
+- **On Central:** `docx4j-ImportXHTML-bundle` 17.3.4. Its published pom's one dependency is
+  docx4j-bundle 17.3.4 (compile), as §3 intends (checked on Central, 24 October).
+- **docx4j-25** was told on 24 October, so that `Docx4j_from_Python.md` can name the jar (§1).
 
 ## 7. Decisions (for Jason; each with a recommendation)
 

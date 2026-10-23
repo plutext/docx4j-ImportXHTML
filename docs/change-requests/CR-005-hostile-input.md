@@ -1,13 +1,14 @@
 # CR-005: hostile input: link schemes, WML built from strings, and tests for what we import
 
-Status: ACCEPTED 2026-10-23 (Jason: "CR-005 decisions: all recommendations accepted"), D1 to D7
-as recommended. Proposed the same day, at Jason's request ("please draft a CR-005 for hostile
-input"). He had pointed at apache/poi#1455 and asked "should we be testing what we import?".
-Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session. Measured with probes against -core at
-d33581f, compiled against the released docx4j 17.3.4 (§1). Phases 1 and 2 implemented 2026-10-23,
-with the entry points' exceptions (§5, Jason: "fix please"; suite 162/0/0, BundleIT 3/0/0; §6),
-commit ca10f61. Installed as 17.1.1-SNAPSHOT the same day, once docx4j's `HtmlChunkImport` made
-the `setLinkSchemesChecked(false)` call (CR-056 phase 3, docx4j 2933e63b7; §8).
+Status: DONE 2026-10-23, released in docx4j-ImportXHTML 17.3.4 (§6). Accepted 2026-10-23 (Jason:
+"CR-005 decisions: all recommendations accepted"), D1 to D7 as recommended. Proposed the same day,
+at Jason's request ("please draft a CR-005 for hostile input"). He had pointed at apache/poi#1455
+and asked "should we be testing what we import?". Drafted by Claude Opus 5.5 in the
+docx4j-ImportXHTML session. Measured with probes against -core at d33581f, compiled against the
+released docx4j 17.3.4 (§1). Phases 1 and 2 implemented 2026-10-23, with the entry points'
+exceptions (§5, Jason: "fix please"; suite 162/0/0, BundleIT 3/0/0; §6), commit ca10f61. Installed
+as 17.1.1-SNAPSHOT the same day, once docx4j's `HtmlChunkImport` made the
+`setLinkSchemesChecked(false)` call (CR-056 phase 3, docx4j 2933e63b7; §8).
 Scope: `XHTMLImporterImpl` (`createHyperlink`, and a link check with its setter),
 `XHTMLImageHandlerDefault` (alt text), `Docx4jUserAgent` (a failed image fetched once),
 `XHTMLtoPPTX` (the same link check), a new class for the check, a new test class in core-tests, the
@@ -299,6 +300,12 @@ As §4, once D1 to D4 are decided. Then send docx4j-25 the commit. They take
 ### Phase 3: the release
 
 This goes with CR-002's phase 4, CR-003's phase 2 and CR-004's phase 2 as 17.3.4 (D6).
+
+**Done 2026-10-23:** released in 17.3.4 with CR-002's phase 4 (D6). CR-002 §8 has the release.
+- **The review's fixes** to this CR's code are in it (24439a2): `XHTMLtoPPTX` resets its warn-once
+  flag for each slide, and `LinkSchemes` reads its property once per value.
+- **docx4j CR-057 phase 1** (§5) is in docx4j 17.3.5-SNAPSHOT, which `VERSION_17_3_5` builds
+  against. Phase 1's `""` and `setDescr` need no change for it.
 
 ## 7. Decisions (for Jason; each with a recommendation)
 

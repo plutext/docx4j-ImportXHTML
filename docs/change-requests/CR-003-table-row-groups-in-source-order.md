@@ -1,12 +1,12 @@
 # CR-003: a table's row groups in source order, as Word imports an altChunk (docx4j CR-053's round 11)
 
-Status: ACCEPTED 2026-10-21 (Jason: "decisions agreed."), D1 to D4 as recommended. Phase 1
-implemented 2026-10-21 (suite 146/0/0; §9), commit dd7b913, and installed as
-17.1.1-SNAPSHOT. §4's Word round (docx4j CR-053's round 12), which D2 asked for before it ships,
-confirms source order in all six cases. Proposed 2026-10-21, at Jason's request ("draft
-CR-003"), after docx4j-25's report from docx4j CR-053's round 11 Word probe (r11-8). Drafted by
-Claude Opus 5.5 in the docx4j-ImportXHTML session, with openhtmltopdf's reordering measured and the
-fix prototyped first (§2, §3).
+Status: DONE 2026-10-23, released in docx4j-ImportXHTML 17.3.4 (§6). Accepted 2026-10-21 (Jason:
+"decisions agreed."), D1 to D4 as recommended. Phase 1 implemented 2026-10-21 (suite 146/0/0; §9),
+commit dd7b913, and installed as 17.1.1-SNAPSHOT. §4's Word round (docx4j CR-053's round 12), which
+D2 asked for before it ships, confirms source order in all six cases. Proposed 2026-10-21, at
+Jason's request ("draft CR-003"), after docx4j-25's report from docx4j CR-053's round 11 Word probe
+(r11-8). Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session, with openhtmltopdf's
+reordering measured and the fix prototyped first (§2, §3).
 Scope: `XHTMLImporterImpl` (a setter, and the loop over a table's children) and `TableHelper` (one
 method). Nothing changes unless the option is set.
 Branch: `VERSION_17_3_4`; released with CR-002 as 17.3.4, if decided in time (D4).
@@ -199,6 +199,8 @@ reinstalled 17.1.1-SNAPSHOT for docx4j, and docx4j-25 told.
 ### Phase 2: the release
 
 With CR-002's phase 4 as 17.3.4 (D4), or else in the next release.
+
+**Done 2026-10-23:** released in 17.3.4 with CR-002's phase 4 (D4). CR-002 §8 has the release.
 
 ## 7. Decisions (for Jason; each with a recommendation)
 

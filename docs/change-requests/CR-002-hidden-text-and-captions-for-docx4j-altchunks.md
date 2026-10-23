@@ -1,13 +1,13 @@
 # CR-002: display:none as hidden text, the elements it came from, and the table caption (docx4j CR-053's asks)
 
-Status: ACCEPTED 2026-10-20 (Jason: "CR-002 accept all recommendations. commit then implement."),
-D1 to D11 as recommended. Phases 1 to 3 implemented 2026-10-20 (suite 140/0/0; §11), commit
-468a760 (the three together); phase 2 installed as docx4j-ImportXHTML-core 17.1.1-SNAPSHOT for docx4j
-CR-053 phase 2, and docx4j-25 told. Phase 4 (the release) next. Proposed 2026-10-20, at the
-request of the docx4j session (docx4j-25) for docx4j CR-053 §4a (accepted by Jason 2026-10-20,
-docx4j c69d4282d), whose phase 2 depends on items 1 and 2. Drafted by Claude Opus 5.5 in the
-docx4j-ImportXHTML session, with openhtmltopdf's cascade, the caption defect and the extras
-measured first (§2 to §6).
+Status: DONE 2026-10-23, released in docx4j-ImportXHTML 17.3.4 (§8). Accepted 2026-10-20 (Jason:
+"CR-002 accept all recommendations. commit then implement."), D1 to D11 as recommended. Phases 1 to
+3 implemented 2026-10-20 (suite 140/0/0; §11), commit 468a760 (the three together); phase 2
+installed as docx4j-ImportXHTML-core 17.1.1-SNAPSHOT for docx4j CR-053 phase 2, and docx4j-25 told.
+Proposed 2026-10-20, at the request of the docx4j session (docx4j-25) for docx4j CR-053 §4a
+(accepted by Jason 2026-10-20, docx4j c69d4282d), whose phase 2 depends on items 1 and 2. Drafted by
+Claude Opus 5.5 in the docx4j-ImportXHTML session, with openhtmltopdf's cascade, the caption defect
+and the extras measured first (§2 to §6).
 Scope: `XHTMLImporterImpl`, `TableHelper`, and a pre-pass over the DOM before layout; phase 3 also
 `ListHelper`, `HeadingHandler`, `DocxRenderer`, a namespace handler of our own, and jsoup as an
 optional dependency. Phase 2 changes nothing unless its option is set. Otherwise output changes only
@@ -488,6 +488,17 @@ through jsoup where present. Each with its tests and CHANGELOG entry.
 The version commit (17.3.4: `revision`, `version.docx4j`, the scm tag, the CHANGELOG heading, and the
 "since 17.1.1" notes; prepared, awaiting Jason). Then the release, and the docx4j and portfolio
 sessions told.
+
+**Done 2026-10-23:** released as 17.3.4, with CR-003 to CR-005.
+- **The review.** Claude Fable 5.1 reviewed the release and fixed its eight findings in 24439a2,
+  which also changed the "since 17.1.1" notes to 17.3.4.
+- **The version commit** is Jason's b716530 ("prepare for 17.3.4 release"), tagged
+  `docx4j-ImportXHTML-17.3.4`, against docx4j 17.3.4.
+- **The CHANGELOG** has a summary of the release (cf92b7b) and links to the full list at 39dde25.
+- **On Central:** docx4j-ImportXHTML-core and docx4j-ImportXHTML-bundle 17.3.4, checked against
+  Central's metadata on 24 October.
+- **Next:** `VERSION_17_3_5` (19f38d8), at 17.3.5-SNAPSHOT against docx4j 17.3.5-SNAPSHOT.
+- docx4j-25 and the portfolio session were told on 24 October.
 
 ## 9. Decisions (for Jason; each with a recommendation)
 

@@ -1,6 +1,7 @@
 # CR: Fonts should honour the run-level FormattingOption
 
-Status: IMPLEMENTED (2026-09-11) — phases 1 and 2 done in the working tree; phase 3 done in docx4j CR-013
+Status: DONE 2026-10-23, released in docx4j-ImportXHTML 17.3.4. Implemented 2026-09-11:
+phases 1 and 2 in a8ec734; phase 3 done in docx4j CR-013 (its test here, cd244ba)
 Scope: `XHTMLImporterImpl.formatRPr` only — where a text run's `w:rFonts` is
 set from CSS `font-family`.  `FontHandler`'s mapping tables are unchanged; the
 fonts `ListHelper` puts on list-number symbols are out of scope.
@@ -188,6 +189,14 @@ Record there that "styles only" for fonts in OpenDoPE binding needs
 ImportXHTML ≥ 17.1.1, and that the docx4j-side wrapper guard is then merely
 tidy (no `font-family` to leak) rather than necessary.  Done in the same
 session this CR was written (CR-013 interaction 1 / decision 2 amended).
+
+### Released 2026-10-23, in 17.3.4
+
+Neither 17.1.1 nor 17.2.0 was released, so this first ships in 17.3.4, with
+the property named as in decision 1.  Where docx4j says fonts need
+docx4j-ImportXHTML "17.2.0+" (CR-013, its CHANGELOG, the sample
+`docx4j.properties`, the OpenDoPE specification's reference), the release that
+has it is 17.3.4.
 
 ## Risks
 
