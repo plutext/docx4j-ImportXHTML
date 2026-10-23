@@ -6,6 +6,7 @@ determine whether we should bump to some or all of these updates". Measured by C
 the docx4j-ImportXHTML session; the probes are archived in
 `~/claude-scratch-archive/docx4j-ImportXHTML/dependency-bumps-2026-10-23/` (its `README.txt`
 says how each was run). The release notes and advisories were read the same day (sources in §6).
+On 24 October, jsoup was reassessed for 17.3.5 with docx4j, and moved to 1.23.2 (§5).
 
 ## 1. Summary
 
@@ -15,7 +16,7 @@ None of the four goes into 17.3.4.
 |---|---|---|---|---|
 | `io.github.openhtmltopdf:openhtmltopdf-core`, `-pdfbox` | 1.1.31 | 1.1.100 | stays | one `<br/>` gives two `w:br` (§3) |
 | `org.apache.james:apache-mime4j-core` | 0.8.13 | 0.8.15 | stays; next release | an MHT of more than 512 parts fails (§4) |
-| `org.jsoup:jsoup` (optional) | 1.22.1 | 1.23.2 | stays | docx4j 17.3.4 pins 1.22.1, and neither advisory reaches either project (§5) |
+| `org.jsoup:jsoup` (optional) | 1.22.1 | 1.23.2 | stays; 1.23.2 in 17.3.5 | docx4j 17.3.4 pins 1.22.1, and neither advisory reaches either project (§5) |
 
 The versions plugin listed nothing else. The rest of -core's direct dependencies are current:
 - pdfbox, xmpbox and fontbox 3.0.8. docx4j 17.3.4 pins fontbox 3.0.8, and docx4j-bundle holds
@@ -119,7 +120,7 @@ The rest is safe:
 **To take it:** a CR-005 follow-up in the next release. It would choose a `MimeConfig` (a higher
 part limit, or stopping once the HTML part is read), and add a test with a 513-part MHT.
 
-## 5. jsoup 1.22.1 → 1.23.2: stays
+## 5. jsoup 1.22.1 → 1.23.2: stays in 17.3.4; moved in 17.3.5
 
 - **docx4j pins 1.22.1.** docx4j 17.3.4 does, and so does `VERSION_17_3_5`. With docx4j-bundle,
   docx4j's HTML altChunk reader runs on the jsoup our bundle ships, because docx4j-bundle has
@@ -150,6 +151,47 @@ part limit, or stopping once the HTML part is read), and add a test with a 513-p
 
 **To take it:** with docx4j, at the same version on both sides. Before that, run this suite,
 docx4j's altChunk tests and a Word MHT through `convertMHT`.
+
+### Moved to 1.23.2 for 17.3.5 (24 October 2026)
+
+Jason asked for the jsoup move to be reassessed in both repositories, on the rule that both move
+or neither does, and the portfolio session coordinated. Both said go. Jason then said "yes, tell both sessions to bump
+jsoup to 1.23.2 for 17.3.5", and confirmed it here.
+
+- **Assessed** on two `git archive` copies of `VERSION_17_3_5` at 19f38d8 (17.3.5-SNAPSHOT,
+  against docx4j 17.3.5-SNAPSHOT), one at each jsoup. Probes are in the archive's
+  `jsoup-1.23.2-2026-10-24/`.
+  - **Tests:** suite 166/0/0 and `BundleIT` 3/0/0 on both, with the same counts in every test
+    class. `BundleIT`'s smoke test runs docx4j's `convertAltChunks` on the bundle's jsoup.
+  - **The jar:** still Java 8 bytecode. The module descriptor is the same apart from its version.
+    `Multi-Release: true`, with a `META-INF/versions/11/` holding `module-info` and the HTTP client
+    classes; 1.23.2 has one more of those. So the Multi-Release note in the bundle's pom (CR-004
+    §3) still holds.
+  - **`convertMHT`'s output,** with only the jsoup jar swapped, on two inputs that take the jsoup
+    path:
+    - Word "Save as Web Page" HTML: `o:`, `v:`, `w:` and `m:` elements, conditional comments and
+      `mso-list` paragraphs;
+    - HTML5 edge cases: `noscript`, CDATA, `ins`/`del`, `button`, unclosed elements, entities
+      without semicolons, 600 nested `div`s.
+
+    One thing moved: a CDATA section in body text. 1.22.1 kept `<![CDATA[ <b>raw</b> & ]]>` as the
+    text `<b>raw</b> & `. 1.23.2 reads `<![CDATA[ <b>` as a comment, as HTML's parsing rules do,
+    and gives `raw` then ` & ]]>`. The Word output was identical.
+- **docx4j's side,** from docx4j-25:
+  - its suite, 2,047 tests, the same on both versions;
+  - its 93 tests that run through this importer pass, with 1.23.2 ahead of our 17.3.4 bundle;
+  - no golden file moved.
+- **Why move:**
+  - The shaded bundle carries jsoup's `pom.properties`, so a dependency scanner reports the
+    released 17.3.4 bundle's 1.22.1 against both advisories, though neither is reachable.
+  - jsoup is optional in -core and in docx4j-core, so neither passes it on, and Maven doesn't
+    mediate between the two. The coupling is the bundle: with docx4j-bundle, docx4j's reader runs
+    on the jsoup shaded here.
+- **Done** in -core, -core-tests and the bundle's `build-dependencies` profile, with a CHANGELOG
+  entry under 17.3.5. Measured in the tree with `mvn -o clean verify -Dgpg.skip`:
+  - all five modules green, suite 166/0/0, `BundleIT` 3/0/0;
+  - -core and -core-tests resolve jsoup 1.23.2;
+  - the bundle's jsoup `pom.properties` says 1.23.2, and the flattened pom doesn't name jsoup.
 
 ## 6. Sources
 
