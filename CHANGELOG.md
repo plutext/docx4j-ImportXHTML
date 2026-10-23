@@ -14,117 +14,24 @@ Contributors to this release
 
 Jason Harrop
 
-Fable
+Claude Opus 5.5 (mostly)
 
+Claude Fable 5.1
 
-Changes in Version 17.0.4
+Changes in Version 17.3.4
 --------------------------
 
-- setRunFormatting(CLASS_TO_STYLE_ONLY) now applies to fonts too.  Previously
-  CSS font-family always became w:rFonts, whatever the run FormattingOption, so
-  "styles only" was unattainable for fonts (unstyled XHTML got Times New Roman
-  on every run).  Set docx4j-ImportXHTML.Fonts.IgnoreRunFormattingOption=true
-  for the old behaviour.  CLASS_PLUS_OTHER and IGNORE_CLASS are unchanged.
-  See docs/change-requests/CR-001.
+**Closer to how Word reads HTML.** Two new switches on XHTMLImporterImpl, both off by default, make the importer behave as Word does when it opens an HTML altChunk. With setDisplayNoneAsHidden, content hidden by `display: none` comes in as hidden text instead of being dropped. With setTableRowGroupsInSourceOrder, a table's thead, tbody and tfoot keep their source order. Separately, a table with a caption no longer produces a schema-invalid table nested inside another table.
 
-- convert(Node, baseUrl) given an Element (not a Document) imported nothing: the copy
-  of the node was never added to the new document.
+**Safer with HTML you didn't write.** A link whose scheme is javascript:, vbscript:, data:, ms-msdt: or similar now comes in as plain text instead of a hyperlink. The allowed schemes are the ones docx4j's HTML output allow, and a property can add more; setLinkSchemesChecked(false) brings back the old behaviour. Internal links and image alt text are now built as objects, so a quote can no longer add attributes, and an "&" no longer silently drops a link or an image. setExternalResourcesAllowed(false) is new and stops all fetching, file: URLs included. 
 
-- convertMHT (used for an MHT altChunk) imported nothing: it read the text/html part
-  after mime4j had closed it ("Premature end of file"), broken since the mime4j 0.8.10
-  update.  The part is now read while it is parsed; the first text/html part is used,
-  not the last part; and mime4j decodes the quoted-printable or base64 (the
-  now-deprecated MHTFilterInputStream mangled anything but BIRT's =3D").  The encoding
-  comes from a byte order mark, else the part's declared charset.
+**Fonts, lists and headings.** CLASS_TO_STYLE_ONLY now applies to fonts too, so styles-only output is finally possible; set docx4j-ImportXHTML.Fonts.IgnoreRunFormattingOption=true to keep the old behaviour. The importer now honours ol's type attribute, li's value attribute and the start of a nested ol, and docx4j's own numbering sees the new lists immediately. setMapHeadingsToStyles is new and uses an outline level when the document has no heading style. 
 
-- New XHTMLImporterImpl.setExternalResourcesAllowed(boolean), default true.  When false,
-  nothing the document refers to is fetched, by any protocol, file: included: linked
-  and @import-ed stylesheets, images, fonts.  An img whose src isn't a data: URI is
-  left out, with no "[MISSING IMAGE ...]" text.  style elements and attributes, and
-  data: images, still apply.
+**MHT works again.** convertMHT had imported nothing since the mime4j 0.8.10 update. It now reads the first text/html part and decodes quoted-printable and base64 properly. If jsoup is on the classpath (it is now an optional dependency), convertMHT can also read HTML that isn't well-formed XML, such as Word's own MHT.
 
-- A table with a caption came out as a w:tbl directly inside a w:tbl (schema-invalid,
-  and the outer table had no w:tblGrid), broken since 2013.  The caption is now its own
-  paragraph before the table, or after it for caption-side: bottom, with its
-  properties unchanged (centred by the default stylesheet; class="Caption" gives the
-  Caption style).  A table id on a captioned table gives one bookmark, not two.
-  See docs/change-requests/CR-002.
+**New docx4j-ImportXHTML-bundle.** This fat jar goes beside docx4j-bundle. It holds ImportXHTML with openhtmltopdf, PDFBox, mime4j and jsoup, and nothing that docx4j-bundle already contains. Its pom depends only on docx4j-bundle. 
 
-- New XHTMLImporterImpl.setDisplayNoneAsHidden(boolean), default false.  When true,
-  what CSS display: none hides is imported as hidden text (w:vanish), as Word imports
-  it from an HTML altChunk, rather than left out: hidden runs in a visible paragraph,
-  hidden paragraphs (their marks included), and for a hidden tr, thead, tbody, tfoot or
-  table, rows with w:trPr/w:hidden.  Only display: none from the author counts (a style
-  attribute, a style element or a linked stylesheet), not the default stylesheet's, so
-  head and script stay out.  An element inside a hidden one whose display the author
-  sets to anything but none or inherit shows again, as in Word.  The new
-  getHiddenContent() reports what the last convert hid, by the outermost hidden element
-  it came from.  The document's style attributes are changed during the convert, and
-  restored.  See docs/change-requests/CR-002.
-
-- New XHTMLImporterImpl.setTableRowGroupsInSourceOrder(boolean), default false.  When
-  true, a table's thead, tbody and tfoot come out in the order the source has them, as
-  Word imports an HTML altChunk, rather than with the first thead first and the first
-  tfoot last, as a browser draws them.  See docs/change-requests/CR-003.
-
-- An hr's horizontal rule is now a fresh paragraph each time; one shared object went
-  into every document.
-
-- An ol's type attribute (1, a, A, i, I) now sets its numbering format, as a
-  presentational hint, so CSS list-style-type still wins; it used to be ignored.  An
-  li's value attribute now numbers that item, and the ones after it, on from there; and
-  a nested ol's start is honoured where the list restarts (it got 1).
-
-- After a convert that adds lists, docx4j's NumberingDefinitionsPart has current
-  definitions for them (the importer calls initialiseMaps()).  docx4j caches a
-  definition per w:num from its abstract numbering's levels at the time, and the
-  importer adds the levels afterwards, so docx4j's own numbering (its Emulator, its text
-  extraction) could find no levels for these lists, unless something rebuilt the maps.
-  The saved docx was always right.
-
-- New XHTMLImporterImpl.setMapHeadingsToStyles(boolean), defaulting as before to
-  docx4j-ImportXHTML.Element.Heading.MapToStyle (else false).  When on, hN gets the
-  style named "heading N" as before, or, where the package has none (createPackage()
-  defines Heading 1 to 4), w:outlineLvl N-1.  A style with no w:name no longer causes a
-  NullPointerException.
-
-- convertMHT now reads HTML which isn't well-formed XML, such as Word's own MHT, with
-  jsoup, if jsoup (org.jsoup:jsoup, now an optional dependency) is on the classpath; on
-  the module path, add --add-modules org.jsoup.  Without it, such an MHT gives a
-  Docx4JException naming jsoup, rather than an unchecked XRRuntimeException.
-  Well-formed HTML is parsed as XML, as before.
-
-- New artifact docx4j-ImportXHTML-bundle, a fat jar to put beside docx4j-bundle: it
-  holds docx4j-ImportXHTML, openhtmltopdf, PDFBox, xmpbox, graphics2d, apache-mime4j and
-  jsoup, and nothing docx4j-bundle holds (fontbox and pdfbox-io come from there).  Its
-  published pom depends on docx4j-bundle alone, so a docx4j-bundle user no longer gets
-  docx4j-core's tree a second time from -core's pom.  Every build checks, in BundleIT,
-  that it shares no file with docx4j-bundle or docx4j-bundle-extras, and that the two
-  jars alone convert XHTML and an HTML altChunk.  Use it with the docx4j-bundle version
-  its pom names; on the module path, use -core.  See docs/change-requests/CR-004.
-
-- An internal link (href="#...") and an image's alt text are now built as objects, not
-  pasted into XML text.  A quote in the fragment or the alt text added attributes to the
-  w:hyperlink or wp:docPr; a & or < in it lost the link or the image without an error
-  (<img alt="Profit &amp; Loss"> came out as "[MISSING IMAGE ...]"), and so did link text
-  with both "&amp;" and a bare "&" in it.  An image that can't be loaded is now requested
-  once per convert, not four times.  See docs/change-requests/CR-005.
-
-- New LinkSchemes, and XHTMLImporterImpl.setLinkSchemesChecked(boolean), default true (the
-  same on XHTMLtoPPTX).  An href whose scheme isn't allowed (javascript:, vbscript:, data:,
-  ms-msdt: and the like) now gives its text without a link, where it gave an External
-  hyperlink with that target; the first one refused in a convert is logged at WARN.
-  Allowed: no scheme (relative paths, fragments, UNC paths), drive paths (C:\), and http,
-  https, ftp, mailto, file, news and tel, as in POI and docx4j's HTML output.  The property
-  docx4j-ImportXHTML.Hyperlink.Schemes, a comma-separated list, adds schemes.  Set it false
-  to keep every target as written, as Word does for an HTML altChunk.
-  See docs/change-requests/CR-005.
-
-- convert(InputStream), convert(Reader), convert(InputSource), convert(File) and
-  convert(URL) now throw a Docx4JException, with the line and column, where the XHTML
-  isn't well-formed, as convert(String) did; they let openhtmltopdf's unchecked
-  XRRuntimeException out.  See docs/change-requests/CR-005.
-
+Some miscellaneous fixes.  For more details see https://github.com/plutext/docx4j-ImportXHTML/blob/39dde2536ee0de20d40c861934e6c1716f4460dc/CHANGELOG.md
 
 Version 17.0.4
 ===============
