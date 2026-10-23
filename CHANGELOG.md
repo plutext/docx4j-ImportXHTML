@@ -16,7 +16,7 @@ Jason Harrop
 
 Claude Opus 5.5 (mostly)
 
-Claude Fable 5.1
+Reviewed by Claude Fable 5.1
 
 Changes in Version 17.3.4
 --------------------------
