@@ -36,6 +36,7 @@ import java.util.Deque;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -138,6 +139,11 @@ class DisplayNoneHelper {
 
 		if (!active) return;
 
+		if (!mayHaveAuthorDisplay(renderer.getDocument())) {
+			log.debug("no author display anywhere, so nothing to show again");
+			return;
+		}
+
 		SharedContext sharedContext = renderer.getSharedContext();
 		NamespaceHandler nsh = sharedContext.getNamespaceHandler();
 
@@ -211,6 +217,44 @@ class DisplayNoneHelper {
 	private static String displayOf(Matcher defaults, Element e) {
 		PropertyDeclaration display = defaults.getCascadedStyle(e, false).propertyByName(CSSName.DISPLAY);
 		return display==null ? "inline" : display.getValue().getCssText(); // inline is the initial value
+	}
+
+		/**
+	 * Whether the document can set display at all: a stylesheet it links to or imports
+	 * (whose text isn't to hand here), a style element or a style attribute which names
+	 * display.  Where it can't, nothing is hidden, and the cascade walk in prepare, which
+	 * matches every element's author rules again, is skipped.  Conservative: a link
+	 * element of any rel, or an @import, counts.  (A CSS escape in the property name,
+	 * d\69splay, would pass unseen, and that content would be left out as without the
+	 * option, not hidden.)
+	 */
+	static boolean mayHaveAuthorDisplay(Document doc) {
+		for (Node n = doc.getFirstChild(); n!=null; n = n.getNextSibling()) {
+			if (n.getNodeType()==Node.PROCESSING_INSTRUCTION_NODE && "xml-stylesheet".equals(n.getNodeName())) {
+				return true;
+			}
+		}
+		Element root = doc.getDocumentElement();
+		if (root==null) return false;
+		Node n = root;
+		while (n!=null) {
+			if (n instanceof Element) {
+				Element e = (Element)n;
+				String name = e.getLocalName()==null ? e.getNodeName() : e.getLocalName();
+				if ("link".equalsIgnoreCase(name)) {
+					return true;
+				}
+				if ("style".equalsIgnoreCase(name)) {
+					String css = e.getTextContent().toLowerCase(Locale.ROOT);
+					if (css.contains("display") || css.contains("@import")) return true;
+				}
+				if (e.hasAttribute("style") && e.getAttribute("style").toLowerCase(Locale.ROOT).contains("display")) {
+					return true;
+				}
+			}
+			n = next(n, root);
+		}
+		return false;
 	}
 
 	private static Element body(Document doc) {

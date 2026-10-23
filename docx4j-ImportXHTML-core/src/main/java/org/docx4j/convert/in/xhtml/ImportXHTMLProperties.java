@@ -52,7 +52,7 @@ import org.docx4j.utils.ResourceUtils;
 	  * "docx4j-ImportXHTML.Images.ThrowOnMissing", false
 	  * 
 	  * "docx4j-ImportXHTML.Fonts.IgnoreRunFormattingOption", false
-	  *     (true restores the pre-17.1.1 behaviour, where CSS font-family
+	  *     (true restores the pre-17.3.4 behaviour, where CSS font-family
 	  *     became w:rFonts even under CLASS_TO_STYLE_ONLY; deprecated)
 	  * 
 	  * Note: Via code, you can configure:

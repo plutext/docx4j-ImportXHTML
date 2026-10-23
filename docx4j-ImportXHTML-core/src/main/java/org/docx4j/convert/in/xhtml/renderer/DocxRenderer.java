@@ -223,8 +223,13 @@ public class DocxRenderer {
 	}
 
 
+	/**
+	 * @return the document at uri, or null where the user agent can't open it (it logs, and
+	 *         returns no resource)
+	 */
 	public Document loadDocument(final String uri) {
-		return _sharedContext.getUac().getXMLResource(uri).getDocument();
+		com.openhtmltopdf.resource.XMLResource resource = _sharedContext.getUac().getXMLResource(uri);
+		return resource == null ? null : resource.getDocument();
 	}
 
 	public void setDocument(Document doc, String url) {

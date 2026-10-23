@@ -159,14 +159,19 @@
 				</executions>
 			</plugin>
 
-			<!-- direct: the published pom has docx4j-bundle only.  The parent's "all" would
-			     hoist -core's tree, docx4j-core's included, which is what this jar avoids. -->
+						<!-- direct: the published pom has docx4j-bundle only.  The parent's "all" would
+			     hoist -core's tree, docx4j-core's included, which is what this jar avoids.
+			     The build's own dependencies (provided, optional) are in the profile below,
+			     and profiles are removed from the flattened pom, so it doesn't carry them. -->
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>flatten-maven-plugin</artifactId>
 				<configuration>
 					<flattenMode>ossrh</flattenMode>
 					<flattenDependencyMode>direct</flattenDependencyMode>
+					<pomElements>
+						<profiles>remove</profiles>
+					</pomElements>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -179,35 +184,7 @@
 			<version>${version.docx4j}</version>
 		</dependency>
 
-		<!-- in docx4j-bundle; provided, so that they are neither shaded nor published -->
-		<dependency>
-			<groupId>org.docx4j</groupId>
-			<artifactId>docx4j-core</artifactId>
-			<version>${version.docx4j}</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.docx4j</groupId>
-			<artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
-			<version>${version.docx4j}</version>
-			<scope>provided</scope>
-		</dependency>
-
-		<!-- shaded into this jar; optional, so that the published pom doesn't carry them -->
-		<dependency>
-			<groupId>org.docx4j</groupId>
-			<artifactId>docx4j-ImportXHTML-core</artifactId>
-			<version>${project.version}</version>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>org.jsoup</groupId>
-			<artifactId>jsoup</artifactId>
-			<version>1.22.1</version>
-			<optional>true</optional>
-		</dependency>
-
-		<!-- for BundleIT -->
+				<!-- for BundleIT -->
 		<dependency>
 			<groupId>org.docx4j</groupId>
 			<artifactId>docx4j-bundle-extras</artifactId>
@@ -220,5 +197,48 @@
 			<version>4.13.2</version>
 			<scope>test</scope>
 		</dependency>
-	</dependencies>
+		</dependencies>
+
+	<!-- The build's own dependencies, which the published pom doesn't carry: the flatten
+	     configuration above removes profiles.  Always active (the property is never set);
+	     a profile rather than the dependencies element only for that reason. -->
+	<profiles>
+		<profile>
+			<id>build-dependencies</id>
+			<activation>
+				<property>
+					<name>!docx4j.ImportXHTML.bundle.published</name>
+				</property>
+			</activation>
+			<dependencies>
+				<!-- in docx4j-bundle; provided, so that they are neither shaded nor published -->
+				<dependency>
+					<groupId>org.docx4j</groupId>
+					<artifactId>docx4j-core</artifactId>
+					<version>${version.docx4j}</version>
+					<scope>provided</scope>
+				</dependency>
+				<dependency>
+					<groupId>org.docx4j</groupId>
+					<artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
+					<version>${version.docx4j}</version>
+					<scope>provided</scope>
+				</dependency>
+
+				<!-- shaded into this jar -->
+				<dependency>
+					<groupId>org.docx4j</groupId>
+					<artifactId>docx4j-ImportXHTML-core</artifactId>
+					<version>${project.version}</version>
+					<optional>true</optional>
+				</dependency>
+				<dependency>
+					<groupId>org.jsoup</groupId>
+					<artifactId>jsoup</artifactId>
+					<version>1.22.1</version>
+					<optional>true</optional>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
 </project>

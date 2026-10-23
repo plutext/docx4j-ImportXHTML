@@ -33,16 +33,19 @@ import java.util.List;
 
 import org.docx4j.XmlUtils;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
+import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.junit.Assert;
 import org.junit.Test;
 import org.w3c.dom.Document;
+import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 
 /**
  * convert(Node, baseUrl) given an element rather than a whole document: the element is
  * copied into a new document and imported, not dropped (before, the copy was never
- * appended, so the importer saw an empty document).
+  * appended, so the importer saw an empty document).  A DocumentFragment of several nodes
+ * is imported in a div; a node which can't be a document's root gives a Docx4JException.
  */
 public class NodeInputTest {
 
@@ -71,6 +74,29 @@ public class NodeInputTest {
 		String xml = marshal(content);
 		Assert.assertTrue(xml, xml.contains("Outside the div"));
 		Assert.assertTrue(xml, xml.contains("NODE_INPUT_TEXT"));
+	}
+
+		@Test
+	public void fragmentIsImported() throws Exception {
+		Document doc = parse();
+		DocumentFragment fragment = doc.createDocumentFragment();
+		fragment.appendChild(doc.getElementsByTagName("p").item(0).cloneNode(true));
+		fragment.appendChild(doc.getElementsByTagName("div").item(0).cloneNode(true));
+		List<Object> content = new XHTMLImporterImpl(WordprocessingMLPackage.createPackage()).convert(fragment, null);
+
+		String xml = marshal(content);
+		Assert.assertTrue(xml, xml.contains("Outside the div"));
+		Assert.assertTrue(xml, xml.contains("NODE_INPUT_TEXT"));
+	}
+
+	@Test
+	public void textNodeIsRefused() throws Exception {
+		try {
+			new XHTMLImporterImpl(WordprocessingMLPackage.createPackage()).convert(parse().createTextNode("just text"), null);
+			Assert.fail("converted");
+		} catch (Docx4JException expected) {
+			Assert.assertTrue(expected.getMessage(), expected.getMessage().contains("DocumentFragment"));
+		}
 	}
 
 	private static String marshal(List<Object> content) {

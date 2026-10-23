@@ -99,15 +99,37 @@ public final class LinkSchemes {
 		return !first && ((c >= '0' && c <= '9') || c == '+' || c == '-' || c == '.');
 	}
 
+	/** The property's value as last parsed, and the schemes in it */
+	private static final class Extra {
+		final String list;
+		final Set<String> schemes;
+
+		Extra(String list) {
+			this.list = list;
+			Set<String> parsed = new HashSet<String>();
+			for (String s : list.split(",")) {
+				s = s.trim().toLowerCase(Locale.ROOT);
+				if (s.endsWith(":")) s = s.substring(0, s.length() - 1);
+				if (!s.isEmpty()) parsed.add(s);
+			}
+			this.schemes = Collections.unmodifiableSet(parsed);
+		}
+	}
+
+	private static volatile Extra extra;
+
+	/**
+	 * @return the schemes the property adds, parsed once per value of the property (it can
+	 * be set at run time), not once per link
+	 */
 	private static Set<String> extra() {
 		String list = ImportXHTMLProperties.getProperty(PROPERTY);
 		if (list == null) return Collections.emptySet();
-		Set<String> schemes = new HashSet<String>();
-		for (String s : list.split(",")) {
-			s = s.trim().toLowerCase(Locale.ROOT);
-			if (s.endsWith(":")) s = s.substring(0, s.length() - 1);
-			if (!s.isEmpty()) schemes.add(s);
+		Extra e = extra;
+		if (e == null || !e.list.equals(list)) {
+			e = new Extra(list);
+			extra = e;
 		}
-		return schemes;
+		return e.schemes;
 	}
 }

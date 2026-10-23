@@ -196,6 +196,7 @@ public class XHTMLtoPPTX {
      * @return
      */
     public List<Object> convertSingleSlide() throws Exception {
+        linkRefused = false; // the first refused link of each convert is logged at WARN
         return this.traverse();
     }
 

@@ -28,6 +28,7 @@
 package org.docx4j.convert.in.xhtml.tests;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -35,6 +36,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -313,6 +315,48 @@ public class HostileInputTest {
 					// not openhtmltopdf's unchecked XRRuntimeException, which all but convert(String) let out
 					Assert.assertTrue(where + ": " + expected.getMessage(), expected.getMessage().startsWith("issues at Line 1"));
 				}
+			}
+		}
+	}
+
+		@Test
+	public void importerUsableAfterNotWellFormed() throws Exception {
+		// A parse which fails leaves no renderer behind, so the next convert on the same importer
+		// gets a fresh one, and a setExternalResourcesAllowed(true) in between takes effect
+		Path png = dir.resolve("image.png");
+		Files.write(png, Base64.getDecoder().decode(PNG_BASE64));
+		String bad = "<html " + XHTML_NS + "><body><p>unclosed</body></html>";
+		String good = p("<img src=\"" + png.toUri() + "\"/>");
+		for (Map.Entry<String, EntryPoint> e : entryPoints().entrySet()) {
+			if (e.getKey().equals("MHT")) continue;
+			XHTMLImporterImpl importer = importer(false);
+			try {
+				e.getValue().convert(importer, bad);
+				Assert.fail(e.getKey() + ": converted");
+			} catch (Docx4JException expected) {
+			}
+			importer.setExternalResourcesAllowed(true);
+			String xml = marshal(importer.convert(good, null));
+			Assert.assertTrue(e.getKey() + ": " + xml, xml.contains("<w:drawing>"));
+		}
+	}
+
+	@Test
+	public void missingFileGivesDocx4JException() throws Exception {
+		// whether or not the renderer's user agent reads it (it returns null, not an exception)
+		File missing = dir.resolve("missing.xhtml").toFile();
+		for (boolean allowed : new boolean[] {true, false}) {
+			try {
+				importer(allowed).convert(missing, null);
+				Assert.fail("File, allowed " + allowed + ": converted");
+			} catch (Docx4JException expected) {
+				Assert.assertTrue(expected.getMessage(), expected.getMessage().startsWith("Couldn't read "));
+			}
+			try {
+				importer(allowed).convert(missing.toURI().toURL());
+				Assert.fail("URL, allowed " + allowed + ": converted");
+			} catch (Docx4JException expected) {
+				Assert.assertTrue(expected.getMessage(), expected.getMessage().startsWith("Couldn't read "));
 			}
 		}
 	}

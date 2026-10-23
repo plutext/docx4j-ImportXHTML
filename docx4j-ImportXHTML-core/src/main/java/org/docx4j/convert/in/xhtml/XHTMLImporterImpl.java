@@ -116,6 +116,7 @@ import org.docx4j.wml.Tr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
+import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.css.CSSPrimitiveValue;
@@ -520,6 +521,20 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	}
 
 	/**
+	 * After a failure before layoutAndTraverse (which closes the renderer itself): close
+	 * the renderer, so that the next convert gets a fresh one rather than this one, with
+	 * its PDDocument open and the access controllers of the failed convert installed.
+	 * (The renderer is created before the parse rather than after it, since creating it
+	 * registers the SharedContext openhtmltopdf's XMLResource.load wants on the thread.)
+	 */
+	private void discardRenderer() {
+		if (renderer != null) {
+			renderer.close();
+			renderer = null;
+		}
+	}
+
+	/**
 	 * @param renderer the renderer to set
 	 */
 	public void setRenderer(DocxRenderer renderer) {
@@ -752,18 +767,18 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      */
     public List<Object> convert(File file, String baseUrl) throws Docx4JException {
 
-        renderer = getRenderer();
-        
         File parent = file.getAbsoluteFile().getParentFile();
-        
+        String uri;
+        String base;
         try {
-			renderer.setDocument(
-					loadDocument(file.toURI().toURL().toExternalForm()),
-			        (parent == null ? "" : parent.toURI().toURL().toExternalForm())
-			);
-		} catch (MalformedURLException e) {
-			throw new Docx4JException("Malformed URL", e);
-		}
+            uri = file.toURI().toURL().toExternalForm();
+            base = (parent == null ? "" : parent.toURI().toURL().toExternalForm());
+        } catch (MalformedURLException e) {
+            throw new Docx4JException("Malformed URL", e);
+        }
+
+        renderer = getRenderer();
+        renderer.setDocument(loadDocument(uri), base);
 
         return layoutAndTraverse();
     }
@@ -780,12 +795,13 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      */
     public List<Object> convert(InputSource is,  String baseUrl) throws Docx4JException {
 
-        renderer = getRenderer();
+        renderer = getRenderer(); // before the parse: XMLResource.load wants its SharedContext on the thread
         
         Document dom;
         try {
         	dom = XMLResource.load(is).getDocument();
         } catch (com.openhtmltopdf.util.XRRuntimeException xre) {
+        	discardRenderer();
         	throw notWellFormed(xre);
         }
         renderer.setDocument(dom, baseUrl);
@@ -889,13 +905,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      *         unchecked XRRuntimeException), or can't be converted
      */
     public List<Object> convert(InputStream is, String baseUrl) throws Docx4JException {
-    	
-        renderer = getRenderer();
+
+        renderer = getRenderer(); // before the parse: XMLResource.load wants its SharedContext on the thread
         
         Document dom;
         try {
         	dom = XMLResource.load(is).getDocument();
         } catch (com.openhtmltopdf.util.XRRuntimeException xre) {
+        	discardRenderer();
         	throw notWellFormed(xre);
         }
         renderer.setDocument(dom, baseUrl);
@@ -904,23 +921,66 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     }
     
     /**
+     * Convert the XHTML in node: a Document, or an Element or DocumentFragment, which is
+     * copied into a new document (a fragment of several nodes, in a div).
+     * 
      * @param node
      * @param baseUrl
-     * @param wordMLPackage
      * @return
-     * @throws IOException
+     * @throws Docx4JException for any other kind of node, or where the XHTML can't be converted
      */
     public List<Object> convert(Node node,  String baseUrl) throws Docx4JException {
-    	
+
+        Document doc = documentFor(node);
         renderer = getRenderer();
-        if (node instanceof Document) {
-        	renderer.setDocument( (Document)node, baseUrl );
-        } else {
-        	Document doc = XmlUtils.neww3cDomDocument();
-        	doc.appendChild(doc.importNode(node, true));
-        	renderer.setDocument( doc, baseUrl );
-        }
+        renderer.setDocument( doc, baseUrl );
         return layoutAndTraverse();
+    }
+
+    /**
+     * The document convert(Node) imports: the Document itself; an Element, copied into a
+     * new document as its root; a DocumentFragment likewise where it holds one element, else
+     * its children in a div, since a document has one root.
+     *
+     * @throws Docx4JException for any other kind of node (text, a comment, an attribute),
+     *         which can't be a document's root
+     */
+    private static Document documentFor(Node node) throws Docx4JException {
+        if (node instanceof Document) {
+            return (Document) node;
+        }
+        Document doc = XmlUtils.neww3cDomDocument();
+        if (node instanceof Element) {
+            doc.appendChild(doc.importNode(node, true));
+            return doc;
+        }
+        if (node instanceof DocumentFragment) {
+            Element element = null;
+            int elements = 0;
+            boolean text = false;
+            for (Node n = node.getFirstChild(); n != null; n = n.getNextSibling()) {
+                if (n instanceof Element) {
+                    elements++;
+                    element = (Element) n;
+                } else if ((n.getNodeType() == Node.TEXT_NODE || n.getNodeType() == Node.CDATA_SECTION_NODE)
+                        && !n.getNodeValue().trim().isEmpty()) {
+                    text = true;
+                }
+            }
+            if (elements == 1 && !text) {
+                doc.appendChild(doc.importNode(element, true));
+            } else {
+                String ns = element == null ? "http://www.w3.org/1999/xhtml" : element.getNamespaceURI();
+                Element div = ns == null ? doc.createElement("div") : doc.createElementNS(ns, "div");
+                doc.appendChild(div);
+                for (Node n = node.getFirstChild(); n != null; n = n.getNextSibling()) {
+                    div.appendChild(doc.importNode(n, true));
+                }
+            }
+            return doc;
+        }
+        throw new Docx4JException("convert(Node) takes a Document, an Element or a DocumentFragment, not "
+                + node.getClass().getSimpleName() + " " + node.getNodeName());
     }
     
     /**
@@ -932,13 +992,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      *         unchecked XRRuntimeException), or can't be converted
      */
     public List<Object> convert(Reader reader,  String baseUrl) throws Docx4JException {
-    	
-        renderer = getRenderer();
+
+        renderer = getRenderer(); // before the parse: XMLResource.load wants its SharedContext on the thread
         
         Document dom;
         try {
         	dom = XMLResource.load(reader).getDocument();
         } catch (com.openhtmltopdf.util.XRRuntimeException xre) {
+        	discardRenderer();
         	throw notWellFormed(xre);
         }
         renderer.setDocument(dom, baseUrl);
@@ -996,16 +1057,27 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      */
     private Document loadDocument(String uri) throws Docx4JException {
         try {
+            Document dom;
             if (externalResourcesAllowed) {
-                return renderer.loadDocument(uri);
+                // null, not an exception, where the user agent can't open it (it logs)
+                dom = renderer.loadDocument(uri);
+                if (dom == null) {
+                    throw new Docx4JException("Couldn't read " + uri);
+                }
+            } else {
+                try (Reader reader = new InputStreamReader(new URL(uri).openStream(), StandardCharsets.UTF_8)) {
+                    dom = XMLResource.load(reader).getDocument();
+                } catch (IOException e) {
+                    throw new Docx4JException("Couldn't read " + uri, e);
+                }
             }
-            try (Reader reader = new InputStreamReader(new URL(uri).openStream(), StandardCharsets.UTF_8)) {
-                return XMLResource.load(reader).getDocument();
-            } catch (IOException e) {
-                throw new Docx4JException("Couldn't read " + uri, e);
-            }
+            return dom;
         } catch (com.openhtmltopdf.util.XRRuntimeException xre) {
+            discardRenderer();
             throw notWellFormed(xre);
+        } catch (Docx4JException | RuntimeException e) {
+            discardRenderer();
+            throw e;
         }
     }
 
@@ -1057,7 +1129,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     		content = content.substring(1);
     	}
     	
-        renderer = getRenderer();
+        renderer = getRenderer(); // before the parse: XMLResource.load wants its SharedContext on the thread
         
         InputSource is = new InputSource(new BufferedReader(new StringReader(content)));
         
@@ -1065,9 +1137,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         try {
         	dom = XMLResource.load(is).getDocument();
         } catch  ( com.openhtmltopdf.util.XRRuntimeException xre) {
+        	discardRenderer();
         	throw notWellFormed(xre);
         }
-        
         
         renderer.setDocument(dom, baseUrl);
         return layoutAndTraverse();
@@ -2840,7 +2912,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 				
 		// CSS font-family -> w:rFonts is direct formatting like any other run
 		// property, so it follows runFormatting: not under CLASS_TO_STYLE_ONLY.
-		// Before 17.1.1 it was applied unconditionally (see CR-001); the
+		// Before 17.3.4 it was applied unconditionally (see CR-001); the
 		// property restores that.
 		if (!runFormatting.equals(FormattingOption.CLASS_TO_STYLE_ONLY)
 				|| ImportXHTMLProperties.getProperty("docx4j-ImportXHTML.Fonts.IgnoreRunFormattingOption", false)) {

@@ -51,7 +51,7 @@ import org.junit.Test;
 /**
  * CSS font-family -> w:rFonts is direct formatting, so it must follow
  * the run-level FormattingOption like every other run property.
- * Before 17.1.1 it was written unconditionally.  See CR-001.
+ * Before 17.3.4 it was written unconditionally.  See CR-001.
  */
 public class RunFormattingFontTest {
 
