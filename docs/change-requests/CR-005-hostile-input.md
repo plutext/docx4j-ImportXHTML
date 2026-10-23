@@ -6,8 +6,8 @@ input"). He had pointed at apache/poi#1455 and asked "should we be testing what 
 Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session. Measured with probes against -core at
 d33581f, compiled against the released docx4j 17.3.4 (§1). Phases 1 and 2 implemented 2026-10-23,
 with the entry points' exceptions (§5, Jason: "fix please"; suite 162/0/0, BundleIT 3/0/0; §6),
-commit ca10f61, not installed. Phase 2 changes what docx4j's `HtmlChunkImport` gets, so the
-snapshot waits on docx4j-25 (§8).
+commit ca10f61. Installed as 17.1.1-SNAPSHOT the same day, once docx4j's `HtmlChunkImport` made
+the `setLinkSchemesChecked(false)` call (CR-056 phase 3, docx4j 2933e63b7; §8).
 Scope: `XHTMLImporterImpl` (`createHyperlink`, and a link check with its setter),
 `XHTMLImageHandlerDefault` (alt text), `Docx4jUserAgent` (a failed image fetched once),
 `XHTMLtoPPTX` (the same link check), a new class for the check, a new test class in core-tests, the
@@ -127,7 +127,7 @@ The case against, which is why there's a switch (D2):
 - Word's own import of an HTML altChunk keeps such a target (CR-056 §4, from docx4j-25), and CR-002
   and CR-003 move ImportXHTML towards Word's import.
 - docx4j's text model and inspector read altChunks through ImportXHTML (`HtmlChunkImport`). The
-  inspector's `relationship.external` finding wants the target as written.
+  inspector's `altchunk.script` finding wants the target as written.
 
 **WordprocessingML is built from objects, never from strings.**
 - **`createHyperlink`** makes a `P.Hyperlink` with `setAnchor` or `setId`, and an `R` holding a
@@ -183,7 +183,10 @@ API (`Probe6` in the probe archive). docx4j-25 confirmed both in source and is w
 docx4j CR-057, for the input side:
 - **(1)** escaped inside `createImageInline`. Phase 1's `""` plus `setDescr(alt)` stays safe once
   that ships: one is escaping at template substitution, the other a JAXB value, so nothing is
-  escaped twice.
+  escaped twice. It shipped as CR-057 phase 1 (docx4j 26ddf11c5, 17.3.5-SNAPSHOT, 2026-10-23).
+  Phase 1's code passes `null` and `""`, so it is unchanged against 17.3.5 too. It can stay when
+  ImportXHTML moves to 17.3.5; only the comment in `XHTMLImageHandlerDefault`, which says
+  docx4j pastes the alt text unescaped, would then describe 17.3.4 alone.
 - **(2)** a `Docx4jProperties` switch. "Never fetch" is recommended as the default from docx4j
   17.3.5, with Word's fetching on request; the default is Jason's decision.
 
@@ -234,7 +237,7 @@ please"):
 
 As §4. The CHANGELOG entry describes rows 2 to 6 as a fix.
 
-**Done 2026-10-23** (commit ca10f61, not installed):
+**Done 2026-10-23** (commit ca10f61):
 - **`createHyperlink`** builds the `P.Hyperlink`, `R` and `Text` as objects, with their parents
   set as unmarshalling set them. Two things are gone: the hand escaping of the link text, and the
   catch that logged "Dodgy link text" and returned null.
@@ -262,7 +265,7 @@ As §4, once D1 to D4 are decided. Then send docx4j-25 the commit. They take
 `setLinkSchemesChecked(false)` in `HtmlChunkImport`, for the inspector (§8), in CR-056 phase 3
 (agreed 2026-10-23).
 
-**Done 2026-10-23** (commit ca10f61, not installed):
+**Done 2026-10-23** (commit ca10f61):
 
 - **`LinkSchemes`** (new, LGPL header) holds `isAllowed`, `defaults()` and `PROPERTY`. It reads a
   scheme as POI's `isSafeHyperlink` does, written afresh: tabs and line breaks are dropped, and
@@ -359,8 +362,13 @@ accepted").
   the WARN names the first one, and the property brings a scheme back.
 - **docx4j's inspector loses what it reports.** When docx4j reads an HTML altChunk through
   ImportXHTML with the check on, a `javascript:` link comes out as text. The inspector's
-  `relationship.external` finding then has nothing to report. `HtmlChunkImport` needs one more
+  `altchunk.script` finding then has nothing to report. `HtmlChunkImport` needs one more
   reflective call, as for `neverFetch`. That is docx4j-25's to make, and phase 2 tells them.
+  They made it the same day, in docx4j 2933e63b7 (CR-056 phase 3), and the snapshot was installed
+  after it. Their test with the installed bundle jar: a chunk's
+  `<a href='javascript:alert(1)'>CLICK</a>` gives the run "CLICK -> javascript:alert(1)", and the
+  inspector reports altchunk, altchunk.script and altchunk.external_ref. (This CR first named
+  the finding `relationship.external`, from docx4j-25's hand-off; they corrected it after the test.)
 - **Unlike Word's altChunk import.** With the check on, `convertAltChunks` drops a link that Word
   keeps. That runs against CR-002 and CR-003's direction, for links only.
 - **`file:` and UNC paths stay links.** That is POI's and CR-056's set. Following a link to
