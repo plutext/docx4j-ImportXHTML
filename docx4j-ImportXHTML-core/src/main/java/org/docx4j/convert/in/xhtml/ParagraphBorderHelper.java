@@ -208,8 +208,11 @@ public class ParagraphBorderHelper {
 		// w:ST_EighthPointMeasure - Measurement in Eighths of a Point
 		width = UnitsOfMeasurement.twipToPoint( Math.round(width) ) * 8.0f;
 		
-		String color = borderColor.asString();
-		if (color.startsWith("#")) color=color.substring(1);
+		// hex, or none where it's transparent, and then no border (CR-006)
+		String color = CssColorForWord.borderColor(borderColor);
+		if (color==null) {
+			return createBorderStyle(STBorder.NIL, null, null);
+		}
 		
 		return createBorderStyle( stBorder, color, BigInteger.valueOf( Math.round(width) ) );
 	}

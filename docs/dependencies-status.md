@@ -16,7 +16,7 @@ None of the four goes into 17.3.4.
 
 | dependency | pinned | newest | 17.3.4 | why |
 |---|---|---|---|---|
-| `io.github.openhtmltopdf:openhtmltopdf-core`, `-pdfbox` | 1.1.31 | 1.1.100 | stays; CR-006 | one `<br/>` gives two `w:br` (§3) |
+| `io.github.openhtmltopdf:openhtmltopdf-core`, `-pdfbox` | 1.1.31 | 1.1.100 | stays; 1.1.100 in 17.3.5 (CR-006) | one `<br/>` gives two `w:br` (§3) |
 | `org.apache.james:apache-mime4j-core` | 0.8.13 | 0.8.15 | stays; 0.8.15 in 17.3.5 | an MHT of more than 512 parts fails (§4) |
 | `org.jsoup:jsoup` (optional) | 1.22.1 | 1.23.2 | stays; 1.23.2 in 17.3.5 | docx4j 17.3.4 pins 1.22.1, and neither advisory reaches either project (§5) |
 
@@ -44,7 +44,7 @@ The versions plugin listed nothing else. The rest of -core's direct dependencies
 - **jsoup:** the parse and `W3CDom` path timed on hostile nesting (§5).
 - **mime4j:** `convertMHT` run on MHTs of 10 to 600 parts (§4).
 
-## 3. openhtmltopdf 1.1.31 → 1.1.100: stays; CR-006
+## 3. openhtmltopdf 1.1.31 → 1.1.100: stays in 17.3.4; moved in 17.3.5 (CR-006)
 
 The tests pass, but 7 of the 10 outputs change.
 
@@ -121,6 +121,18 @@ Probes are in the archive's `followups-2026-10-24/`.
   - thead's `keepLines`;
   - a wider set of test documents;
   - the move itself.
+
+### Moved to 1.1.100 for 17.3.5 (24 October 2026)
+
+CR-006, accepted the same day (Jason: "D5 (b); others as recommended"), has the details.
+- **Phase 0, a wider measurement** over the suite's 277 converts and more inputs, found nothing
+  beyond what is above, except gains: `var()`, `initial` and `unset` now apply.
+- **Phase 1, colours,** fixes all of the colour findings above, with `CssColorForWord`.
+- **Phase 2:** `page-break-inside` counts only where the document's own CSS sets it.
+- **Phase 3** moved -core's pins.
+- **After all four,** the suite's converts differ from 1.1.31 in seven row heights only.
+- **Still true on 1.1.100:** the fetch timeouts (10 s to connect, 30 s to read) and the nesting
+  limit, the same on both versions, as the README says.
 
 ## 4. mime4j 0.8.13 → 0.8.15: stays in 17.3.4; moved in 17.3.5
 

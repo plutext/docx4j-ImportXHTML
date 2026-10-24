@@ -22,9 +22,27 @@ Changes in Version 17.3.5
   HTML part, an MHT with hundreds of image parts after it still converts.  More than 512 parts
   before its HTML part gives a Docx4JException.
 
-- A br is one w:br with any openhtmltopdf.  From openhtmltopdf 1.1.97, the line break its
-  default stylesheet puts before a br splits the br's own box in two, and each part gave a
-  w:br.  (This release still uses openhtmltopdf 1.1.31, where a br's box isn't split.)
+- A br is one w:br.  From openhtmltopdf 1.1.97, which this release moves to (below), the line
+  break its default stylesheet puts before a br splits the br's own box in two, and each part
+  gave a w:br.
+
+- openhtmltopdf is now 1.1.100, from 1.1.31.  It parses rgba(), hsl() and hsla() colours, CSS
+  variables (var(), with a fallback) and the initial and unset keywords, which 1.1.31
+  dropped.  Row heights and cell widths can move slightly (by up to 3.75 pt and 0.35 pt in
+  what was measured), from its font metrics and line-height.  It declares PDFBox 3.0.8, the
+  version this project pins.  See docs/change-requests/CR-006.
+
+- Colours with alpha.  Word's colours have no alpha, so a fully transparent colour
+  (rgba(..., 0), or transparent) is no colour: no shading, and no border.  On 1.1.100 alone,
+  rgba(0,0,0,0) gave a black background.  Partial alpha is blended over white:
+  rgba(255,255,0,0.4) gives FFFF99.  A border colour is now always hex.  Before, transparent
+  (and, on 1.1.100, an rgba colour) went into w:color as its CSS text, which isn't valid
+  WordprocessingML; that was so in 17.3.4 too.  New CssColorForWord.
+
+- page-break-inside gives w:keepLines only where the document's own CSS sets it (a style
+  attribute, a style element or a linked stylesheet), on the paragraph or an ancestor.  From
+  1.1.79, openhtmltopdf's default stylesheet sets it on thead, which gave w:keepLines to every
+  paragraph in a header row.
 
 - -core's jar no longer carries XhtmlNamespaceHandler.css and xhtmlrenderer.conf.
   The openhtmltopdf this project uses doesn't read them: its default stylesheet is its own

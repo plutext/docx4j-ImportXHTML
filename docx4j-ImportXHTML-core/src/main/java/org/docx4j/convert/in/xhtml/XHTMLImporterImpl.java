@@ -126,11 +126,14 @@ import org.w3c.dom.css.CSSPrimitiveValue;
 import org.xml.sax.InputSource;
 
 import com.openhtmltopdf.css.constants.CSSName;
+import com.openhtmltopdf.css.sheet.PropertyDeclaration;
+import com.openhtmltopdf.css.sheet.StylesheetInfo;
 import com.openhtmltopdf.css.constants.IdentValue;
 import com.openhtmltopdf.css.parser.PropertyValue;
 import com.openhtmltopdf.css.style.CalculatedStyle;
 import com.openhtmltopdf.css.style.DerivedValue;
 import com.openhtmltopdf.css.style.FSDerivedValue;
+import com.openhtmltopdf.css.parser.FSColor;
 import com.openhtmltopdf.css.style.derived.ColorValue;
 import com.openhtmltopdf.css.style.derived.CountersValue;
 import com.openhtmltopdf.css.style.derived.FunctionValue;
@@ -1266,9 +1269,12 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	        	
 	            } else if (val instanceof ColorValue) {
 	            	
-	//            	Object o = ((ColorValue)val).asColor();
-	    			PropertyValue val2 = new PropertyValue( ((ColorValue)val).asColor() ); 
-	            	cssMap.put(name.toString(), val2 );            		
+	            	// none where fully transparent, else opaque (CR-006): Word's colours have no alpha
+	            	FSColor color = CssColorForWord.opaque(((ColorValue)val).asColor());
+	            	if (color!=null) {
+	            		cssMap.put(name.toString(), new PropertyValue(color) );
+	            	}
+
 	
 	            } else if (val instanceof LengthValue) {
 
@@ -1998,9 +2004,12 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 //                                    && ((InlineBox)o).isStartsHere()) {
                                 
                             	displayNoneHelper.enter((InlineBox)o);
+                            	Element previousInlineOwner = inlineOwner;
+                            	inlineOwner = box.getElement();
                             	try {
                             		processInlineBox( (InlineBox)o);
                             	} finally {
+                            		inlineOwner = previousInlineOwner;
                             		displayNoneHelper.leave();
                             	}
                             		                            	
@@ -2952,6 +2961,28 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     }
     
 	
+    /** The element whose inline content is being processed, for an anonymous InlineBox. */
+    private Element inlineOwner;
+    
+    /**
+     * Whether page-break-inside, as it applies to this element, is the author's: set by a style
+     * attribute, a style element or a linked stylesheet, on the element or on the nearest ancestor
+     * that sets it (the property is inherited).  From 1.1.79, openhtmltopdf's default stylesheet
+     * sets it on thead, which would give w:keepLines to each paragraph in a header row (CR-006 D1).
+     */
+    private boolean isAuthorPageBreakInside(Styleable styleable) {
+    	Node n = styleable==null ? null : styleable.getElement();
+    	if (n==null) n = inlineOwner; // an anonymous InlineBox, eg the text in a th
+    	for (; n instanceof Element; n = n.getParentNode()) {
+    		PropertyDeclaration declared = renderer.getSharedContext().getCss()
+    				.getCascadedStyle((Element)n, false).propertyByName(CSSName.PAGE_BREAK_INSIDE);
+    		if (declared!=null && !"inherit".equalsIgnoreCase(declared.getValue().getCssText())) {
+    			return declared.getOrigin()==StylesheetInfo.AUTHOR;
+    		}
+    	}
+    	return false;
+    }
+    
     private void addParagraphProperties(PPr pPr, Styleable styleable, Map<String, PropertyValue> cssMap) throws Docx4JException {
     	// NB, not invoked in CLASS_TO_STYLE_ONLY case
     	
@@ -2961,6 +2992,10 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         	
         	String cssName = (String)o;
         	PropertyValue cssValue = cssMap.get(cssName);
+        	
+        	if ("page-break-inside".equals(cssName) && !isAuthorPageBreakInside(styleable)) {
+        		continue; // eg openhtmltopdf's thead rule, which isn't the author's (CR-006)
+        	}
         	
         	Property p = PropertyFactory.createPropertyFromCssName(cssName, new DomCssValueAdaptor(cssValue));
         	

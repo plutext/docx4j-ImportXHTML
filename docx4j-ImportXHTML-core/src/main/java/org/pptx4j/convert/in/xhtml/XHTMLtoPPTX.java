@@ -39,6 +39,7 @@ import java.util.Map;
 import jakarta.xml.bind.JAXBException;
 
 import org.docx4j.XmlUtils;
+import org.docx4j.convert.in.xhtml.CssColorForWord;
 import org.docx4j.convert.in.xhtml.DomCssValueAdaptor;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
 import org.docx4j.convert.in.xhtml.LinkSchemes;
@@ -79,6 +80,7 @@ import com.openhtmltopdf.css.parser.PropertyValue;
 import com.openhtmltopdf.css.style.CalculatedStyle;
 import com.openhtmltopdf.css.style.DerivedValue;
 import com.openhtmltopdf.css.style.FSDerivedValue;
+import com.openhtmltopdf.css.parser.FSColor;
 import com.openhtmltopdf.css.style.derived.ColorValue;
 import com.openhtmltopdf.css.style.derived.CountersValue;
 import com.openhtmltopdf.css.style.derived.FunctionValue;
@@ -618,9 +620,12 @@ public class XHTMLtoPPTX {
 	        	
 	            } else if (val instanceof ColorValue) {
 	            	
-	//            	Object o = ((ColorValue)val).asColor();
-	    			PropertyValue val2 = new PropertyValue( ((ColorValue)val).asColor() ); 
-	            	cssMap.put(name.toString(), val2 );            		
+	            	// none where fully transparent, else opaque (CR-006): Word's colours have no alpha
+	            	FSColor color = CssColorForWord.opaque(((ColorValue)val).asColor());
+	            	if (color!=null) {
+	            		cssMap.put(name.toString(), new PropertyValue(color) );
+	            	}
+
 	
 	            } else if (val instanceof LengthValue) {
 

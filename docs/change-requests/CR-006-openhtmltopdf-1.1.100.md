@@ -1,10 +1,12 @@
 # CR-006: openhtmltopdf 1.1.100: colours with alpha, thead's keepLines, and the move
 
-Status: PROPOSED 2026-10-24, at Jason's request ("yes" to "draft CR-006 for openhtmltopdf"),
-after `docs/dependencies-status.md` §3 kept openhtmltopdf at 1.1.31 for 17.3.4. Drafted by Claude
-Opus 5.5 in the docx4j-ImportXHTML session, with each finding measured first (§1). The doubled
-`w:br` it found was fixed outside this CR, for 17.3.5 (§1, row 1). Decisions D1 to D6 await
-Jason (§6).
+Status: ACCEPTED 2026-10-24 (Jason: "D5 (b); others as recommended"): all four phases in 17.3.5,
+and D1 to D4 and D6 as recommended. Proposed the same day, at Jason's request ("yes" to "draft
+CR-006 for openhtmltopdf"), after `docs/dependencies-status.md` §3 kept openhtmltopdf at 1.1.31
+for 17.3.4. Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session, with each finding
+measured first (§1). The doubled `w:br` it found was fixed outside this CR, for 17.3.5 (§1, row 1).
+Phases 0 to 3 implemented 2026-10-24 (suite 178/0/0, BundleIT 3/0/0; §5), uncommitted. Phase 1
+needs 1.1.100's alpha, so the move came with it. The release is 17.3.5's.
 Scope:
 - colour handling: `TableHelper` and `ParagraphBorderHelper` (border colours), and the CSS
   values the importer hands to docx4j's `PropertyFactory` (text colour and shading);
@@ -87,8 +89,8 @@ It applies in three places:
 
 ## 4. The move
 
--core's `openhtmltopdf-core` and `-pdfbox` go to 1.1.100, or to the newest when phase 3 starts.
-openhtmltopdf publishes a release for each merge (§7). 1.1.100 declares PDFBox 3.0.8, the
+-core's `openhtmltopdf-core` and `-pdfbox` go to the version phase 0 measures (D6): 1.1.100, if
+phase 0 starts now. openhtmltopdf publishes a release for each merge (§7). 1.1.100 declares PDFBox 3.0.8, the
 version -core pins, where 1.1.31 declared 3.0.3. The API -core uses has additions only
 (`dependencies-status.md` §3). The CHANGELOG names rows 3 and 8, and any of the not-measured
 list that phase 0 finds.
@@ -106,20 +108,119 @@ Rerun the comparison on 1.1.31 and the target version, with more inputs:
 
 Record what moves, here.
 
+**Done 2026-10-24** (on e80fdb9; probes in the archive's `cr006-phase0-2026-10-24/`):
+- **The suite's converts.** Two `git archive` copies, at 1.1.31 and at 1.1.100, each had a
+  temporary hook, never committed, that wrote each convert's WML. The suite ran 169/0/0 on both,
+  with 277 converts each. 21 of the 277 move:
+  - 21 header-row paragraphs gain `w:keepLines` (row 2; phase 2);
+  - 7 `w:trHeight` change (row 8).
+
+  Nothing else moves. `XHTMLtoPPTX` doesn't lay out with openhtmltopdf, so it isn't in these.
+- **The extra inputs:**
+  - CSS features: `:root` and `var()` with a fallback, `initial`, `unset`, `[class^=…]`, `.a.b`,
+    `nth-child`, font-family case, `white-space: pre-line`, `text-transform`, `line-height`;
+  - generated content: `q`, `::before`, `::after`, `counter()`, `list-style-type`, `a::after`,
+    and a `br` inside an inline element;
+  - the samples, as in §1;
+  - through `convertMHT`, a Word "Save as Web Page" document and the HTML5 edge cases of
+    `dependencies-status.md` §5.
+- **Gains on 1.1.100,** which 1.1.31 dropped, for the CHANGELOG:
+  - `var()` and its fallback apply, to colour and margins;
+  - `font-weight: initial` and `text-align: initial` reset, as CSS says.
+- **Unchanged:**
+  - the selectors and font-family case;
+  - generated content. Neither version imports `::before` or `::after` content, `q`'s quotes or
+    counters, so 1.1.97's change reaches only the `br` (row 1);
+  - the Word document through `convertMHT`, apart from its row heights.
+- **So D6's version is 1.1.100.** The colours of rows 3 to 7 are phase 1's.
+
 ### Phase 1: colours
 
 As §2, with D2 and D3, and tests for rows 4 to 7, on 1.1.31 and on the target version. Row 7's
 fix doesn't depend on the move, so this phase can land first.
 
+**Done 2026-10-24** (uncommitted). It differs from the plan in one way:
+- **It needs 1.1.100.** `FSRGBColor.getAlpha()` is new in 1.1.100. In 1.1.31,
+  `FSRGBColor.TRANSPARENT` is (0, 0, 0), the same as black. So -core's pins moved with this
+  phase rather than in phase 3, and the tests run on 1.1.100 only. D5 (b) ships all four phases
+  together, so the release isn't affected.
+
+What was done:
+- **`CssColorForWord`** (new, public, `@since 17.3.5`, LGPL header):
+  - `opaque(FSColor)` returns null at alpha 0, the colour at alpha 1, and partial alpha blended
+    over white (D2), rounding half up;
+  - `borderColor(FSDerivedValue)` returns hex without the '#', or null where the colour is
+    transparent: the identifier `transparent`, or alpha 0.
+- **Where it applies:**
+  - the colour branch of `getCascadedProperties`, in `XHTMLImporterImpl` and in `XHTMLtoPPTX`. A
+    colour that is none is left out of the map, so docx4j's `PropertyFactory` never sees it;
+  - `TableHelper`'s cell background;
+  - `TableHelper`'s and `ParagraphBorderHelper`'s border colours. A null gives a
+    `w:val="nil"` border (D3); the old comments about `transparent` are gone.
+- **pptx:** docx4j's `FontColor.set(CTTextCharacterProperties)` is a TODO, so a pptx run gets no
+  text colour, before or after this phase.
+- **`ColorAlphaTest`** (new, 5 tests): none where transparent, on a run, a paragraph and a cell;
+  partial alpha (`e48080`, `ffff99`, `ff8080`); opaque colours unchanged; every `w:color` is
+  `ST_HexColor`, with `8080ff`, `ff8080` and `nil`; and pptx converts.
+- **Measured on 1.1.100 without this phase:** 3 of `ColorAlphaTest`'s 5 fail. The probe's
+  output, `colours.xhtml`:
+  - `E48080`, `008000` and `B3B3FF` for the text colours;
+  - `FFFF99` for the paragraph, `FF0000` for the hsl cell, and no shading where transparent;
+  - `8080FF` and `nil` for the borders.
+
 ### Phase 2: the default stylesheet's page-break-inside
 
 As §3, with D1.
+
+**Done 2026-10-24** (uncommitted):
+- **`XHTMLImporterImpl.addParagraphProperties`** skips `page-break-inside` unless
+  `isAuthorPageBreakInside` says so.
+- **How that is decided:** the nearest element, the paragraph's own or an ancestor's, with a
+  cascaded `page-break-inside` other than `inherit` decides. That declaration must have
+  `StylesheetInfo.AUTHOR` as its origin, the same test `DisplayNoneHelper` makes for `display`.
+- **Anonymous inline boxes:** a paragraph made from one, such as a th's text, has no element of
+  its own. So the traversal notes the element whose inline content it is processing
+  (`inlineOwner`), and the walk starts there.
+- **`PageBreakInsideTest`** (new, 4 tests):
+  - none from the default stylesheet's thead rule;
+  - the author's, from a style element and from a style attribute;
+  - the author's, inherited from a div, and from an author thead rule;
+  - an author's `auto` on th, which wins over the default stylesheet's thead rule.
+- **Measured:** the 21 `w:keepLines` of phase 0 are gone from the suite's converts.
 
 ### Phase 3: the move
 
 As §4. The CHANGELOG, `docs/dependencies-status.md` §3, and the release (D5).
 
+**Done 2026-10-24** (uncommitted), apart from the release, which is 17.3.5's:
+- **The pins:** `openhtmltopdf-core` and `-pdfbox` at 1.1.100 (D6), moved with phase 1.
+- **Measured** with `mvn -o clean verify -Dgpg.skip`: all five modules green. The suite is
+  178/0/0, with nine new tests in this CR and `LineBreakTest`, and `BundleIT` is 3/0/0. The
+  enforcer passes, with bytecode 11 and dependency convergence.
+- **Phase 0's comparison, rerun.** The suite's 277 converts, at 1.1.31 against 1.1.100 with
+  phases 1 and 2, differ in 7 `w:trHeight` only (row 8). Of the extra inputs:
+  - `css-features` gains `var()` and `initial`;
+  - `colours` is as phase 1 says;
+  - row heights and widths move as in row 8;
+  - the rest is the same.
+
+  Every `w:color` in every output is hex.
+- **Still true on 1.1.100:** the README's fetch timeouts (10 s and 30 s, the same constants)
+  and its nesting note. With `-Xss1m`, 825 nested divs convert on both versions.
+- **The CHANGELOG** (17.3.5) and `docs/dependencies-status.md` §1 and §3 are updated.
+
 ## 6. Decisions (for Jason; each with a recommendation)
+
+Decided 2026-10-24 (Jason: "D5 (b); others as recommended"):
+- D1 (b), the author's `page-break-inside` only;
+- D2 (b), partial alpha blended over white;
+- D3 (a), no border for a border whose colour is none;
+- D4: docx4j-25 is sent rows 4 and 5. Done the same day. At Jason's word, docx4j's
+  `PropertyFactory` now applies the same rule, alpha 0 as none and partial alpha over white, for its
+  other callers (docx4j 7f27c9f33, `PropertyFactoryCssAlphaTest`). Against that snapshot this
+  suite is still 178/0/0, and ImportXHTML's output is unchanged, since §2 filters first;
+- D5 (b), all four phases in 17.3.5;
+- D6 (a), the version phase 0 measures, 1.1.100.
 
 - **D1. thead's `keepLines` (§3).** (a) accept; (b) only the author's `page-break-inside`; (c) none
   in table cells.
@@ -152,10 +253,26 @@ As §4. The CHANGELOG, `docs/dependencies-status.md` §3, and the release (D5).
 
   **Recommended: (a).** Row 7 is a schema-invalid document in the released 17.3.4, so its fix
   shouldn't wait for the move.
-- **D6. The target version.** (a) 1.1.100; (b) the newest when phase 3 starts.
+- **D6. The target version.**
+  - (a) The version phase 0 measures: 1.1.100, if phase 0 starts now.
+  - (b) The newest when phase 3 starts, at least two weeks old.
 
-  **Recommended: (b), at least two weeks old.** 1.1.100 was a day old when measured, and a
-  release comes with each merge.
+  **Recommended: (a).** Phase 3 then ships exactly what was measured, and nothing is compared
+  twice.
+  - **The releases that bear on us are 1.1.95 to 1.1.97** (9 October), which change line
+    breaking and inline layout; 1.1.97 is the one that split the br. By 24 October they were 15
+    days old.
+  - **The later ones barely touch the importer.** 1.1.98 and 1.1.99 (22 October) are footnotes
+    and multi-column pagination, and 1.1.100 is PDFBox 3.0.8, which -core already pins.
+  - **No sign of instability.** None of the releases from 1.1.89 to 1.1.100 reverts or hastily
+    fixes an earlier one.
+  - **A newer release is taken only for a reason**, such as a fix for something phase 0 finds,
+    and then phase 0 is rerun on it.
+
+  (Revised 2026-10-24 at Jason's request, "change D6's recommendation to 'ship the version phase 0
+  measures', which would be 1.1.100". It had recommended (b), because a release comes with each
+  merge and 1.1.100 was a day old when measured. The two-week margin was a rule of thumb, not
+  something the release history showed.)
 
 ## 7. Risks
 
@@ -163,8 +280,9 @@ As §4. The CHANGELOG, `docs/dependencies-status.md` §3, and the release (D5).
   documents and two probes.
 - **Blending (D2 (b)) is a guess at the page.** A document on a dark background gets colours lighter
   than its author saw.
-- **The versions move quickly.** One release per merge means the version measured in phase 0 can
-  be superseded by phase 3, so phase 3 reruns phase 0's comparison on its own version.
+- **The versions move quickly.** With one release per merge, newer versions will be out by
+  phase 3. Under D6 (a), phase 3 still ships the version phase 0 measured. If a newer one is taken
+  for a reason, phase 0's comparison is rerun on it.
 - **Word not checked.** Neither `w:color="transparent"` nor rows 4 to 6 were opened in Word.
 
 ## 8. Sources
