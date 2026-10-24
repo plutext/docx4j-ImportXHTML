@@ -56,8 +56,6 @@
 			<resource>
 				<directory>src/main/resources</directory>
 				<includes>
-					<include>XhtmlNamespaceHandler.css</include>
-					<include>xhtmlrenderer.conf</include>
 				<!-- could put here for convenience
 					<include>logback.xml</include>
 					<include>docx4j.properties</include>

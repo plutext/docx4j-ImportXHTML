@@ -16,6 +16,20 @@ Changes in Version 17.3.5
   output: a CDATA section in HTML body text is read as HTML's parsing rules read it, as a comment
   ending at the first ">", where 1.22.1 kept its content as text.  See docs/dependencies-status.md.
 
+- convertMHT reads an MHT only as far as its first text/html part, the one it uses, and
+  apache-mime4j is now 0.8.15.  0.8.15 limits the parts (512), the nesting and the headers of
+  a MIME message, against messages built to exhaust memory.  Because the parse stops at the
+  HTML part, an MHT with hundreds of image parts after it still converts.  More than 512 parts
+  before its HTML part gives a Docx4JException.
+
+- A br is one w:br with any openhtmltopdf.  From openhtmltopdf 1.1.97, the line break its
+  default stylesheet puts before a br splits the br's own box in two, and each part gave a
+  w:br.  (This release still uses openhtmltopdf 1.1.31, where a br's box isn't split.)
+
+- -core's jar no longer carries XhtmlNamespaceHandler.css and xhtmlrenderer.conf.
+  The openhtmltopdf this project uses doesn't read them: its default stylesheet is its own
+  copy, in its jar.
+
 
 Version 17.3.4
 ===============

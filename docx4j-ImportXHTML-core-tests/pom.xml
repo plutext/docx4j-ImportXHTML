@@ -105,16 +105,6 @@
 					<include>**/jaxb.properties</include>
 				</includes>
 			</resource>
-			<resource>
-				<directory>src/main/resources</directory>
-				<includes>
-					<include>XhtmlNamespaceHandler.css</include>
-					<include>xhtmlrenderer.conf</include>
-					<!-- user supplied: -->
-					<!--<include>mml2omml.xsl</include> -->
-				</includes>
-			
-			</resource>
 			<!-- <resource> <directory>src/test/resources</directory> <excludes> <exclude>*.docx</exclude>
 				</excludes> </resource> -->
 		</resources>

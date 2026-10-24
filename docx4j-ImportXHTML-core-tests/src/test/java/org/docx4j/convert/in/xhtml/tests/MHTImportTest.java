@@ -187,6 +187,37 @@ public class MHTImportTest {
 		Assert.assertTrue(xml, xml.contains("o:hr=\"t\""));
 	}
 
+	/**
+	 * The parse stops once the text/html part is read, so the parts after it (an image
+	 * file each, as Word writes for an illustrated document) aren't read, nor counted
+	 * against mime4j's part limit, 512 from 0.8.15.
+	 */
+	@Test
+	public void manyPartsAfterTheHtml() throws Exception {
+		StringBuilder mht = new StringBuilder(MULTIPART_HEADER)
+				.append("--BOUNDARY\r\n")
+				.append("Content-Type: text/html; charset=\"utf-8\"\r\n")
+				.append("\r\n")
+				.append("<html xmlns=\"http://www.w3.org/1999/xhtml\"><body><p>the first part</p></body></html>\r\n")
+				.append(imageParts(1000))
+				.append("--BOUNDARY--\r\n");
+		String xml = convertMHT(mht.toString());
+		Assert.assertTrue(xml, xml.contains("the first part"));
+	}
+
+	/** Before the text/html part, mime4j's limit still holds. */
+	@Test(expected = Docx4JException.class)
+	public void tooManyPartsBeforeTheHtml() throws Exception {
+		StringBuilder mht = new StringBuilder(MULTIPART_HEADER)
+				.append(imageParts(1000))
+				.append("--BOUNDARY\r\n")
+				.append("Content-Type: text/html; charset=\"utf-8\"\r\n")
+				.append("\r\n")
+				.append("<html xmlns=\"http://www.w3.org/1999/xhtml\"><body><p>late</p></body></html>\r\n")
+				.append("--BOUNDARY--\r\n");
+		convertMHT(mht.toString());
+	}
+
 	@Test(expected = Docx4JException.class)
 	public void noHtmlPart() throws Exception {
 		convertMHT(MULTIPART_HEADER
@@ -195,6 +226,18 @@ public class MHTImportTest {
 				+ "\r\n"
 				+ "not html\r\n"
 				+ "--BOUNDARY--\r\n");
+	}
+
+	private static String imageParts(int n) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 1; i <= n; i++) {
+			sb.append("--BOUNDARY\r\n")
+				.append("Content-Type: image/png\r\n")
+				.append("Content-Location: file:///C:/x_files/image").append(i).append(".png\r\n")
+				.append("\r\n")
+				.append("x\r\n");
+		}
+		return sb.toString();
 	}
 
 	private static XHTMLImporterImpl importer() throws Exception {

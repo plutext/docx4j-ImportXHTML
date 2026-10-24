@@ -86,16 +86,6 @@
 					<include>**/jaxb.properties</include>
 				</includes>
 			</resource>
-			<resource>
-				<directory>src/main/resources</directory>
-				<includes>
-					<include>XhtmlNamespaceHandler.css</include>
-					<include>xhtmlrenderer.conf</include>
-					<!-- user supplied: -->
-					<!--<include>mml2omml.xsl</include> -->
-				</includes>
-			
-			</resource>
 			<!-- <resource> <directory>src/test/resources</directory> <excludes> <exclude>*.docx</exclude>
 				</excludes> </resource> -->
 		</resources>
@@ -181,7 +171,7 @@
 		<dependency>
 			<groupId>org.apache.james</groupId>
 			<artifactId>apache-mime4j-core</artifactId>
-			<version>0.8.13</version>
+			<version>0.8.15</version>
 		</dependency>
 
 		<!-- optional: convertMHT reads HTML which isn't well-formed XML (eg Word's own MHT) with it, where present -->

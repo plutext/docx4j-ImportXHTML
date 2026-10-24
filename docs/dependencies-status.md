@@ -6,7 +6,9 @@ determine whether we should bump to some or all of these updates". Measured by C
 the docx4j-ImportXHTML session; the probes are archived in
 `~/claude-scratch-archive/docx4j-ImportXHTML/dependency-bumps-2026-10-23/` (its `README.txt`
 says how each was run). The release notes and advisories were read the same day (sources in §6).
-On 24 October, jsoup was reassessed for 17.3.5 with docx4j, and moved to 1.23.2 (§5).
+On 24 October, jsoup was reassessed for 17.3.5 with docx4j, and moved to 1.23.2 (§5). The same
+day, mime4j moved to 0.8.15 (§4), the doubled `w:br` was traced and fixed, and openhtmltopdf's
+other changes went to CR-006 (§3).
 
 ## 1. Summary
 
@@ -14,8 +16,8 @@ None of the four goes into 17.3.4.
 
 | dependency | pinned | newest | 17.3.4 | why |
 |---|---|---|---|---|
-| `io.github.openhtmltopdf:openhtmltopdf-core`, `-pdfbox` | 1.1.31 | 1.1.100 | stays | one `<br/>` gives two `w:br` (§3) |
-| `org.apache.james:apache-mime4j-core` | 0.8.13 | 0.8.15 | stays; next release | an MHT of more than 512 parts fails (§4) |
+| `io.github.openhtmltopdf:openhtmltopdf-core`, `-pdfbox` | 1.1.31 | 1.1.100 | stays; CR-006 | one `<br/>` gives two `w:br` (§3) |
+| `org.apache.james:apache-mime4j-core` | 0.8.13 | 0.8.15 | stays; 0.8.15 in 17.3.5 | an MHT of more than 512 parts fails (§4) |
 | `org.jsoup:jsoup` (optional) | 1.22.1 | 1.23.2 | stays; 1.23.2 in 17.3.5 | docx4j 17.3.4 pins 1.22.1, and neither advisory reaches either project (§5) |
 
 The versions plugin listed nothing else. The rest of -core's direct dependencies are current:
@@ -42,7 +44,7 @@ The versions plugin listed nothing else. The rest of -core's direct dependencies
 - **jsoup:** the parse and `W3CDom` path timed on hostile nesting (§5).
 - **mime4j:** `convertMHT` run on MHTs of 10 to 600 parts (§4).
 
-## 3. openhtmltopdf 1.1.31 → 1.1.100: stays
+## 3. openhtmltopdf 1.1.31 → 1.1.100: stays; CR-006
 
 The tests pass, but 7 of the 10 outputs change.
 
@@ -88,7 +90,39 @@ before this check.
 - add a test of one `w:br` per `<br/>`;
 - rerun this comparison.
 
-## 4. mime4j 0.8.13 → 0.8.15: stays; the next release
+### Followed up, 24 October 2026
+
+Probes are in the archive's `followups-2026-10-24/`.
+
+- **The doubled `w:br`: traced, and fixed for 17.3.5.**
+  - **Cause:** openhtmltopdf's default stylesheet has `br:before { content: "\A"; }`. From 1.1.97
+    that content is laid out inside the br's own `InlineBox`. The line break then splits the box
+    in two, and `processInlineBoxContent` gave a `w:br` for each part.
+  - **Measured:** on 1.1.31 each br box starts and ends in place. On 1.1.100 each br gives a pair
+    of boxes: one where it starts, and one where it ends.
+  - **Fix:** the `w:br` is made only where the box starts, which changes nothing on 1.1.31.
+  - **Test:** `LineBreakTest` checks for one `w:br` per `<br/>`. Without the fix it fails on
+    1.1.100 (10 instead of 5); with it, it passes there.
+- **Which default stylesheet is read** was answered in CR-002 §7. It's openhtmltopdf's own,
+  from its jar. Overriding its path isn't safe, because openhtmltopdf caches the parsed sheet in
+  a static shared across the JVM. -core's `XhtmlNamespaceHandler.css` and
+  `xhtmlrenderer.conf` were deleted for 17.3.5, with the poms' includes of them.
+- **Colours, measured** (`colours.xhtml`):
+  - 1.1.31 drops `rgba()`, `hsl()` and `hsla()` colours. 1.1.100 applies them, ignoring their
+    alpha.
+  - On 1.1.100, `background-color: rgba(0,0,0,0)` gives a black `w:shd w:fill="000000"`, on a run
+    and on a cell. docx4j's `PropertyFactory` skips only the text `transparent`.
+  - On 1.1.100, a border in `rgba(0,0,255,0.5)` gives `w:color="rgba(0, 0, 255, 0.5)"`. That
+    isn't a hex colour, so the document is schema-invalid. `TableHelper` writes the CSS text.
+  - On both versions, `border: 1px solid transparent` gives `w:color="transparent"`, which is
+    schema-invalid too. That bug is in the released 17.3.4.
+- **The rest is CR-006:**
+  - the colours;
+  - thead's `keepLines`;
+  - a wider set of test documents;
+  - the move itself.
+
+## 4. mime4j 0.8.13 → 0.8.15: stays in 17.3.4; moved in 17.3.5
 
 0.8.14 is from 21 April 2026, and 0.8.15 from 3 September 2026. No CVE: NVD's newest mime4j
 entry is CVE-2024-21742, fixed in 0.8.10. 0.8.15 does add hardening against denial of service,
@@ -119,6 +153,26 @@ The rest is safe:
 
 **To take it:** a CR-005 follow-up in the next release. It would choose a `MimeConfig` (a higher
 part limit, or stopping once the HTML part is read), and add a test with a 513-part MHT.
+
+### Moved to 0.8.15 for 17.3.5 (24 October 2026)
+
+At Jason's word ("yes"), as a small change rather than a CR.
+
+- **Stopping at the HTML part.** `convertMHT` now stops parsing once the text/html part is read.
+  Its handler throws a private `MimeException` subclass, and `convertMHT` catches it. The
+  handler is an anonymous subclass of `MHTContentHandler` inside `convertMHT`, so code that uses
+  the public class with its own parser is unaffected.
+- **mime4j's own `stop()` doesn't do this.** `MimeEntity.stopSoft()` drops only what is
+  buffered, and the parser refills. Measured on 0.8.15: it stopped after 1 body on 10 parts, but
+  went on to the limit, 512 bodies, on 513 and 5,000. Throwing stopped after one body on 10, 513
+  and 5,000 parts, on 0.8.13 and 0.8.15.
+- **The limits still hold** for whatever comes before the HTML part, and for its headers.
+- **Tests,** in `MHTImportTest`:
+  - `manyPartsAfterTheHtml`: 1,000 image parts after the HTML. It converts, and without the fix
+    it fails on 0.8.15.
+  - `tooManyPartsBeforeTheHtml`: the same parts before the HTML give a `Docx4JException`.
+- **Measured** with `mvn -o clean verify -Dgpg.skip`: suite 169/0/0, `BundleIT` 3/0/0. The
+  bundle holds mime4j 0.8.15.
 
 ## 5. jsoup 1.22.1 → 1.23.2: stays in 17.3.4; moved in 17.3.5
 

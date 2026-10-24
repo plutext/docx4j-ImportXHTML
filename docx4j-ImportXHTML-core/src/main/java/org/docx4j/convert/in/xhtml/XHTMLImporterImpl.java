@@ -64,6 +64,7 @@ import javax.xml.transform.stream.StreamSource;
 import org.apache.james.mime4j.MimeException;
 import org.apache.james.mime4j.parser.ContentHandler;
 import org.apache.james.mime4j.parser.MimeStreamParser;
+import org.apache.james.mime4j.stream.BodyDescriptor;
 import org.apache.james.mime4j.stream.MimeConfig;
 import org.docx4j.Docx4jProperties;
 import org.docx4j.UnitsOfMeasurement;
@@ -827,13 +828,23 @@ public class XHTMLImporterImpl implements XHTMLImporter {
      */
     public List<Object> convertMHT(InputStream is, String baseUrl) throws Docx4JException {
     	
-    	// First, extract HTML from the MHT
-    	MHTContentHandler handler = new MHTContentHandler();
+    	// First, extract HTML from the MHT.  Only the first text/html part is used, so
+    	// stop there: the parts after it aren't read, nor counted against mime4j's limits
+    	// (from 0.8.15, 512 parts).  The parser's own stop() only drops what it has buffered.
+    	MHTContentHandler handler = new MHTContentHandler() {
+    		@Override
+    		public void body(BodyDescriptor bd, InputStream is) throws MimeException, IOException {
+    			super.body(bd, is);
+    			if (getBodyBytes()!=null) throw new HtmlPartRead();
+    		}
+    	};
     	MimeStreamParser parser = new MimeStreamParser();
     	parser.setContentDecoding(true);
     	parser.setContentHandler(handler);
     	try {
     		parser.parse(is);
+    	} catch (HtmlPartRead done) {
+    		// the rest of the MHT is left unread
     	} catch (MimeException | IOException e) {
     		throw new Docx4JException(e.getMessage(), e);
     	}
@@ -874,6 +885,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     		}
     	}
     	return convert(dom, baseUrl);
+    }
+    
+    /** Ends convertMHT's parse once the text/html part is read. */
+    private static final class HtmlPartRead extends MimeException {
+    	private static final long serialVersionUID = 1L;
+    	HtmlPartRead() {
+    		super("text/html part read");
+    	}
     }
     
     /**
@@ -2725,10 +2744,15 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		
         if (s!=null && s.getElement()!=null && s.getElement().getNodeName().equals("br") ) {
             
-            R run = Context.getWmlObjectFactory().createR();
-            getListForRun().getContent().add(run);                
-       		run.getContent().add(Context.getWmlObjectFactory().createBr());
-       		displayNoneHelper.created(run);
+        	// One w:br for each br.  From openhtmltopdf 1.1.97, br:before's "\A" (its default
+        	// stylesheet) is laid out inside the br's own box, which that line break splits in
+        	// two; only the first part starts here.
+        	if (inlineBox.isStartsHere()) {
+	            R run = Context.getWmlObjectFactory().createR();
+	            getListForRun().getContent().add(run);                
+	       		run.getContent().add(Context.getWmlObjectFactory().createBr());
+	       		displayNoneHelper.created(run);
+        	}
         	
         } else if (inlineBox.getText()==null 
         		|| inlineBox.getText().length()==0
