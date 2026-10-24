@@ -5,7 +5,7 @@ and D1 to D4 and D6 as recommended. Proposed the same day, at Jason's request ("
 CR-006 for openhtmltopdf"), after `docs/dependencies-status.md` §3 kept openhtmltopdf at 1.1.31
 for 17.3.4. Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session, with each finding
 measured first (§1). The doubled `w:br` it found was fixed outside this CR, for 17.3.5 (§1, row 1).
-Phases 0 to 3 implemented 2026-10-24 (suite 178/0/0, BundleIT 3/0/0; §5), uncommitted. Phase 1
+Phases 0 to 3 implemented 2026-10-24 (suite 178/0/0, BundleIT 3/0/0; §5), commit 6da82a2. Phase 1
 needs 1.1.100's alpha, so the move came with it. The release is 17.3.5's.
 Scope:
 - colour handling: `TableHelper` and `ParagraphBorderHelper` (border colours), and the CSS
@@ -139,7 +139,7 @@ Record what moves, here.
 As §2, with D2 and D3, and tests for rows 4 to 7, on 1.1.31 and on the target version. Row 7's
 fix doesn't depend on the move, so this phase can land first.
 
-**Done 2026-10-24** (uncommitted). It differs from the plan in one way:
+**Done 2026-10-24** (commit 6da82a2). It differs from the plan in one way:
 - **It needs 1.1.100.** `FSRGBColor.getAlpha()` is new in 1.1.100. In 1.1.31,
   `FSRGBColor.TRANSPARENT` is (0, 0, 0), the same as black. So -core's pins moved with this
   phase rather than in phase 3, and the tests run on 1.1.100 only. D5 (b) ships all four phases
@@ -172,7 +172,7 @@ What was done:
 
 As §3, with D1.
 
-**Done 2026-10-24** (uncommitted):
+**Done 2026-10-24** (commit 6da82a2):
 - **`XHTMLImporterImpl.addParagraphProperties`** skips `page-break-inside` unless
   `isAuthorPageBreakInside` says so.
 - **How that is decided:** the nearest element, the paragraph's own or an ancestor's, with a
@@ -192,7 +192,7 @@ As §3, with D1.
 
 As §4. The CHANGELOG, `docs/dependencies-status.md` §3, and the release (D5).
 
-**Done 2026-10-24** (uncommitted), apart from the release, which is 17.3.5's:
+**Done 2026-10-24** (commit 6da82a2), apart from the release, which is 17.3.5's:
 - **The pins:** `openhtmltopdf-core` and `-pdfbox` at 1.1.100 (D6), moved with phase 1.
 - **Measured** with `mvn -o clean verify -Dgpg.skip`: all five modules green. The suite is
   178/0/0, with nine new tests in this CR and `LineBreakTest`, and `BundleIT` is 3/0/0. The
