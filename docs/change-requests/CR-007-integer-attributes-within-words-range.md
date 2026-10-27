@@ -1,9 +1,14 @@
 # CR-007: integer attributes within Word's range
 
-Status: PROPOSED 2026-10-26, at Jason's request ("draft the CR"), after docx4j-25's hand-off of
-docx4j CR-066 phase 2 the same day: "your own CR decides whether ImportXHTML should throw, clamp or
-leave it". Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session, with each finding measured
-first (§2). Decisions D1 to D5 (§5) await Jason.
+Status: ACCEPTED 2026-10-28 (Jason: "CR-007 decisions as recommended; the new D3 CR should also be
+in the 17.3.5 release"): D1 (a) clamp, with a WARN; D2 (a) at the writers, with the scanning test;
+D3 (a) the units are a CR of their own, CR-008, also for 17.3.5; D4 the two points, for the docx4j
+session in phase 2; D5 (a) 17.3.5. Phase 0 done 2026-10-28, by Jason's run in Word 365 (§4):
+Word cuts the row off, so D5 (a) stands. Clamped, every line shows, but the row's last page is
+left blank below it, so D6 is new, for Jason. Proposed 2026-10-26, at Jason's request ("draft
+the CR"), after docx4j-25's hand-off of docx4j CR-066 phase 2 the same day: "your own CR decides
+whether ImportXHTML should throw, clamp or leave it". Drafted by Claude Opus 5.5 in the
+docx4j-ImportXHTML session, with each finding measured first (§2).
 Scope:
 - the integer attributes ImportXHTML computes itself: `TableHelper`, `ParagraphBorderHelper`,
   `ListHelper.createIndent`, and `XHTMLImporterImpl`'s paragraph indent;
@@ -71,7 +76,7 @@ of text gives 285). For a tall row, Word reads that height differently:
 - **In the other bands,** the row reads as atLeast a smaller height. It still grows to fit its
   content, so nothing shows.
 
-Phase 0 checks the cut-off in Word.
+Phase 0 checks the cut-off in Word. (It's worse: §4.)
 
 ### 2.2 Large CSS values
 
@@ -120,7 +125,8 @@ not 200, and `1em` gives 15. Paragraph `margin-left` is right (1in gives 1440, p
 
 Fixing these changes ordinary documents (every table indent, bordered paragraph and padded cell),
 so it's D3's. It doesn't change this CR: the guard works on the written attribute, whatever the
-conversion before it.
+conversion before it. (Decided 2026-10-28: CR-008, which measured more of them. Column widths,
+`w:tcW` and `w:gridCol`, are dots as well.)
 
 ## 3. The guard
 
@@ -155,14 +161,37 @@ conversion before it.
 
 ### Phase 0: a Word check
 
-One docx for Jason to open in Word, put wherever he says:
-- §2.1's 3000px cell as written today (45030), then clamped (32767);
-- a bordered paragraph with `padding: 60px`, today and clamped;
-- `border: 50px`, today and clamped.
+One docx for Jason to open in Word, with CR-008's phase 0 cases:
+`~/claude-scratch-archive/docx4j-ImportXHTML/cr008-units-2026-10-28/word-check/word-check-cr007-cr008.docx`
+(built 2026-10-28; it moves wherever Jason says). Each case is as written today, then with the
+clamped value set by hand:
+- a bordered cell of 85 paragraphs: `w:trHeight` 45600, then 32767. §2.1's 3000px div doesn't
+  show the cut-off, since its height isn't written and in Word the cell's content is short. 85
+  paragraphs are as tall in Word;
+- a bordered paragraph with `padding: 60px`: `w:space` 45, then 31;
+- `border: 50px` on a paragraph: `w:sz` 400, then 255.
 
 It records whether Word cuts off the first cell, and what the others look like. The hand-off's
 table predicts it but hasn't been seen in Word. The cut-off is the reason D5 (a) ships this in
 17.3.5.
+
+**Result (2026-10-28).** Jason opened the docx in Word for Microsoft 365 and saved it as a PDF,
+archived beside it. It was measured at 720 dpi, to about 0.1pt (the archive's README):
+- **1a, `w:trHeight` 45600: cut off, worse than predicted.** Word reads the height as exact:
+  19936 twips, 996.8pt. The row doesn't break across pages. It starts a page of its own and
+  runs to the paper's edge, so 769.6pt of it shows. Lines 1 to 27 of the 85 show; lines 28 to
+  85 are on no page.
+- **1b, 32767: every line shows, with a blank below.** The row breaks across four pages: 24,
+  24, 24 and 13 lines. But on the last page the cell goes on to the bottom margin, about 348pt
+  (4.8 in) empty below line 85, and the next paragraph starts the page after. The likely reason
+  is that its minimum height (1638pt, more than a page) applies to the row's last part. That
+  isn't checked (D6).
+- **2a and 2b, `w:space` 45 and 31.** Word draws the border 18.0pt further from the text for 31
+  than for 45, across and down. So it reads 45 as 13, as CR-066 says, and 31 as 31.
+- **3a and 3b, `w:sz` 400 and 255.** Word draws a border of 18.0pt (400 read as 144 eighths)
+  and one of 31.7pt (255). It draws past its UI's 6pt.
+
+The dialogs' readings weren't recorded. The drawings answer each question.
 
 ### Phase 1: the guard
 
@@ -174,6 +203,9 @@ As §3, with D1, D2 and D4. Tests:
   - `border: 50px` gives `w:sz` 255;
   - the indents give ±32767 and -32768;
   - docx4j's converter outputs are clamped.
+
+The inputs stay out of range after CR-008's units: `border: 50px` gives `w:sz` 300 there, and
+`padding: 60px` still gives `w:space` 45.
 
 Measured: the suite's converts are unchanged, by CR-006 phase 0's method (a temporary dump hook in
 `git archive` copies, never committed). The suite has no out-of-range value, so any change there
@@ -194,6 +226,8 @@ The CHANGELOG, the release (D5), and the message to docx4j-25 (D4).
   turned around, a 60px padding become 13pt. Throwing would fail a whole document over one CSS
   value, and elsewhere the importer drops CSS it can't use. Clamping also covers the four
   `TblWidth` attributes and the tall rows, which docx4j can't report.
+
+  **Decided 2026-10-28 (Jason): (a).**
 - **D2. Where.**
   - (a) At the writers, plus the scanning test (§3).
   - (b) One pass over the content each convert produced, and the numbering levels it made, after
@@ -202,6 +236,8 @@ The CHANGELOG, the release (D5), and the message to docx4j-25 (D4).
   **Recommended: (a).** The WARN can then name the CSS property, as docx4j's does. (b) would be
   one place to maintain, but it would need its own walk through sdts, nested tables and both
   parts, and by then the CSS is gone. The test closes the gap (a) leaves.
+
+  **Decided 2026-10-28 (Jason): (a).**
 - **D3. The units (§2.3).**
   - (a) A CR of its own, with a Word check.
   - (b) A later phase of this CR.
@@ -209,6 +245,9 @@ The CHANGELOG, the release (D5), and the message to docx4j-25 (D4).
 
   **Recommended: (a).** It changes ordinary documents, where this CR changes only values Word
   would misread. They are better decided and released separately.
+
+  **Decided 2026-10-28 (Jason): (a), CR-008, and released with this CR: "the new D3 CR should
+  also be in the 17.3.5 release".**
 - **D4. What docx4j-25 is told,** once D1 is decided.
 
   **Recommended:** two points:
@@ -217,6 +256,8 @@ The CHANGELOG, the release (D5), and the message to docx4j-25 (D4).
     CR-066 §3.1 suggests for `TblWidth`.
   - Under D1 (a), the converter's "written as computed" may not hold for a caller that guards.
     For `margin-left`, its value isn't the one written even today.
+
+  **Decided 2026-10-28 (Jason): the two points.** Phase 2 sends them to the docx4j session.
 - **D5. The release.**
   - (a) 17.3.5, with CR-006 and docx4j's CR-066.
   - (b) The release after.
@@ -224,10 +265,29 @@ The CHANGELOG, the release (D5), and the message to docx4j-25 (D4).
   **Recommended: (a),** if phase 0 confirms the cut-off. A tall cell is ordinary content, and the
   guard is small. Otherwise (b) is as good.
 
+  **Decided 2026-10-28 (Jason): (a),** with CR-008. The recommendation's condition stands: if
+  phase 0 shows Word doesn't cut the row off, that goes to Jason before the release.
+
+  Phase 0 (2026-10-28) shows the cut-off, so the condition holds.
+- **D6. A row taller than a page (found in phase 0).** Clamped to 32767 atLeast, the tall row
+  shows every line, but the cell runs on to the foot of its last page (§4, 1b). The cause is
+  probably any atLeast height over a page. If so, it's in today's output too, for rows of about
+  9.7 to 22.8 inches, which stay in range.
+  - (a) Keep 32767 atLeast, with the blank.
+  - (b) Write no `w:trHeight` for a row whose laid-out height is over the page's text height.
+    Word sizes such a row to its content anyway. A CSS height that tall is rare.
+  - (c) A second Word check first. Three variants: the 85 lines with no `w:trHeight`; the same
+    with atLeast less than a page; a row of about 15 inches as written today (atLeast 21600, in
+    range). Then (a) or (b).
+
+  **Recommended: (c).** It costs one docx. It tells whether the blank comes from the height,
+  and whether today's output has it already. Then (b) if it does.
+
 ## 6. Risks
 
 - **Not seen in Word.** §2's "Word reads" column is CR-066's measurement of the attribute, not of
-  these documents. Phase 0 checks the tall row.
+  these documents. Phase 0 checks the tall row. (Seen 2026-10-28 for the row, `w:space` and
+  `w:sz`: §4.)
 - **A clamped value is still wrong**, only less so: an indent of 32767 twips is 22.8 inches. The
   guard keeps Word from reading something else. It doesn't make the layout right.
 - **A site missed.** The scanning test covers §2's inputs, not every path. A new writer needs its
