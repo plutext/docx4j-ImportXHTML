@@ -176,7 +176,8 @@ measured at 720 dpi:
   3pt.
 
 The Table Properties and Borders and Shading readings weren't recorded. The drawings answer each
-question.
+question. The round, round 1, is in
+`docx4j-ImportXHTML-core-tests/src/test/resources/word-check/evidence/word-open-results.md`.
 
 ### Phase 1: the units
 

@@ -5,9 +5,12 @@ in the 17.3.5 release"): D1 (a) clamp, with a WARN; D2 (a) at the writers, with 
 D3 (a) the units are a CR of their own, CR-008, also for 17.3.5; D4 the two points, for the docx4j
 session in phase 2; D5 (a) 17.3.5. Phase 0 done 2026-10-28, by Jason's run in Word 365 (§4):
 Word cuts the row off, so D5 (a) stands. Clamped, every line shows, but the row's last page is
-left blank below it, so D6 is new, for Jason. Proposed 2026-10-26, at Jason's request ("draft
-the CR"), after docx4j-25's hand-off of docx4j CR-066 phase 2 the same day: "your own CR decides
-whether ImportXHTML should throw, clamp or leave it". Drafted by Claude Opus 5.5 in the
+left blank below it. D6 (c), decided the same day (Jason: "CR-007 D6: let's do the word check"):
+round 2, also run the same day (§4), shows Word keeps a split row's last part at least its
+minimum height, in today's output too. D6 (d), decided the same day: a `w:trHeight` only from a
+CSS height. Phase 1 is next. Proposed 2026-10-26, at Jason's request ("draft the CR"),
+after docx4j-25's hand-off of docx4j CR-066 phase 2 the same day: "your own CR decides whether
+ImportXHTML should throw, clamp or leave it". Drafted by Claude Opus 5.5 in the
 docx4j-ImportXHTML session, with each finding measured first (§2).
 Scope:
 - the integer attributes ImportXHTML computes itself: `TableHelper`, `ParagraphBorderHelper`,
@@ -147,9 +150,11 @@ conversion before it. (Decided 2026-10-28: CR-008, which measured more of them. 
 | a border's `@w:sz` | 0..255 |
 | a border's `@w:space` | 0..31 |
 
-  A row taller than 32767 twips becomes atLeast 32767, and Word grows it to fit its content. A
-  border wider than 255 eighths of a point becomes 255. That's still far beyond Word's UI limit
-  of 48, which Word doesn't apply on read.
+  A row taller than 32767 twips becomes atLeast 32767, and Word grows it to fit its content.
+  (D6 (d), decided 2026-10-28: only a CSS height is written, so that's a row with a CSS height
+  over 22.8 inches. A row sized by its content gets no `w:trHeight`.) A border wider than 255
+  eighths of a point becomes 255. That's still far beyond Word's UI limit of 48, which Word
+  doesn't apply on read.
 - **Where (D2):** at each writer of §1's table, and after the converter loops of
   `addParagraphProperties` and `addRunProperties` for the attributes docx4j's converters set.
   There are about 15 sites, each a one-line call.
@@ -183,22 +188,68 @@ archived beside it. It was measured at 720 dpi, to about 0.1pt (the archive's RE
   85 are on no page.
 - **1b, 32767: every line shows, with a blank below.** The row breaks across four pages: 24,
   24, 24 and 13 lines. But on the last page the cell goes on to the bottom margin, about 348pt
-  (4.8 in) empty below line 85, and the next paragraph starts the page after. The likely reason
-  is that its minimum height (1638pt, more than a page) applies to the row's last part. That
-  isn't checked (D6).
+  (4.8 in) empty below line 85, and the next paragraph starts the page after. The row also
+  starts on the page after its heading, as 1a's does, though nothing stops it splitting. The
+  likely reason is that its minimum height (1638pt, more than a page) applies to the row's last
+  part. That isn't checked (D6).
 - **2a and 2b, `w:space` 45 and 31.** Word draws the border 18.0pt further from the text for 31
   than for 45, across and down. So it reads 45 as 13, as CR-066 says, and 31 as 31.
 - **3a and 3b, `w:sz` 400 and 255.** Word draws a border of 18.0pt (400 read as 144 eighths)
   and one of 31.7pt (255). It draws past its UI's 6pt.
 
-The dialogs' readings weren't recorded. The drawings answer each question.
+The dialogs' readings weren't recorded. The drawings answer each question. Word's build wasn't
+recorded either. The round is in the evidence file:
+`docx4j-ImportXHTML-core-tests/src/test/resources/word-check/evidence/word-open-results.md`.
+
+**Round 2 (D6), staged 2026-10-28.** `TallRowProbeBuilder` in core-tests builds
+`cr007-tall-row-r2.docx` and its README. They're on the share in
+`~/vbShares/Office 2016/__tmp/xhtml-cr007/round2/`. Four cases, each a bordered cell of
+numbered lines on a page of its own after its heading:
+
+| Case | Lines | `w:trHeight` |
+|---|---|---|
+| A | 85 | 32767 atLeast (the clamp; round 1's 1b again) |
+| B | 85 | none |
+| C | 85 | 10000 atLeast (500pt, less than a page) |
+| D | 40 | 21690 atLeast, as written today: in range, more than a page (697.9pt) |
+
+The predictions, written before the run, set two explanations side by side. H1: Word gives each
+page's part of an atLeast row the row's minimum height, up to a page. H2: only a minimum over a
+page does anything to the row's parts.
+
+| Case | H1 | H2 |
+|---|---|---|
+| A | starts on a new page; empty from line 85 to the bottom margin | the same |
+| B | starts under its heading; ends at line 85 | the same |
+| C | its last part is at least 500pt, empty below line 85 if its lines take less | ends at line 85 |
+| D | starts on a new page; empty from line 40 to the bottom margin, about 250pt | the same |
+
+If D has no blank either, it's something about the clamped value alone, and both are wrong.
+What each outcome means for D6 is in §5.
+
+**Result (2026-10-28): H1.** Jason ran it in Word 365, Version 2608 (Build 20326.20232), and
+sent his notes and a PDF, measured as round 1 (the evidence file). "Empty" is below the last
+line, beyond the ordinary 17.1pt gap B shows:
+- **A:** as round 1's 1b. The row starts on the page after its heading, and the cell runs on to
+  the bottom margin, 330.6pt empty.
+- **B, no height:** the row starts under its heading and ends at line 85, with the next paragraph
+  straight after. Word sizes the row to its content.
+- **C, 10000 (500pt):** the same lines as B, but the last part is 503.7pt tall: 108.0pt empty
+  below line 85. Jason: "there is empty space below line 85".
+- **D, 21690, as written today:** as A. It starts on the page after its heading, and the cell
+  runs on to the bottom margin, 246.6pt empty.
+
+So Word gives a split row's last part the row's minimum height, and a row whose minimum is over a
+page starts on a page of its own. Since ImportXHTML writes every row's laid-out height as its
+minimum, any row taller than a page does this today, in range or not.
 
 ### Phase 1: the guard
 
-As §3, with D1, D2 and D4. Tests:
+As §3, with D1, D2, D4 and D6 (d). Tests:
 - the scanning test, on §2's inputs;
 - one per attribute family, for the clamped value and the WARN:
-  - the tall row gives atLeast 32767;
+  - a row sized by its content gets no `w:trHeight`, however tall (the 85 lines);
+  - td `height: 30in` gives atLeast 32767, and `height: 1in` still gives 1440;
   - `padding: 60px` gives `w:space` 31;
   - `border: 50px` gives `w:sz` 255;
   - the indents give ±32767 and -32768;
@@ -208,8 +259,9 @@ The inputs stay out of range after CR-008's units: `border: 50px` gives `w:sz` 3
 `padding: 60px` still gives `w:space` 45.
 
 Measured: the suite's converts are unchanged, by CR-006 phase 0's method (a temporary dump hook in
-`git archive` copies, never committed). The suite has no out-of-range value, so any change there
-is a bug.
+`git archive` copies, never committed), except for `w:trHeight`. The suite has no out-of-range
+value, so any other change is a bug. Under D6 (d), every row without a CSS height loses its
+`w:trHeight`, and those are listed.
 
 ### Phase 2: the release and the hand-off
 
@@ -282,6 +334,35 @@ The CHANGELOG, the release (D5), and the message to docx4j-25 (D4).
 
   **Recommended: (c).** It costs one docx. It tells whether the blank comes from the height,
   and whether today's output has it already. Then (b) if it does.
+
+  **Decided 2026-10-28 (Jason): (c).** Round 2 (§4) is staged. What its outcomes mean:
+  - B clean and D blank: (b), which also fixes today's rows of a page to 22.8 inches.
+  - C blank as well (H1): a smaller minimum on a row that splits leaves a blank too, so (b)'s
+    threshold isn't enough. Whether to write a laid-out height for a row at all goes back to
+    Jason.
+  - D clean: only the clamped value does it, and (a) or a lower clamp goes back to Jason.
+
+  **Round 2 (2026-10-28): B clean, C and D blank, so H1, and D6 goes back to Jason.** The
+  options, given that:
+  - (a) Keep the clamp. Every line shows, with the blanks (A).
+  - (b) No `w:trHeight` over the page's text height. That fixes the cut-off and the blanks of A
+    and D. But a row with a smaller laid-out height that splits at a page break keeps one, as C
+    does.
+  - (d) A `w:trHeight` only where the CSS gives the row or one of its cells a height: atLeast
+    that height, clamped. A row sized by its content gets none, and Word sizes it, as B shows.
+
+  **Recommended: (d).** The laid-out height gives Word nothing it needs: Word sizes a row to
+  its content (B). But it causes the blanks, in today's output too (D). A CSS height is a
+  minimum in CSS as well, so atLeast keeps its meaning. The clamp then applies only to a CSS
+  height over 22.8 inches. The cost:
+  - every row without a CSS height loses its `w:trHeight`, so Word's layout of the content sets
+    its height, not openhtmltopdf's (a line of text is written 285 today);
+  - CR-007 D3 kept ordinary-document changes in CRs of their own. But this is the writer this CR
+    changes anyway, and the blanks are in today's output.
+
+  Phase 1 would measure the suite's converts before and after.
+
+  **Decided 2026-10-28 (Jason): (d).**
 
 ## 6. Risks
 
