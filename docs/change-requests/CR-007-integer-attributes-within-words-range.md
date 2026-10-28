@@ -8,8 +8,8 @@ Word cuts the row off, so D5 (a) stands. Clamped, every line shows, but the row'
 left blank below it. D6 (c), decided the same day (Jason: "CR-007 D6: let's do the word check"):
 round 2, also run the same day (§4), shows Word keeps a split row's last part at least its
 minimum height, in today's output too. D6 (d), decided the same day: a `w:trHeight` only from a
-CSS height. Phase 1 done 2026-10-28 (§4); phase 2 is next. Proposed 2026-10-26, at Jason's
-request ("draft the CR"),
+CSS height. Phase 1 done 2026-10-28 (§4), commit a788fbf; phase 2 is next. Proposed 2026-10-26, at
+Jason's request ("draft the CR"),
 after docx4j-25's hand-off of docx4j CR-066 phase 2 the same day: "your own CR decides whether
 ImportXHTML should throw, clamp or leave it". Drafted by Claude Opus 5.5 in the
 docx4j-ImportXHTML session, with each finding measured first (§2).
@@ -264,7 +264,7 @@ Measured: the suite's converts are unchanged, by CR-006 phase 0's method (a temp
 value, so any other change is a bug. Under D6 (d), every row without a CSS height loses its
 `w:trHeight`, and those are listed.
 
-**Done 2026-10-28** (on 0639831; probes in the archive's `cr007-phase1-2026-10-28/`):
+**Done 2026-10-28** (commit a788fbf, on 0639831; probes in the archive's `cr007-phase1-2026-10-28/`):
 - **The guard** is `WordRange`, a package-private enum in -core. It holds each attribute's range,
   as §3. Its `clamp` returns a value inside the range as it is. Otherwise it returns the nearest
   end, with a WARN such as: `w:trHeight/@w:val 43200 (from height on a row or cell) is outside
