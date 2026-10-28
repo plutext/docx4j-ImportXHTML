@@ -102,12 +102,12 @@ public class WordRangeTest {
 
 	@Test
 	public void borderSz() throws Exception {
-		// 400 is read as 144 by Word
+		// 300 is read as 44 by Word
 		Converted c = convert("p,td,table{border:50px solid red}",
 				"<p>x</p><table><tr><td>y</td></tr></table>");
 		Assert.assertEquals(c.xml, 12, count(c.xml, "w:sz=\"255\""));
-		Assert.assertFalse(c.xml, c.xml.contains("w:sz=\"400\""));
-		assertWarned(c, "a border's w:sz 400 (from border-top-width)", "0..255", 255);
+		Assert.assertFalse(c.xml, c.xml.contains("w:sz=\"300\""));
+		assertWarned(c, "a border's w:sz 300 (from border-top-width)", "0..255", 255);
 	}
 
 	@Test
@@ -127,7 +127,7 @@ public class WordRangeTest {
 
 		c = convert("table{margin-left:5000pt}", "<table><tr><td>x</td></tr></table>");
 		Assert.assertTrue(c.xml, c.xml.contains("<w:tblInd w:w=\"32767\" w:type=\"dxa\"/>"));
-		assertWarned(c, "w:tblInd 133333 (from margin-left on a table)", "-32768..32767", 32767);
+		assertWarned(c, "w:tblInd 100000 (from margin-left on a table)", "-32768..32767", 32767);
 	}
 
 	@Test
@@ -137,10 +137,11 @@ public class WordRangeTest {
 		Assert.assertEquals(c.xml, 4, count(tcMar, "w:w=\"32767\""));
 		Assert.assertTrue(c.xml, c.xml.contains("<w:tcW w:w=\"32767\" w:type=\"dxa\"/>"));
 		Assert.assertTrue(c.xml, c.xml.contains("<w:gridCol w:w=\"32767\"/>"));
-		assertWarned(c, "w:tcMar/@w:w 45000 (from padding-left on a cell)", "0..32767", 32767);
-		assertWarned(c, "w:tcW/@w:w 160200 (from a column's width)", "0..32767", 32767);
+		assertWarned(c, "w:tcMar/@w:w 60000 (from padding-left on a cell)", "0..32767", 32767);
+		assertWarned(c, "w:tcW/@w:w 120150 (from a column's width)", "0..32767", 32767);
 
-		c = convert("table{border-collapse:separate;border-spacing:3000pt}", "<table><tr><td>x</td></tr></table>");
+		// Word leaves the spacing twice, so the code halves it: 4000pt is 80000 twips
+		c = convert("table{border-collapse:separate;border-spacing:4000pt}", "<table><tr><td>x</td></tr></table>");
 		Assert.assertTrue(c.xml, c.xml.contains("<w:tblCellSpacing w:w=\"32767\" w:type=\"dxa\"/>"));
 		assertWarned(c, "w:tblCellSpacing/@w:w 40000 (from border-spacing)", "0..32767", 32767);
 	}
@@ -182,7 +183,7 @@ public class WordRangeTest {
 			longCell.append("<p>line " + i + " of a long cell</p>");
 		}
 		String[][] inputs = {
-				{"table{border-collapse:separate;border-spacing:3000pt}", "<table><tr><td>x</td></tr></table>"},
+				{"table{border-collapse:separate;border-spacing:4000pt}", "<table><tr><td>x</td></tr></table>"},
 				{"li{margin-left:5000pt}", "<ul><li>x</li></ul>"},
 				{"p{border:50px solid red;padding:40px}", "<p>x</p>"},
 				{"p{border:1px solid red;padding:60px}", "<p>x</p>"},

@@ -4,11 +4,13 @@ Status: ACCEPTED 2026-10-28 (Jason: "CR-008 D1 to D7: decisions as recommended")
 §2.1 and §2.2; D2 (a) padding from the layout; D3 (a) keep `w:tblCellSpacing`'s halving; D4 (a) a
 paragraph's double border divided by 3; D5 (a) `padding: 0` writes 0; D6 (b) the layout's width is
 a CR of its own, so phase 2 leaves this one; D7 (a) no setting for the old values. Phase 0 done
-2026-10-28, by Jason's run in Word 365 (§4). Phase 1 is next, after CR-007's. Proposed 2026-10-28,
-from CR-007's D3, which Jason decided the same day: "CR-007 decisions as recommended; the new D3
-CR should also be in the 17.3.5 release". So the release is decided: 17.3.5, with CR-006 and
-CR-007. Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session, with each finding measured
-first (§2).
+2026-10-28, by Jason's run in Word 365 (§4). Phase 1 done 2026-10-28 (§4), with D8 (a), decided
+the same day (Jason: "write the space only on sides that have a border, folded into CR-008"):
+`w:space` only on a paragraph side with a border. Phase 3 is next. Proposed 2026-10-28, from
+CR-007's D3, which Jason decided the same day: "CR-007 decisions as recommended; the new D3 CR
+should also be in the 17.3.5 release". So the release is decided: 17.3.5, with CR-006 and CR-007.
+Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session, with each finding measured first
+(§2).
 Scope:
 - the measures ImportXHTML converts from openhtmltopdf's layout itself, in `TableHelper` and
   `ParagraphBorderHelper`: column widths, table indent, cell spacing, cell margins, border `w:sz`
@@ -130,7 +132,8 @@ docx's own page doesn't come into it. So:
   constant, since `DocxRenderer(float dotsPerPoint, int dotsPerPixel)` is public. At `w:tcW`,
   `w:gridCol`, `w:tblInd`, `w:tblCellSpacing`, and border `w:sz` in both helpers. The image
   path's `dotsToTwip` (72/`UnitsOfMeasurement.DPI`, right at docx4j's default of 96) can use it
-  too, with no change to its output.
+  too, with no change to its output. (Phase 1 leaves it on `docx4j.DPI`, as 89a2b0c made it: the
+  two agree only at 96, §4.)
 - **Padding from the layout** (D2): the box's computed padding (`Box.getPadding(CssContext)`, in
   dots), which has resolved em and % as openhtmltopdf lays them out. Then twips for `w:tcMar`,
   points for `w:space`.
@@ -192,6 +195,56 @@ As §3, with D1 to D5, after CR-007's phase 1, which changes the same writers. T
 Measured: the suite's converts before and after, by CR-006 phase 0's method (a temporary dump
 hook in `git archive` copies, never committed). The attributes §2.1 and §2.2 list are expected to
 change, and nothing else.
+
+**Done 2026-10-28** (on d86dbf0; probes in the archive's `cr008-phase1-2026-10-28/`):
+- **One conversion** (D1): `XHTMLImporterImpl.layoutDotsToTwip`, twips from dots by the
+  renderer's DPI, which is 72 × its dots per point. It's used at `w:tcW`, `w:gridCol`, `w:tblInd`
+  (from `margin-left`), `w:tblCellSpacing`, and border `w:sz` in both helpers:
+  - A column's width is the difference of its two positions, each converted first, so the
+    columns add up to the table.
+  - `w:sz` goes from dots to eighths of a point with no twip rounding in between.
+- **Left on `docx4j.DPI`:** the image path's `dotsToTwip`, and `w:trHeight`'s
+  `UnitsOfMeasurement.pxToTwip`. 89a2b0c ("Image sizing use docx4j.DPI", 2022) made image sizes
+  follow that property, and `ImageAddTest` checks it. So §3's "with no change to its output"
+  holds only at 96, where the two conversions agree.
+- **Padding from the layout** (D2): `Box.getPadding`, in dots, for `w:tcMar` (in twips) and
+  `w:space` (in points). `padding: 0` writes 0 (D5); the default stylesheet's 1px still gives 15.
+- **A cell's % padding writes 0:** openhtmltopdf 1.1.100 lays it out as none, even in a 6-inch
+  table. The cell's content edge is its border edge, and `getPadding` gives 0. Recomputed
+  without the cache, it would be 582 dots, which the layout never used. 75 was written before
+  (the 5 read as pixels). §2.2's "5% of the table's width" isn't what the layout does.
+- **A paragraph's double border is divided by 3** (D4), as a table's is.
+- **§2's probe, run again** on the new code: every row of §2.1 and §2.2 is now as "As the CSS
+  says", except the cell's 5%. Image extents, `w:trHeight` from a CSS height, and the lengths
+  §2.3 lists are unchanged.
+- **Tests:**
+  - `CssLengthsTest`, 8 tests: column widths, table indent, cell spacing, border widths, a double
+    border, cell margins, border space, and border space only with a border (D8). They use in,
+    pt, px and em, % for padding, and the default stylesheet's values. On d86dbf0's code, all 8
+    fail.
+  - `WordRangeTest` still passes. The values its WARNs quote before the clamp move with the
+    units: `w:sz` 400 becomes 300, `w:tblInd` 133333 becomes 100000, `w:tcW` 160200 becomes
+    120150, and `w:tcMar` 45000 becomes 60000 (3000pt, no longer read as 3000px).
+  - `border-spacing: 3000pt` now gives 30000, which is in range, so that input is 4000pt, both in
+    the test and in the scan.
+- **Measured:** of the 328 converts in both dumps, 118 differ, all in §2.1's attributes:
+  - 241 `w:tcW`, 140 `w:gridCol`, and 119 `w:tblCellSpacing` (all the default 2px, 20 to 15);
+  - border `w:sz`: 55 on tables, 36 on cells and 12 on paragraphs;
+  - two `w:tblInd`, both centred tables, whose computed `margin-left` is written: 6917 to 5188,
+    and 6837 to 5128.
+
+  Each of the 605 values is 3/4 of the old, to within rounding. Nothing else moved: no `w:tcMar`
+  (the suite's padding is px or the default), `w:space`, paragraph indent or numbering value, and
+  no change in structure. The new dump has 42 more converts, `CssLengthsTest`'s. Suite 194/0/0,
+  `BundleIT` 3/0/0.
+- **Found in phase 1, and fixed in it (D8):** a paragraph with padding but no border got `w:pBdr`
+  sides that carry only `w:space`. `p{padding:24pt}` gave four, such as `<w:top w:space="24"/>`
+  (18 on d86dbf0), and CT_Border requires `w:val`. `ParagraphBorderHelper.doSide` wrote the space
+  whether or not the side had a border. It now writes it only on a side with a border, and not
+  on one that's `nil` (a transparent colour, CR-006). Its `getBorder`, which created the empty
+  side, had no other caller, so it's gone. The suite's only `w:space` values are on paragraphs
+  bordered all round (three of `WordRangeTest`'s converts), so the measurement above is the same
+  with D8.
 
 ### Phase 2: the layout's width
 
@@ -277,6 +330,12 @@ release with CR-007, in 17.3.5.
   tests must cover, and a document tuned to the old output can be retuned from the CHANGELOG.
 
   **Decided 2026-10-28 (Jason): (a).**
+- **D8. `w:space` on a paragraph side with no border** (found in phase 1, §4).
+  - (a) Write it only on a side with a border, in this CR.
+  - (b) The same, in a CR of its own.
+
+  **Decided 2026-10-28 (Jason): (a)** ("write the space only on sides that have a border, folded
+  into CR-008").
 
 ## 6. Risks
 
@@ -284,6 +343,7 @@ release with CR-007, in 17.3.5.
   - every table's column widths, and an indent from its `margin-left`, shrink to 3/4;
   - every border is 3/4 as wide;
   - cell padding in pt, in, em or % changes;
+  - a paragraph with padding gets a `w:pBdr` side only where it has a border (D8);
   - with D6, every table that fills its line, and every % width, is narrower (not in this CR,
     by D6 (b)).
 
@@ -295,7 +355,7 @@ release with CR-007, in 17.3.5.
   width. They're atLeast, so a row Word needs taller still grows. (From CR-007 phase 1, a row
   gets a `w:trHeight` only from a CSS height, which the layout's width doesn't change.)
 - **CR-007's guard** works on the written value, so it's unaffected. Its inputs stay out of range
-  (CR-007 phase 1).
+  (CR-007 phase 1), all but `border-spacing: 3000pt`, which is now 4000pt (§4).
 
 ## 7. Sources
 

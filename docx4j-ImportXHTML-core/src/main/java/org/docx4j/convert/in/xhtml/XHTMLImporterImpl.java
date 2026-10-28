@@ -2490,6 +2490,16 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		// Java2D DPI/
 	}
 	
+	/**
+	 * Twips from openhtmltopdf's dots, by the renderer's own dots per point: it lays out at
+	 * 72 x dots per point to the inch, so at DocxRenderer's default a dot is 3/4 of a twip
+	 * (CR-008).  For table and border lengths; an image's size follows docx4j.DPI instead
+	 * (dotsToTwip).
+	 */
+	float layoutDotsToTwip(float dots) throws CyclicStylesException {
+		return dots * 1440f / getRenderer().getLayoutContext().getSharedContext().getDPI();
+	}
+	
 	
 //	private void addHyperlinkIfNec(String href, Map<String, CSSValue> cssMap) {
 //		

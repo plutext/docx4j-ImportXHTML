@@ -30,15 +30,16 @@ package org.docx4j.convert.in.xhtml;
 import java.math.BigInteger;
 import java.util.Map;
 
-import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.jaxb.Context;
 import org.docx4j.openpackaging.exceptions.CyclicStylesException;
 
 import com.openhtmltopdf.css.constants.CSSName;
+import com.openhtmltopdf.css.constants.IdentValue;
 import com.openhtmltopdf.css.parser.PropertyValue;
 import com.openhtmltopdf.css.style.FSDerivedValue;
-import com.openhtmltopdf.css.style.derived.LengthValue;
+import com.openhtmltopdf.css.style.derived.RectPropertySet;
 import com.openhtmltopdf.layout.Styleable;
+import com.openhtmltopdf.render.Box;
 import org.docx4j.wml.CTBorder;
 import org.docx4j.wml.PPr;
 import org.docx4j.wml.PPrBase.PBdr;
@@ -86,37 +87,6 @@ public class ParagraphBorderHelper {
 		return pBdr;
 	}
 	
-	private CTBorder getBorder(PPr pPr, String side) {
-		
-		pBdr = createPBdr(pPr);
-		CTBorder border = null;
-		
-		if (side.equals("left")) {
-			border = pBdr.getLeft(); 
-		} else if (side.equals("right")) {
-			border = pBdr.getRight(); 
-		} else if (side.equals("top")) {
-			border = pBdr.getTop(); 
-		} else if (side.equals("bottom")) {
-			border = pBdr.getBottom(); 
-		}
-		
-		if (border==null) {
-			border = Context.getWmlObjectFactory().createCTBorder();
-			if (side.equals("left")) {
-				pBdr.setLeft(border); 
-			} else if (side.equals("right")) {
-				pBdr.setRight(border); 
-			} else if (side.equals("top")) {
-				pBdr.setTop(border); 
-			} else if (side.equals("bottom")) {
-				pBdr.setBottom(border); 
-			}
-		}
-		
-		return border;
-	}
-
 	private void setBorder(PPr pPr, String side, CTBorder border ) {
 		
 		pBdr = createPBdr(pPr);
@@ -154,13 +124,14 @@ public class ParagraphBorderHelper {
     		setBorder( pPr,  side,  border );
     	}
     	
-		// padding to space
-    	BigInteger spaceAttrVal = paddingToSpace(styleable, side);
-    	
-    	if (spaceAttrVal!=null) {
+    	// padding to space, on a side with a border only: a w:pBdr side needs its w:val,
+    	// and with no border there's no space to keep (CR-008 D8)
+    	if (border!=null && border.getVal()!=STBorder.NIL) {
     		
-    		border = getBorder( pPr,  side);
-    		border.setSpace(spaceAttrVal);
+    		BigInteger spaceAttrVal = paddingToSpace(styleable, side);
+    		if (spaceAttrVal!=null) {
+    			border.setSpace(spaceAttrVal);
+    		}
     	}
     	
     	// NB:  Word 2010 doesn't seem to honour this when its in a table cell!
@@ -168,18 +139,22 @@ public class ParagraphBorderHelper {
     	
     }
 		
-	private BigInteger paddingToSpace(Styleable styleable,  String side)  {
+	private BigInteger paddingToSpace(Styleable styleable,  String side) throws CyclicStylesException {
 
-		FSDerivedValue padding = styleable.getStyle().valueByName( CSSName.getByPropertyName("padding-" + side));
-		if (padding != null && padding instanceof LengthValue) {
-						
-			int twip = UnitsOfMeasurement.pxToTwip(((LengthValue)padding).asFloat()/20);
-			
-			if (twip>0) {
-				return WordRange.BORDER_SPACE.clamp(twip, "padding-" + side + " on a bordered paragraph");
-			} else {
-				// Don't create a @space setting
-			}
+		// the padding as openhtmltopdf laid it out, in dots, so em and % are resolved (CR-008 D2)
+		RectPropertySet padding = styleable instanceof Box 
+				? ((Box)styleable).getPadding(importer.getRenderer().getLayoutContext())
+				: styleable.getStyle().getPaddingRect(0, importer.getRenderer().getLayoutContext());
+		float dots = side.equals("left") ? padding.left() 
+				: side.equals("right") ? padding.right() 
+				: side.equals("top") ? padding.top() 
+				: padding.bottom();
+		
+		int point = Math.round(importer.layoutDotsToTwip(dots) / 20); // w:space is in points
+		if (point>0) {
+			return WordRange.BORDER_SPACE.clamp(point, "padding-" + side + " on a bordered paragraph");
+		} else {
+			// Don't create a @space setting
 		}
 		return null;
 	}
@@ -198,6 +173,12 @@ public class ParagraphBorderHelper {
 		float width = styleable.getStyle().getFloatPropertyProportionalHeight(
 				CSSName.getByPropertyName("border-"+side+"-width"), 0, importer.getRenderer().getLayoutContext() );
 
+		// double border width in html is applied to the whole border, 
+		// while the word applying it to each bar and the gap in between (CR-008 D4, as TableHelper)
+		if(borderStyle.asIdentValue() == IdentValue.DOUBLE) {
+			width /= 3;
+		}
+
 		STBorder stBorder;
 		try {
 			stBorder = STBorder.fromValue( borderStyle.asString() );
@@ -205,8 +186,8 @@ public class ParagraphBorderHelper {
 			stBorder = STBorder.SINGLE; 
 		}
 
-		// w:ST_EighthPointMeasure - Measurement in Eighths of a Point
-		width = UnitsOfMeasurement.twipToPoint( Math.round(width) ) * 8.0f;
+		// w:ST_EighthPointMeasure - Measurement in Eighths of a Point; 20 twips to the point (CR-008)
+		width = importer.layoutDotsToTwip(width) / 20f * 8.0f;
 		
 		// hex, or none where it's transparent, and then no border (CR-006)
 		String color = CssColorForWord.borderColor(borderColor);

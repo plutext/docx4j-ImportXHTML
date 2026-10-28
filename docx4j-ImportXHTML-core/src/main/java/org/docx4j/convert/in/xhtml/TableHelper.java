@@ -77,9 +77,8 @@ import com.openhtmltopdf.css.constants.CSSName;
 import com.openhtmltopdf.css.constants.IdentValue;
 import com.openhtmltopdf.css.parser.FSColor;
 import com.openhtmltopdf.css.parser.FSRGBColor;
-import com.openhtmltopdf.css.style.CalculatedStyle;
 import com.openhtmltopdf.css.style.FSDerivedValue;
-import com.openhtmltopdf.css.style.derived.LengthValue;
+import com.openhtmltopdf.css.style.derived.RectPropertySet;
 import com.openhtmltopdf.newtable.TableBox;
 import com.openhtmltopdf.newtable.TableCellBox;
 import com.openhtmltopdf.newtable.TableSectionBox;
@@ -134,8 +133,9 @@ public class TableHelper {
 			spacingWidth.setW(BigInteger.ZERO);
 			spacingWidth.setType(TblWidth.TYPE_AUTO);
 		} else {
-			int cssSpacing = cssTable.getStyle().getBorderHSpacing(importer.getRenderer().getLayoutContext());
-			spacingWidth.setW( WordRange.TBL_CELL_SPACING.clamp(cssSpacing  / 2, "border-spacing") );	// appears twice thicker, probably taken from both sides 
+			int cssSpacing = cssTable.getStyle().getBorderHSpacing(importer.getRenderer().getLayoutContext()); // in dots
+			// halved, since Word leaves it twice: between cells, and between a cell and the table's border (CR-008 §4)
+			spacingWidth.setW( WordRange.TBL_CELL_SPACING.clamp(Math.round(importer.layoutDotsToTwip(cssSpacing) / 2), "border-spacing") ); 
 			spacingWidth.setType(TblWidth.TYPE_DXA);
 		}
 		tblPr.setTblCellSpacing(spacingWidth); 
@@ -182,9 +182,9 @@ public class TableHelper {
         	
 			log.debug("Calculating TblInd from margin.left: " + cssTable.getMargin(importer.getRenderer().getLayoutContext()).left() );
     		TblWidth tblInd = Context.getWmlObjectFactory().createTblWidth();
-    		tblInd.setW( WordRange.TBL_IND.clamp( Math.round(
+    		tblInd.setW( WordRange.TBL_IND.clamp( Math.round(importer.layoutDotsToTwip(
     				cssTable.getMargin(importer.getRenderer().getLayoutContext()).left()
-    				), "margin-left on a table"));
+    				)), "margin-left on a table"));
     		tblInd.setType(TblWidth.TYPE_DXA);
 			tblPr.setTblInd(tblInd);
 			
@@ -242,7 +242,7 @@ public class TableHelper {
         }		            	
     }
     
-    protected void setupTblGrid(TableBox cssTable, Tbl tbl, TableProperties tableProperties) {
+    protected void setupTblGrid(TableBox cssTable, Tbl tbl, TableProperties tableProperties) throws CyclicStylesException {
     	
     	// Word can generally open a table without tblGrid:
         // <w:tblGrid>
@@ -264,10 +264,18 @@ public class TableHelper {
     		tblGrid.getGridCol().add(tblGridCol);
     		
     		log.debug("colpos=" + colPos[i]);
-    		tblGridCol.setW( WordRange.GRID_COL.clamp(colPos[i]-colPos[i-1], "a column's width") );
+    		tblGridCol.setW( WordRange.GRID_COL.clamp(columnWidth(colPos, i), "a column's width") );
     		
     	}
     	
+    }
+    
+    /**
+     * @return column col's width (from 1), in twips.  openhtmltopdf's column positions are in dots;
+     * each is converted before they're subtracted, so the columns add up to the table (CR-008).
+     */
+    private int columnWidth(int[] colPos, int col) throws CyclicStylesException {
+    	return Math.round(importer.layoutDotsToTwip(colPos[col])) - Math.round(importer.layoutDotsToTwip(colPos[col-1]));
     }
 
     protected void setupTrPr(com.openhtmltopdf.newtable.TableRowBox trBox, Tr tr, boolean isTblHeader ) throws CyclicStylesException {
@@ -357,7 +365,7 @@ public class TableHelper {
         // eg <w:tcW w:w="2268" w:type="dxa"/>
         try {
     		TblWidth tblW = Context.getWmlObjectFactory().createTblWidth();
-    		tblW.setW(WordRange.TC_W.clamp(tableProperties.getColumnWidth(effCol+1), "a column's width" ));
+    		tblW.setW(WordRange.TC_W.clamp(columnWidth(tableProperties.getColumnPos(), effCol+1), "a column's width" ));
     		tblW.setType(TblWidth.TYPE_DXA);
     		tcPr.setTcW(tblW);    	                    
         } catch (java.lang.ArrayIndexOutOfBoundsException aioob) {
@@ -442,43 +450,24 @@ public class TableHelper {
 			} 
 		}
 		
-		// padding becomes margin
+		// padding becomes margin: the padding as openhtmltopdf laid it out, in dots, so em and % 
+		// are resolved, and 0 is 0 (CR-008 D2, D5)
+		RectPropertySet padding = tcb.getPadding(importer.getRenderer().getLayoutContext());
 		TcMar tcMar = Context.getWmlObjectFactory().createTcMar();
 		tcPr.setTcMar(tcMar); 
 
-		// .. left
-		TblWidth width = getCellMargin(tcb.getStyle(), "left");
-		if (width!=null) tcMar.setLeft(width);
-		
-		// .. right
-		width = getCellMargin(tcb.getStyle(), "right");
-		if (width!=null) tcMar.setRight(width);
-
-		// .. top
-		width = getCellMargin(tcb.getStyle(), "top");
-		if (width!=null) tcMar.setTop(width);
-
-		// .. bottom
-		width = getCellMargin(tcb.getStyle(), "bottom");
-		if (width!=null) tcMar.setBottom(width);
+		tcMar.setLeft(getCellMargin(padding.left(), "left"));
+		tcMar.setRight(getCellMargin(padding.right(), "right"));
+		tcMar.setTop(getCellMargin(padding.top(), "top"));
+		tcMar.setBottom(getCellMargin(padding.bottom(), "bottom"));
 		
     }
 		
-	private TblWidth getCellMargin(CalculatedStyle tcStyle, String side)  {
+	private TblWidth getCellMargin(float dots, String side) throws CyclicStylesException {
 		
-		TblWidth tblWidth = null;
-
-		FSDerivedValue padding = tcStyle.valueByName( CSSName.getByPropertyName("padding-" + side));
-		if (padding != null && padding instanceof LengthValue) {
-						
-			int twip = UnitsOfMeasurement.pxToTwip(((LengthValue)padding).asFloat());
-			if (twip==0) twip = 15; // Default
-			
-			tblWidth = Context.getWmlObjectFactory().createTblWidth();
-			tblWidth.setW(WordRange.TC_MAR.clamp(twip, "padding-" + side + " on a cell"));
-			tblWidth.setType("dxa");
-		}
-		
+		TblWidth tblWidth = Context.getWmlObjectFactory().createTblWidth();
+		tblWidth.setW(WordRange.TC_MAR.clamp(Math.round(importer.layoutDotsToTwip(dots)), "padding-" + side + " on a cell"));
+		tblWidth.setType("dxa");
 		return tblWidth;
 	}
     
@@ -525,8 +514,8 @@ public class TableHelper {
 			log.debug(borderStyle.asString() + " -> " + stBorder);
 		}
 
-		// w:ST_EighthPointMeasure - Measurement in Eighths of a Point
-		width = UnitsOfMeasurement.twipToPoint( Math.round(width) ) * 8.0f;
+		// w:ST_EighthPointMeasure - Measurement in Eighths of a Point; 20 twips to the point (CR-008)
+		width = importer.layoutDotsToTwip(width) / 20f * 8.0f;
 		log.debug("converted border width: " + width);
 		
 		// hex, or none where it's transparent, and then no border (CR-006)
