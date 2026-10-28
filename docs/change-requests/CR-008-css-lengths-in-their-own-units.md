@@ -4,13 +4,12 @@ Status: ACCEPTED 2026-10-28 (Jason: "CR-008 D1 to D7: decisions as recommended")
 §2.1 and §2.2; D2 (a) padding from the layout; D3 (a) keep `w:tblCellSpacing`'s halving; D4 (a) a
 paragraph's double border divided by 3; D5 (a) `padding: 0` writes 0; D6 (b) the layout's width is
 a CR of its own, so phase 2 leaves this one; D7 (a) no setting for the old values. Phase 0 done
-2026-10-28, by Jason's run in Word 365 (§4). Phase 1 done 2026-10-28 (§4), with D8 (a), decided
-the same day (Jason: "write the space only on sides that have a border, folded into CR-008"):
-`w:space` only on a paragraph side with a border. Phase 3 is next. Proposed 2026-10-28, from
-CR-007's D3, which Jason decided the same day: "CR-007 decisions as recommended; the new D3 CR
+2026-10-28, by Jason's run in Word 365 (§4). Phase 1 done 2026-10-28 (§4), commit f2c8202, with
+D8 (a), decided the same day (Jason: "write the space only on sides that have a border, folded into
+CR-008"): `w:space` only on a paragraph side with a border. Phase 3 is next. Proposed 2026-10-28,
+from CR-007's D3, which Jason decided the same day: "CR-007 decisions as recommended; the new D3 CR
 should also be in the 17.3.5 release". So the release is decided: 17.3.5, with CR-006 and CR-007.
-Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session, with each finding measured first
-(§2).
+Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session, with each finding measured first (§2).
 Scope:
 - the measures ImportXHTML converts from openhtmltopdf's layout itself, in `TableHelper` and
   `ParagraphBorderHelper`: column widths, table indent, cell spacing, cell margins, border `w:sz`
@@ -196,7 +195,7 @@ Measured: the suite's converts before and after, by CR-006 phase 0's method (a t
 hook in `git archive` copies, never committed). The attributes §2.1 and §2.2 list are expected to
 change, and nothing else.
 
-**Done 2026-10-28** (on d86dbf0; probes in the archive's `cr008-phase1-2026-10-28/`):
+**Done 2026-10-28** (commit f2c8202, on d86dbf0; probes in the archive's `cr008-phase1-2026-10-28/`):
 - **One conversion** (D1): `XHTMLImporterImpl.layoutDotsToTwip`, twips from dots by the
   renderer's DPI, which is 72 × its dots per point. It's used at `w:tcW`, `w:gridCol`, `w:tblInd`
   (from `margin-left`), `w:tblCellSpacing`, and border `w:sz` in both helpers:
