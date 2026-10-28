@@ -1958,8 +1958,10 @@ public class XHTMLImporterImpl implements XHTMLImporter {
             		log.debug("create new attachmentPoint");
 	            	P currentP = this.getCurrentParagraph(true);
 	                currentP.setPPr(this.getPPr(blockBox, cssMap));
-	                
-	                log.debug(XmlUtils.marshaltoString(currentP));
+
+	                if (log.isDebugEnabled()) {
+	                	log.debug(XmlUtils.marshaltoString(currentP));
+	                }
 	                
 
 	            	if (e.getNodeName().equals("figcaption")) {
@@ -2634,8 +2636,10 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	                	
 	                    RPr rPr =  Context.getWmlObjectFactory().createRPr();
 	                    formatRPr(rPr, cssClass, cssMap);
-	                    
-	                	log.debug(XmlUtils.marshaltoString(rPr));
+
+	                	if (log.isDebugEnabled()) {
+	                		log.debug(XmlUtils.marshaltoString(rPr));
+	                	}
 	                	
 	                	// ensure we've got our current p set correctly; this is done above already 
                 		// this.getCurrentParagraph(true);
@@ -3134,8 +3138,10 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	}
     	
     	// TODO: cleansing in table context
-    	    	
-    	log.debug(XmlUtils.marshaltoString(pPr, true, true));
+
+    	if (log.isDebugEnabled()) {
+    		log.debug(XmlUtils.marshaltoString(pPr, true, true));
+    	}
     	
     }
 
