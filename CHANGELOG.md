@@ -48,6 +48,73 @@ Changes in Version 17.3.5
   The openhtmltopdf this project uses doesn't read them: its default stylesheet is its own
   copy, in its jar.
 
+- Integer attributes are kept within Word's range.  Word stores each in a fixed width and wraps
+  a value outside it, with no error: a negative indent past -32768 twips comes out positive, and
+  in 17.3.4 a row whose content was 22.8 to 45.5 inches tall got a height Word reads as exact,
+  so it was cut off.  A value outside the range is now written as the nearest end of it, with a
+  WARN (logger org.docx4j.convert.in.xhtml.WordRange) naming the attribute, the value and, where
+  it's known, the CSS property.  This covers w:ind/@w:left (in the document and the numbering
+  part), w:tblInd, w:tcW, w:gridCol, w:tblCellSpacing, w:tcMar, w:trHeight, a border's w:sz
+  (0..255) and w:space (0..31), and, after docx4j's converters, w:spacing and a run's w:sz and
+  w:spacing.  The ranges are in docs/change-requests/CR-007 §3.
+
+- A row's w:trHeight comes only from a CSS height on the row or one of its cells, as atLeast
+  the greatest of them.  Before, every row got its laid-out height (285 for a line of text).
+  Word gives a row split across pages a last part at least that tall, and starts a row whose
+  height is over a page on a page of its own, so a row taller than a page left the rest of its
+  last page blank.  A row sized by its content now gets no w:trHeight, and Word sizes it to its
+  content.  A percentage height counts as none.
+
+- Table widths, table indents, cell spacing and border widths are written as the CSS gives
+  them.  Since 8.2.0, each was openhtmltopdf's own unit (a dot, 3/4 of a twip) written as
+  twips, so a third too large: a 6in table was written 8in wide.  Word fits a table wider than
+  the text to the text, so the difference shows on tables narrower than the text.  Before and
+  now:
+
+      w:gridCol, w:tcW    a 6in table, two columns ........... 5760 + 5760 -> 4320 + 4320
+                          td width: 1in ...................... 1920 -> 1440
+                          a table that fills its line ........ 9.44in -> 7.08in
+      w:tblInd            table margin-left: 1in ............. 1920 -> 1440
+      w:tblCellSpacing    border-spacing: 10pt ............... 133 -> 100
+                          the default stylesheet's 2px ....... 20 -> 15
+      a border's w:sz     1px, thin .......................... 8 -> 6
+      (table, td or p)    0.5pt .............................. 5 -> 4
+                          1pt ................................ 11 -> 8
+                          2px, medium ........................ 16 -> 12
+                          thick .............................. 24 -> 18
+                          4pt ................................ 43 -> 32
+
+  w:tblCellSpacing is still half the CSS value: Word leaves the spacing twice, between cells
+  and between a cell and the table's border.  Image sizes, and a row height from CSS, were
+  right already, and are unchanged.  A width: 100% table is now 7.1in, the width openhtmltopdf
+  lays out at; the docx's text may be narrower, and Word fits the table to it.
+
+- Cell padding (w:tcMar) and a bordered paragraph's border space (w:space) follow the CSS's
+  unit, as openhtmltopdf lays them out.  Before, the number was read as pixels, whatever its
+  unit.  Before and now:
+
+      w:tcMar (twips)     padding: 10pt ...................... 150 -> 200
+                          0.25in ............................. 4 -> 360
+                          1em (16px text) .................... 15 -> 240
+                          1em at font-size: 20pt ............. 15 -> 400
+                          5% ................................. 75 -> 0
+                          0 .................................. 15 -> 0
+      w:space (points)    padding: 24pt ...................... 18 -> 24
+                          4pt ................................ 3 -> 4
+                          1em ................................ 1 -> 12
+                          0.25in ............................. none -> 18
+
+  Padding in px is unchanged, and a cell with no padding of its own still gets 15, from the
+  default stylesheet's 1px.  A percentage gives 0, since openhtmltopdf lays a cell's percentage
+  padding out as none.
+
+- w:space is written only on a side with a border.  A paragraph with padding and no border got
+  w:pBdr sides holding only w:space, which isn't valid WordprocessingML (a border needs w:val);
+  it now gets no w:pBdr.
+
+- A paragraph's double border has the w:sz of one of its three lines, as a table's already did:
+  p border: 3pt double, 32 -> 8.  See docs/change-requests/CR-008.
+
 
 Version 17.3.4
 ===============

@@ -6,10 +6,11 @@ paragraph's double border divided by 3; D5 (a) `padding: 0` writes 0; D6 (b) the
 a CR of its own, so phase 2 leaves this one; D7 (a) no setting for the old values. Phase 0 done
 2026-10-28, by Jason's run in Word 365 (§4). Phase 1 done 2026-10-28 (§4), commit f2c8202, with
 D8 (a), decided the same day (Jason: "write the space only on sides that have a border, folded into
-CR-008"): `w:space` only on a paragraph side with a border. Phase 3 is next. Proposed 2026-10-28,
-from CR-007's D3, which Jason decided the same day: "CR-007 decisions as recommended; the new D3 CR
-should also be in the 17.3.5 release". So the release is decided: 17.3.5, with CR-006 and CR-007.
-Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session, with each finding measured first (§2).
+CR-008"): `w:space` only on a paragraph side with a border. Phase 3 done 2026-10-28 (§4), apart from
+the release, which is 17.3.5's. Proposed 2026-10-28, from CR-007's D3, which Jason decided the same
+day: "CR-007 decisions as recommended; the new D3 CR should also be in the 17.3.5 release". So the
+release is decided: 17.3.5, with CR-006 and CR-007. Drafted by Claude Opus 5.5 in the
+docx4j-ImportXHTML session, with each finding measured first (§2).
 Scope:
 - the measures ImportXHTML converts from openhtmltopdf's layout itself, in `TableHelper` and
   `ParagraphBorderHelper`: column widths, table indent, cell spacing, cell margins, border `w:sz`
@@ -259,6 +260,16 @@ listed.
 
 The CHANGELOG (each site, with its old and new values, since ordinary documents change), and the
 release with CR-007, in 17.3.5.
+
+**Done 2026-10-28,** apart from the release, which is 17.3.5's. The CHANGELOG (17.3.5) has four
+entries, after CR-007's two:
+- the dots (D1), with a table of each site's old and new values from §2.1. It notes that
+  `w:tblCellSpacing` is still half the CSS value (D3), that image sizes and a row height from
+  CSS don't change, and that `width: 100%` is now 7.1 inches, the layout's width (D6 (b));
+- padding by its unit (D2, D5), with a table from §2.2, as phase 1 measured it: 5% gives 0, and
+  a cell with no padding still gets 15;
+- `w:space` only on a side with a border (D8);
+- a paragraph's double border (D4).
 
 ## 5. Decisions (for Jason; each with a recommendation)
 

@@ -8,11 +8,12 @@ Word cuts the row off, so D5 (a) stands. Clamped, every line shows, but the row'
 left blank below it. D6 (c), decided the same day (Jason: "CR-007 D6: let's do the word check"):
 round 2, also run the same day (§4), shows Word keeps a split row's last part at least its
 minimum height, in today's output too. D6 (d), decided the same day: a `w:trHeight` only from a
-CSS height. Phase 1 done 2026-10-28 (§4), commit a788fbf; phase 2 is next. Proposed 2026-10-26, at
-Jason's request ("draft the CR"),
-after docx4j-25's hand-off of docx4j CR-066 phase 2 the same day: "your own CR decides whether
-ImportXHTML should throw, clamp or leave it". Drafted by Claude Opus 5.5 in the
-docx4j-ImportXHTML session, with each finding measured first (§2).
+CSS height. Phase 1 done 2026-10-28 (§4), commit a788fbf. Phase 2 done 2026-10-28 (§4), apart from
+the release, which is 17.3.5's: the CHANGELOG, and D4's two points sent to the docx4j session.
+Proposed 2026-10-26, at Jason's request ("draft the CR"), after docx4j-25's hand-off of docx4j
+CR-066 phase 2 the same day: "your own CR decides whether ImportXHTML should throw, clamp or leave
+it". Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session, with each finding measured first
+(§2).
 Scope:
 - the integer attributes ImportXHTML computes itself: `TableHelper`, `ParagraphBorderHelper`,
   `ListHelper.createIndent`, and `XHTMLImporterImpl`'s paragraph indent;
@@ -317,6 +318,26 @@ value, so any other change is a bug. Under D6 (d), every row without a CSS heigh
 ### Phase 2: the release and the hand-off
 
 The CHANGELOG, the release (D5), and the message to docx4j-25 (D4).
+
+**Done 2026-10-28,** apart from the release, which is 17.3.5's:
+- **The CHANGELOG** (17.3.5) has two entries, with CR-008's: the guard (the attributes, the
+  ranges by §3, and the WARN, from the logger `org.docx4j.convert.in.xhtml.WordRange`), and
+  D6 (d)'s row heights.
+- **D4's two points** went to the docx4j session, now named docx4j-12, the same day:
+  - The first had moved on since D4 was written. docx4j CR-066's phase 4 (2026-10-27) gave the
+    CR-050 inspector a table of Word's storage per attribute, `word-integer-storage.tsv`. Its
+    row 98 reports a `w:trHeight` outside 0..32767 under any `hRule` but exact and auto, so
+    atLeast is covered, and rows 72 to 79 cover `w:tblW`, `w:tcW`, `w:tblInd` and
+    `w:tblCellSpacing`. So the message says only the save-time WARN still misses it, as CR-066's
+    D7 (amended) chose, and asks for no change.
+  - The second is as D4. The converter's WARN ends "written as computed, Word reads it modulo 16
+    bits", which isn't so for ImportXHTML from 17.3.5, since it clamps the value after the
+    converter. For `margin-left` it wasn't so before either. The message suggests wording that
+    doesn't promise what the caller writes, for docx4j and Jason to decide.
+
+  docx4j-12 took both the same day, in docx4j 5480ccc1c (its CR-066 §10.7). The first is recorded
+  there as a case the inspector catches and the save-time WARN misses, with no change. For the
+  second, the WARN now ends "Word reads it modulo 16 bits if written as is (CR-066)".
 
 ## 5. Decisions (for Jason; each with a recommendation)
 
