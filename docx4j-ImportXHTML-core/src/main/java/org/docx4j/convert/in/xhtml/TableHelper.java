@@ -135,7 +135,7 @@ public class TableHelper {
 			spacingWidth.setType(TblWidth.TYPE_AUTO);
 		} else {
 			int cssSpacing = cssTable.getStyle().getBorderHSpacing(importer.getRenderer().getLayoutContext());
-			spacingWidth.setW( BigInteger.valueOf(cssSpacing  / 2) );	// appears twice thicker, probably taken from both sides 
+			spacingWidth.setW( WordRange.TBL_CELL_SPACING.clamp(cssSpacing  / 2, "border-spacing") );	// appears twice thicker, probably taken from both sides 
 			spacingWidth.setType(TblWidth.TYPE_DXA);
 		}
 		tblPr.setTblCellSpacing(spacingWidth); 
@@ -163,7 +163,7 @@ public class TableHelper {
 
             	// totalPadding gives indent to the bullet;
             	log.debug("Table in list indent case 1: tblInd set for item itself");
-            	tblInd.setW(BigInteger.valueOf(totalPadding-tableIndentContrib)); 
+            	tblInd.setW(WordRange.TBL_IND.clamp(totalPadding-tableIndentContrib, "a list's indent")); 
                 importer.getListHelper().peekListItemStateStack().isFirstChild=false;
             	
             } else {
@@ -173,7 +173,7 @@ public class TableHelper {
             	// assume 360 twips
             	
             	log.debug("Table in list indent case 2: tblInd set for follwing child");
-            	tblInd.setW(BigInteger.valueOf(totalPadding+ListHelper.INDENT_AFTER-tableIndentContrib)); 
+            	tblInd.setW(WordRange.TBL_IND.clamp(totalPadding+ListHelper.INDENT_AFTER-tableIndentContrib, "a list's indent")); 
             } 
         	
     		
@@ -182,9 +182,9 @@ public class TableHelper {
         	
 			log.debug("Calculating TblInd from margin.left: " + cssTable.getMargin(importer.getRenderer().getLayoutContext()).left() );
     		TblWidth tblInd = Context.getWmlObjectFactory().createTblWidth();
-    		tblInd.setW( BigInteger.valueOf( Math.round(
+    		tblInd.setW( WordRange.TBL_IND.clamp( Math.round(
     				cssTable.getMargin(importer.getRenderer().getLayoutContext()).left()
-    				)));
+    				), "margin-left on a table"));
     		tblInd.setType(TblWidth.TYPE_DXA);
 			tblPr.setTblInd(tblInd);
 			
@@ -264,47 +264,34 @@ public class TableHelper {
     		tblGrid.getGridCol().add(tblGridCol);
     		
     		log.debug("colpos=" + colPos[i]);
-    		tblGridCol.setW( BigInteger.valueOf(colPos[i]-colPos[i-1]) );
+    		tblGridCol.setW( WordRange.GRID_COL.clamp(colPos[i]-colPos[i-1], "a column's width") );
     		
     	}
     	
     }
 
-    protected void setupTrPr(com.openhtmltopdf.newtable.TableRowBox trBox, Tr tr, boolean isTblHeader ) {
+    protected void setupTrPr(com.openhtmltopdf.newtable.TableRowBox trBox, Tr tr, boolean isTblHeader ) throws CyclicStylesException {
 
 	    TrPr trPr = Context.getWmlObjectFactory().createTrPr();
 	    tr.setTrPr(trPr);
 
-	    /* Row height:- 
+	    /* Row height (CR-007 D6 (d)): only where the CSS gives the row or one of its cells a
+	     * height, as atLeast the greatest of them.  A row sized by its content gets none, and
+	     * Word sizes it to its content.  
 	     * 
-	     * In HTML, you can only set height on a cell td, not tr, but Flying Saucer calculates this 
-	     * based on cell contents.
+	     * The row's laid-out height was written here before, for every row.  But Word gives each
+	     * part of a row split across pages at least the row's minimum height, so the cell ran on,
+	     * empty, to the foot of its last page, and a row whose minimum is more than a page starts
+	     * on a page of its own (Word 365, CR-007 §4).
 	     * 
-	     * Since there is no height property on a tr in CSS, this.importer.getCascadedProperties 
-	     * does not contain that property.
-	     * 
-	     * But happily, Flying Saucer, sets trBox.getHeight()
-	     * 
-	     * A web browser ignores td height 0 (tested in Chrome), or any value less than height of contents.
-	     * 
-	     * But Flying Saucer, at least the version we modified, sets trBox.getHeight() based on
-	     * td CSS values, not the greater of the specified height and the actual height of the contents.
-	     * 
-	     * So in Word, we want to use STHeightRule.AT_LEAST (rather than EXACT) so contents don't
-	     * get cut off. 
-	     * 
-	     * 2021 11 03: openhtmltopdf produces something like 1114 for a single line of text.
-	     * 
+	     * A web browser ignores td height 0 (tested in Chrome), or any value less than height of contents,
+	     * hence atLeast.
 	     */	    
-	    int height = trBox.getHeight(); // 100px = 2000 so looks like 1/20 of a pixel! 
-	    if (height == 0) { 
-		    // do nothing; equivalent per spec to STHeightRule.AUTO
-	    } else {
+	    float height = cssHeight(trBox); // in openhtmltopdf's dots: 100px = 2000
+	    if (height > 0) { 
 
-    		log.debug("trBox.getHeight(): " + height);
+    		log.debug("CSS height: " + height);
 	    	
-	    	
-	    	// Since we don't have a CSSValue we can use, do it manually
 	    	TrHeight thr = new TrHeight(); // uses STHeightRule.AT_LEAST
 	    	thr.set(trPr);
 	    	/* Per https://github.com/danfickle/openhtmltopdf/blob/4a475a91563f7f0c8c1d81029b1726e4ff112093/openhtmltopdf-pdfbox/src/main/java/com/openhtmltopdf/pdfboxout/PdfBoxFastOutputDevice.java#L76
@@ -317,7 +304,7 @@ public class TableHelper {
      * 	    	 * 
 	    	 */
 			int twip = UnitsOfMeasurement.pxToTwip(height/20);
-			((CTHeight)thr.getObject()).setVal(BigInteger.valueOf(twip));	    	
+			((CTHeight)thr.getObject()).setVal(WordRange.TR_HEIGHT.clamp(twip, "height on a row or cell"));	    	
 	    }
 	    
 	    if (isTblHeader) {
@@ -327,6 +314,30 @@ public class TableHelper {
             trPr.getCnfStyleOrDivIdOrGridBefore().add( booleandefaulttrueWrapped); 	
             }
 
+    }
+    
+    /**
+     * @return the greatest height the CSS gives the row or one of its cells, in openhtmltopdf's 
+     * dots, or 0.  A height that isn't absolute (a percentage) is auto, as openhtmltopdf has it 
+     * (isAutoHeight), and a cell's height is its border box's, as openhtmltopdf lays it out.  A 
+     * cell spanning rows gives none.
+     */
+    private float cssHeight(com.openhtmltopdf.newtable.TableRowBox trBox) throws CyclicStylesException {
+    	
+    	float height = 0;
+    	if (!trBox.isAutoHeight()) {
+    		height = trBox.getStyle().getFloatPropertyProportionalHeight(
+    				CSSName.HEIGHT, 0, importer.getRenderer().getLayoutContext());
+    	}
+    	for (Box box : trBox.getChildren()) {
+    		if (box instanceof TableCellBox
+    				&& box.getStyle().getRowSpan()==1
+    				&& !((TableCellBox)box).isAutoHeight()) {
+    			height = Math.max(height, box.getStyle().getFloatPropertyProportionalHeight(
+    					CSSName.HEIGHT, 0, importer.getRenderer().getLayoutContext()));
+    		}
+    	}
+    	return height;
     }
     
     protected void setupTcPr(TableCellBox tcb, Tc tc, TableProperties tableProperties) throws CyclicStylesException {
@@ -346,7 +357,7 @@ public class TableHelper {
         // eg <w:tcW w:w="2268" w:type="dxa"/>
         try {
     		TblWidth tblW = Context.getWmlObjectFactory().createTblWidth();
-    		tblW.setW(BigInteger.valueOf(tableProperties.getColumnWidth(effCol+1) ));
+    		tblW.setW(WordRange.TC_W.clamp(tableProperties.getColumnWidth(effCol+1), "a column's width" ));
     		tblW.setType(TblWidth.TYPE_DXA);
     		tcPr.setTcW(tblW);    	                    
         } catch (java.lang.ArrayIndexOutOfBoundsException aioob) {
@@ -464,7 +475,7 @@ public class TableHelper {
 			if (twip==0) twip = 15; // Default
 			
 			tblWidth = Context.getWmlObjectFactory().createTblWidth();
-			tblWidth.setW(BigInteger.valueOf(twip));
+			tblWidth.setW(WordRange.TC_MAR.clamp(twip, "padding-" + side + " on a cell"));
 			tblWidth.setType("dxa");
 		}
 		
@@ -524,7 +535,7 @@ public class TableHelper {
 			return createBorderStyle(STBorder.NIL, null, null);
 		}
 		
-		return createBorderStyle( stBorder, color, BigInteger.valueOf( Math.round(width) ) );
+		return createBorderStyle( stBorder, color, WordRange.BORDER_SZ.clamp( Math.round(width), "border-" + side + "-width" ) );
 	}
 
 	private CTBorder createBorderStyle(STBorder val, String color, BigInteger sz) {

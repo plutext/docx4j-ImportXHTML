@@ -176,7 +176,7 @@ public class ParagraphBorderHelper {
 			int twip = UnitsOfMeasurement.pxToTwip(((LengthValue)padding).asFloat()/20);
 			
 			if (twip>0) {
-				return BigInteger.valueOf(twip);
+				return WordRange.BORDER_SPACE.clamp(twip, "padding-" + side + " on a bordered paragraph");
 			} else {
 				// Don't create a @space setting
 			}
@@ -214,7 +214,7 @@ public class ParagraphBorderHelper {
 			return createBorderStyle(STBorder.NIL, null, null);
 		}
 		
-		return createBorderStyle( stBorder, color, BigInteger.valueOf( Math.round(width) ) );
+		return createBorderStyle( stBorder, color, WordRange.BORDER_SZ.clamp( Math.round(width), "border-" + side + "-width" ) );
 	}
 
 	private CTBorder createBorderStyle(STBorder val, String color, BigInteger sz) {

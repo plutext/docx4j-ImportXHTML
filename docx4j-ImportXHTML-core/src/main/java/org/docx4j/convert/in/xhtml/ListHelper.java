@@ -332,10 +332,10 @@ public class ListHelper {
 		Ind ind = Context.getWmlObjectFactory().createPPrBaseInd();
 
 		if (hanging) {
-			ind.setLeft(BigInteger.valueOf(twip+360) );
+			ind.setLeft(WordRange.IND_LEFT.clamp(twip+360, "a list's indent") );
 			ind.setHanging(BigInteger.valueOf(360) );
 		} else {
-			ind.setLeft(BigInteger.valueOf(twip) );			
+			ind.setLeft(WordRange.IND_LEFT.clamp(twip, "a list's indent") );			
 		}
 		return ind;
 	}

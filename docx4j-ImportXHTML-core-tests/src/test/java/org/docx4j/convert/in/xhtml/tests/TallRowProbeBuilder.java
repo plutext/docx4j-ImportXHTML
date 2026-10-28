@@ -66,6 +66,9 @@ import org.docx4j.wml.TrPr;
  *
  * <p>Usage: {@code TallRowProbeBuilder <outDir>} writes {@code cr007-tall-row-r2.docx} and
  * {@code README.txt}. Not a test: run it from the test classpath.</p>
+ *
+ * <p>It builds the round only on output from before CR-007 phase 1 (it was run on 80e4a12). From
+ * phase 1, a row sized by its content gets no {@code w:trHeight}, so A's check stops it.</p>
  */
 public class TallRowProbeBuilder {
 

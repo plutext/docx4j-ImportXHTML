@@ -292,7 +292,8 @@ release with CR-007, in 17.3.5.
   attributes, not seen in Word. Phase 0 checks. (It doesn't: Word fits the table to the text,
   §4. The third shows on narrower tables.)
 - **Row heights move** with D6 (not in this CR, by D6 (b)), since the layout wraps text at another
-  width. They're atLeast, so a row Word needs taller still grows.
+  width. They're atLeast, so a row Word needs taller still grows. (From CR-007 phase 1, a row
+  gets a `w:trHeight` only from a CSS height, which the layout's width doesn't change.)
 - **CR-007's guard** works on the written value, so it's unaffected. Its inputs stay out of range
   (CR-007 phase 1).
 

@@ -8,7 +8,8 @@ Word cuts the row off, so D5 (a) stands. Clamped, every line shows, but the row'
 left blank below it. D6 (c), decided the same day (Jason: "CR-007 D6: let's do the word check"):
 round 2, also run the same day (§4), shows Word keeps a split row's last part at least its
 minimum height, in today's output too. D6 (d), decided the same day: a `w:trHeight` only from a
-CSS height. Phase 1 is next. Proposed 2026-10-26, at Jason's request ("draft the CR"),
+CSS height. Phase 1 done 2026-10-28 (§4); phase 2 is next. Proposed 2026-10-26, at Jason's
+request ("draft the CR"),
 after docx4j-25's hand-off of docx4j CR-066 phase 2 the same day: "your own CR decides whether
 ImportXHTML should throw, clamp or leave it". Drafted by Claude Opus 5.5 in the
 docx4j-ImportXHTML session, with each finding measured first (§2).
@@ -262,6 +263,56 @@ Measured: the suite's converts are unchanged, by CR-006 phase 0's method (a temp
 `git archive` copies, never committed), except for `w:trHeight`. The suite has no out-of-range
 value, so any other change is a bug. Under D6 (d), every row without a CSS height loses its
 `w:trHeight`, and those are listed.
+
+**Done 2026-10-28** (on 0639831; probes in the archive's `cr007-phase1-2026-10-28/`):
+- **The guard** is `WordRange`, a package-private enum in -core. It holds each attribute's range,
+  as §3. Its `clamp` returns a value inside the range as it is. Otherwise it returns the nearest
+  end, with a WARN such as: `w:trHeight/@w:val 43200 (from height on a row or cell) is outside
+  Word's range 0..32767, so 32767 is written (CR-007)`.
+- **The sites:** 19 one-line calls.
+  - `TableHelper`: nine, for `w:tblCellSpacing`, `w:tblInd` (three), `w:gridCol`, `w:trHeight`,
+    `w:tcW`, `w:tcMar` and a border's `w:sz`.
+  - `ParagraphBorderHelper`: two, for `w:space` and `w:sz`.
+  - `ListHelper.createIndent`: two.
+  - `XHTMLImporterImpl`: six. One is the paragraph's indent. Three come after
+    `addParagraphProperties`' converter loop (`w:spacing` before, after and line), and two after
+    `addRunProperties`' loop (`w:sz` and `w:rPr/w:spacing`).
+- **D6 (d):** `setupTrPr` writes a `w:trHeight` only where the row or one of its cells has a CSS
+  height. It writes atLeast the greatest of them, read as openhtmltopdf reads them:
+  - a height that isn't absolute, such as a percentage, counts as auto (`isAutoHeight`);
+  - a cell's height is its border box's height;
+  - a cell spanning rows doesn't count.
+
+  `setupTrPr` now declares `CyclicStylesException`, as `setupTblPr` and `setupTcPr` already do.
+- **Tests:** `WordRangeTest`, eight tests.
+  - The 85 lines get no `w:trHeight`, and neither does a short row.
+  - td `height: 1in` and tr `height: 72pt` each give 1440. A row gets the greatest of its
+    heights (2in of 0.5, 2 and 1). `30in` gives 32767, with the WARN. A percentage, and 0, give
+    none.
+  - `padding: 60px` gives `w:space` 31. `border: 50px` gives `w:sz` 255 on a paragraph, a cell
+    and a table.
+  - The indents: `margin-left` 5000pt gives 32767, -5000pt gives -32768, and the numbering
+    part's indent gives 32767. `w:tblInd` gives 32767.
+  - td `padding: 3000pt` gives 32767 for `w:tcMar`, `w:tcW` and `w:gridCol`.
+    `border-spacing: 3000pt` gives 32767.
+  - docx4j's converters:
+    - spacing before and after give 65535;
+    - `line-height: 200` gives `w:line` 32767 (written 48000, since docx4j reads a number as
+      rem);
+    - letter-spacing gives 32767 and -32768;
+    - `font-size: 40000pt` gives `w:sz` 65535.
+  - The scan converts §2's inputs, with a list in a table and a table in a list, 28 in all. It
+    finds every attribute in range. With `w:gridCol`'s clamp removed, in a copy, it fails on
+    three of them.
+- **The WARNs in the tests:** core-tests gains slf4j-simple 2.0.18, at test scope.
+  `simplelogger.properties` turns every logger off except the guard's, so the suite's output is
+  as before. openhtmltopdf's own lines go through `java.util.logging`, and are there as before.
+- **Measured:** the suite's 285 converts. 97 differ, all by `w:trHeight` alone. Every one of the
+  196 goes (179 of them 285, a line of text), since no suite input has a CSS height. The rows
+  keep an empty `w:trPr`, or their `w:tblHeader`. Nothing else moves.
+- **Suite** 186/0/0 (178 and the eight), `BundleIT` 3/0/0.
+- **`TallRowProbeBuilder` now stops at case A's check,** which finds no height. Its javadoc now
+  says it builds round 2 only on output from before phase 1.
 
 ### Phase 2: the release and the hand-off
 

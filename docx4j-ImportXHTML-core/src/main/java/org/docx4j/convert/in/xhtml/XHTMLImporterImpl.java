@@ -3016,6 +3016,15 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         	
         }
 
+        // docx4j's converters write what they compute, so hold it to Word's range (CR-007);
+        // the indent is set below
+        if (pPr.getSpacing()!=null) {
+        	PPrBase.Spacing spacing = pPr.getSpacing();
+        	spacing.setBefore(WordRange.SPACING_BEFORE.clamp(spacing.getBefore(), "margin-top"));
+        	spacing.setAfter(WordRange.SPACING_AFTER.clamp(spacing.getAfter(), "margin-bottom"));
+        	spacing.setLine(WordRange.SPACING_LINE.clamp(spacing.getLine(), "line-height"));
+        }
+
 //    	log.debug(XmlUtils.marshaltoString(pPr, true, true));
 
     	ParagraphBorderHelper pbh = new ParagraphBorderHelper(this);
@@ -3105,7 +3114,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         	// not in list; handle indent
         	log.debug("not in list; handle indent");
     		Ind ind = Context.getWmlObjectFactory().createPPrBaseInd();
-    		ind.setLeft(BigInteger.valueOf(getAncestorIndentation(styleable)) );			
+    		ind.setLeft(WordRange.IND_LEFT.clamp(getAncestorIndentation(styleable), "margin-left and padding-left") );			
     		pPr.setInd(ind);
         }
         
@@ -3254,6 +3263,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         	}
         }
         
+        // docx4j's converters write what they compute, so hold it to Word's range (CR-007)
+        if (rPr.getSz()!=null) {
+        	rPr.getSz().setVal(WordRange.SZ.clamp(rPr.getSz().getVal(), "font-size"));
+        }
+        if (rPr.getSpacing()!=null) {
+        	rPr.getSpacing().setVal(WordRange.RUN_SPACING.clamp(rPr.getSpacing().getVal(), "letter-spacing"));
+        }
+
     	// An objective here is to avoid adding a run-level property which
     	// simply duplicates something which is already in the paragraph style,
     	// since such direct formatting is probably not the author's intent,
