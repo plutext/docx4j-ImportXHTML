@@ -9,6 +9,11 @@ Not yet released.
 Changes in Version 17.3.5
 --------------------------
 
+- Faster import when debug logging is off.  Three log.debug calls in XHTMLImporterImpl
+  serialised a w:p, w:pPr or w:rPr to XML (XmlUtils.marshaltoString) whatever the log level;
+  they are now guarded by log.isDebugEnabled().  The one at the end of addParagraphProperties
+  ran for every paragraph, and accounted for about 40% of import time on table-heavy input.
+
 - jsoup, which convertMHT uses where it's present and which docx4j-ImportXHTML-bundle holds, is
   now 1.23.2, as in docx4j 17.3.5.  1.22.1 is named by two advisories, GHSA-65r4-943x-97jj and
   GHSA-pmhh-3w7g-xqp8, though neither is reached here: they are in jsoup's XML parser and its
