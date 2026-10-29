@@ -6,6 +6,15 @@ Version 17.3.5
 
 Not yet released.
 
+Contributors to this release
+----------------------------
+
+Jason Harrop
+
+Claude Opus 5.5
+
+Cristian Vat
+
 Changes in Version 17.3.5
 --------------------------
 

@@ -14,6 +14,10 @@ The project header is the LGPL v2.1 block beginning `This file is part of the do
 - **Only ever update Plutext's own copyright line.** Some files carry third-party notices inherited from Flying Saucer / openhtmltopdf — `Copyright (c) 2006 Wisconsin Court System`, `Copyright (c) 2004, 2005 Torbjörn Gannholm` — mostly in `org.docx4j.convert.in.xhtml.renderer`. Leave those untouched; extending someone else's years would misattribute their copyright. If such a file has no Plutext line and you make a substantial change, ask before adding one rather than assuming.
 - **A number of `.java` files have no header at all.** If you touch one, say so and offer to add the standard header — don't add it silently, and don't go header-hunting across files you weren't asked to change. `module-info.java` doesn't need one.
 
+## CHANGELOG contributors
+
+When you update `CHANGELOG.md` after merging a pull request, or after making a fix that a GitHub issue suggested, add the PR's or the issue's author to the "Contributors to this release" list of the current, unreleased version. If that version has no such list yet, create one as 17.3.4's is: under the version's heading, before its "Changes in Version" section, one name to a paragraph. Use the name on their commits or GitHub profile, or their GitHub login if there's no name, and don't list anyone twice. An issue whose fix was already made before it was filed (as #116's was) doesn't count; ask Jason if unsure.
+
 ## Build and test
 
 Multi-module Maven build (Java 11 bytecode is enforced via maven-enforcer; building with a newer JDK is fine since the compiler uses `<release>11</release>`):
