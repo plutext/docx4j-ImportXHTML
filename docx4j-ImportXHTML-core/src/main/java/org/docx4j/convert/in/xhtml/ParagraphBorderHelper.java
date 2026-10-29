@@ -180,10 +180,15 @@ public class ParagraphBorderHelper {
 		}
 
 		STBorder stBorder;
-		try {
-			stBorder = STBorder.fromValue( borderStyle.asString() );
-		} catch (IllegalArgumentException e) {
-			stBorder = STBorder.SINGLE; 
+		// solid is the usual value, and not an ST_Border one: checked here so that it doesn't cost an IllegalArgumentException each time
+		if (borderStyle.asIdentValue() == IdentValue.SOLID) {
+			stBorder = STBorder.SINGLE;
+		} else {
+			try {
+				stBorder = STBorder.fromValue( borderStyle.asString() );
+			} catch (IllegalArgumentException e) {
+				stBorder = STBorder.SINGLE;
+			}
 		}
 
 		// w:ST_EighthPointMeasure - Measurement in Eighths of a Point; 20 twips to the point (CR-008)

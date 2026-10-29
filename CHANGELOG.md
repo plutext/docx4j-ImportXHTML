@@ -14,6 +14,11 @@ Changes in Version 17.3.5
   they are now guarded by log.isDebugEnabled().  The one at the end of addParagraphProperties
   ran for every paragraph, and accounted for about 40% of import time on table-heavy input.
 
+- Faster import of tables and paragraphs with solid borders.  CSS's border-style solid isn't an
+  ST_Border value, so STBorder.fromValue threw an IllegalArgumentException for it, caught to give
+  single, once for every bordered side of every table, cell and paragraph.  TableHelper and
+  ParagraphBorderHelper now map solid to single before trying fromValue.  The output is the same.
+
 - jsoup, which convertMHT uses where it's present and which docx4j-ImportXHTML-bundle holds, is
   now 1.23.2, as in docx4j 17.3.5.  1.22.1 is named by two advisories, GHSA-65r4-943x-97jj and
   GHSA-pmhh-3w7g-xqp8, though neither is reached here: they are in jsoup's XML parser and its
