@@ -35,6 +35,7 @@ import org.docx4j.jaxb.Context;
 import org.docx4j.openpackaging.exceptions.CyclicStylesException;
 
 import com.openhtmltopdf.css.constants.CSSName;
+import com.openhtmltopdf.css.constants.IdentValue;
 import com.openhtmltopdf.css.parser.PropertyValue;
 import com.openhtmltopdf.css.style.FSDerivedValue;
 import com.openhtmltopdf.css.style.derived.LengthValue;
@@ -199,10 +200,15 @@ public class ParagraphBorderHelper {
 				CSSName.getByPropertyName("border-"+side+"-width"), 0, importer.getRenderer().getLayoutContext() );
 
 		STBorder stBorder;
-		try {
-			stBorder = STBorder.fromValue( borderStyle.asString() );
-		} catch (IllegalArgumentException e) {
-			stBorder = STBorder.SINGLE; 
+		// solid is the usual value, and not an ST_Border one: checked here so that it doesn't cost an IllegalArgumentException each time
+		if (borderStyle.asIdentValue() == IdentValue.SOLID) {
+			stBorder = STBorder.SINGLE;
+		} else {
+			try {
+				stBorder = STBorder.fromValue( borderStyle.asString() );
+			} catch (IllegalArgumentException e) {
+				stBorder = STBorder.SINGLE;
+			}
 		}
 
 		// w:ST_EighthPointMeasure - Measurement in Eighths of a Point
