@@ -45,11 +45,13 @@ Changes in Version 17.3.5
   break its default stylesheet puts before a br splits the br's own box in two, and each part
   gave a w:br.
 
-- openhtmltopdf is now 1.1.100, from 1.1.31.  It parses rgba(), hsl() and hsla() colours, CSS
+- openhtmltopdf is now 1.1.103, from 1.1.31.  It parses rgba(), hsl() and hsla() colours, CSS
   variables (var(), with a fallback) and the initial and unset keywords, which 1.1.31
-  dropped.  Row heights and cell widths can move slightly (by up to 3.75 pt and 0.35 pt in
-  what was measured), from its font metrics and line-height.  It declares PDFBox 3.0.8, the
-  version this project pins.  See docs/change-requests/CR-006.
+  dropped.  Cell widths can move slightly (by up to 0.35 pt in what was measured), from its
+  font metrics.  It declares PDFBox 3.0.8, the version this project pins.  1.1.103 rather
+  than 1.1.100 for 1.1.102's fix: text with word-wrap or overflow-wrap: break-word that fits
+  only when broken between characters threw an AssertionError on 1.1.100 when Java assertions
+  were enabled, as they are in Maven's test runs.  See docs/change-requests/CR-006.
 
 - Colours with alpha.  Word's colours have no alpha, so a fully transparent colour
   (rgba(..., 0), or transparent) is no colour: no shading, and no border.  On 1.1.100 alone,

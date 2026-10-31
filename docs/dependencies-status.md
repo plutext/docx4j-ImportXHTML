@@ -8,7 +8,9 @@ the docx4j-ImportXHTML session; the probes are archived in
 says how each was run). The release notes and advisories were read the same day (sources in §6).
 On 24 October, jsoup was reassessed for 17.3.5 with docx4j, and moved to 1.23.2 (§5). The same
 day, mime4j moved to 0.8.15 (§4), the doubled `w:br` was traced and fixed, and openhtmltopdf's
-other changes went to CR-006 (§3).
+other changes went to CR-006 (§3). On 30 October, with 17.3.5's release near, openhtmltopdf's
+releases since 1.1.100 were read, and it moved to 1.1.103 for 17.3.5 (§3). The others were still
+the newest on Central that day.
 
 ## 1. Summary
 
@@ -16,7 +18,7 @@ None of the four goes into 17.3.4.
 
 | dependency | pinned | newest | 17.3.4 | why |
 |---|---|---|---|---|
-| `io.github.openhtmltopdf:openhtmltopdf-core`, `-pdfbox` | 1.1.31 | 1.1.100 | stays; 1.1.100 in 17.3.5 (CR-006) | one `<br/>` gives two `w:br` (§3) |
+| `io.github.openhtmltopdf:openhtmltopdf-core`, `-pdfbox` | 1.1.31 | 1.1.100 | stays; 1.1.103 in 17.3.5 (CR-006) | one `<br/>` gives two `w:br` (§3) |
 | `org.apache.james:apache-mime4j-core` | 0.8.13 | 0.8.15 | stays; 0.8.15 in 17.3.5 | an MHT of more than 512 parts fails (§4) |
 | `org.jsoup:jsoup` (optional) | 1.22.1 | 1.23.2 | stays; 1.23.2 in 17.3.5 | docx4j 17.3.4 pins 1.22.1, and neither advisory reaches either project (§5) |
 
@@ -44,7 +46,7 @@ The versions plugin listed nothing else. The rest of -core's direct dependencies
 - **jsoup:** the parse and `W3CDom` path timed on hostile nesting (§5).
 - **mime4j:** `convertMHT` run on MHTs of 10 to 600 parts (§4).
 
-## 3. openhtmltopdf 1.1.31 → 1.1.100: stays in 17.3.4; moved in 17.3.5 (CR-006)
+## 3. openhtmltopdf 1.1.31 → 1.1.100, then 1.1.103: stays in 17.3.4; moved in 17.3.5 (CR-006)
 
 The tests pass, but 7 of the 10 outputs change.
 
@@ -133,6 +135,35 @@ CR-006, accepted the same day (Jason: "D5 (b); others as recommended"), has the 
 - **After all four,** the suite's converts differ from 1.1.31 in seven row heights only.
 - **Still true on 1.1.100:** the fetch timeouts (10 s to connect, 30 s to read) and the nesting
   limit, the same on both versions, as the README says.
+
+### 1.1.103 for 17.3.5 (30 October 2026)
+
+With 17.3.5's release near, Jason asked whether 1.1.101 to 1.1.105 (27 to 29 October) hold a fix
+we need. One does: 1.1.102's (openhtmltopdf issue 258). Text with `word-wrap` or `overflow-wrap:
+break-word` that fits only when broken between characters makes 1.1.100 throw an
+`AssertionError` from `LineBreakContext.checkConsistency` when Java assertions are enabled, as
+Maven's Surefire and Failsafe enable them. Without assertions the layout is the same. Through
+ImportXHTML with `-ea`, the issue's reproducer throws on 1.1.100 and converts on 17.3.4 (1.1.31).
+So 17.3.5 on 1.1.100 would have been a regression for anyone converting with assertions on.
+
+The other releases don't reach what the importer writes:
+- 1.1.101: kerning, off unless a document sets `font-kerning: normal`;
+- 1.1.103: a bottom margin added twice for a block moved to the next page; the importer doesn't
+  read block positions;
+- 1.1.104: trailing spaces hang at a line end, and line alignment and line heights follow CSS;
+  the importer writes no laid-out line or row height (CR-007);
+- 1.1.105: a block image centred by `margin: auto`; the importer doesn't read its position.
+
+Moved to 1.1.103, the smallest step with the fix (Jason: "move to 1.1.103"):
+- **Measured** by CR-006 phase 0's method: the suite's 380 converts are byte-identical on 1.1.100
+  and 1.1.103.
+- **Declared dependencies** are as 1.1.100's (PDFBox and xmpbox 3.0.8, graphics2d 3.0.1), with
+  the same licence, LGPL 2.1 or later, so `legals/NOTICE` is unchanged.
+- **`BreakWordTest`** is the issue's reproducer. It fails on 1.1.100 and passes on 1.1.103.
+- **Newest on Central** that day: openhtmltopdf 1.1.105; pdfbox 3.0.8, apache-mime4j-core 0.8.15
+  and jsoup 1.23.2, as pinned.
+
+The probes are in `~/claude-scratch-archive/docx4j-ImportXHTML/ohtp-1.1.101-105-2026-10-30/`.
 
 ## 4. mime4j 0.8.13 → 0.8.15: stays in 17.3.4; moved in 17.3.5
 

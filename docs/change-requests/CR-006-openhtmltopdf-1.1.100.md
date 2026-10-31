@@ -6,7 +6,9 @@ CR-006 for openhtmltopdf"), after `docs/dependencies-status.md` §3 kept openhtm
 for 17.3.4. Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session, with each finding
 measured first (§1). The doubled `w:br` it found was fixed outside this CR, for 17.3.5 (§1, row 1).
 Phases 0 to 3 implemented 2026-10-24 (suite 178/0/0, BundleIT 3/0/0; §5), commit 6da82a2. Phase 1
-needs 1.1.100's alpha, so the move came with it. The release is 17.3.5's.
+needs 1.1.100's alpha, so the move came with it. The release is 17.3.5's. Phase 3 amended
+2026-10-30 (§5; Jason: "move to 1.1.103"): openhtmltopdf 1.1.103, for 1.1.102's fix, by D6's own
+rule.
 Scope:
 - colour handling: `TableHelper` and `ParagraphBorderHelper` (border colours), and the CSS
   values the importer hands to docx4j's `PropertyFactory` (text colour and shading);
@@ -209,6 +211,24 @@ As §4. The CHANGELOG, `docs/dependencies-status.md` §3, and the release (D5).
   and its nesting note. With `-Xss1m`, 825 nested divs convert on both versions.
 - **The CHANGELOG** (17.3.5) and `docs/dependencies-status.md` §1 and §3 are updated.
 
+**Amended 2026-10-30: 1.1.103** (Jason: "move to 1.1.103"). D6 takes a newer release "only for a
+reason, such as a fix", with phase 0 rerun on it. 1.1.102 has such a fix (openhtmltopdf issue
+258). Text with `word-wrap: break-word` that fits only when broken between characters made 1.1.100
+throw an `AssertionError` from `LineBreakContext.checkConsistency` when Java assertions are
+enabled, as in Maven's test runs. Through ImportXHTML with `-ea`, the issue's reproducer threw on
+1.1.100 and converted on 17.3.4 (1.1.31), so it would have been a regression in 17.3.5. 1.1.103
+is the smallest step with the fix. 1.1.104's line-layout changes and 1.1.105 are left out.
+`docs/dependencies-status.md` §3 has what each release from 1.1.101 to 1.1.105 changes.
+- **The pins:** `openhtmltopdf-core` and `-pdfbox` at 1.1.103. It declares the same dependencies
+  as 1.1.100 (PDFBox and xmpbox 3.0.8, graphics2d 3.0.1) and the same licence.
+- **Phase 0's comparison, rerun** on the current branch, 1.1.100 against 1.1.103: the suite's 380
+  converts are byte-identical.
+- **`BreakWordTest`:** the issue's reproducer, which skips if openhtmltopdf's assertions are off.
+  It fails on 1.1.100 and passes on 1.1.103.
+- **The CHANGELOG** entry names 1.1.103 and why. Its sentence on row heights moving is gone,
+  since CR-007 writes no laid-out row height.
+- Probes: `~/claude-scratch-archive/docx4j-ImportXHTML/ohtp-1.1.101-105-2026-10-30/`.
+
 ## 6. Decisions (for Jason; each with a recommendation)
 
 Decided 2026-10-24 (Jason: "D5 (b); others as recommended"):
@@ -220,7 +240,8 @@ Decided 2026-10-24 (Jason: "D5 (b); others as recommended"):
   other callers (docx4j 7f27c9f33, `PropertyFactoryCssAlphaTest`). Against that snapshot this
   suite is still 178/0/0, and ImportXHTML's output is unchanged, since §2 filters first;
 - D5 (b), all four phases in 17.3.5;
-- D6 (a), the version phase 0 measures, 1.1.100.
+- D6 (a), the version phase 0 measures, 1.1.100. 1.1.103 from 2026-10-30 (Jason: "move to
+  1.1.103"), for 1.1.102's fix, as D6 allows (§5, phase 3).
 
 - **D1. thead's `keepLines` (§3).** (a) accept; (b) only the author's `page-break-inside`; (c) none
   in table cells.
