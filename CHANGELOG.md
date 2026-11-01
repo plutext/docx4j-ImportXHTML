@@ -94,7 +94,7 @@ Changes in Version 17.3.5
 
       w:gridCol, w:tcW    a 6in table, two columns ........... 5760 + 5760 -> 4320 + 4320
                           td width: 1in ...................... 1920 -> 1440
-                          a table that fills its line ........ 9.44in -> 7.08in
+                          a table that fills its line ........ 9.44in -> the line's width
       w:tblInd            table margin-left: 1in ............. 1920 -> 1440
       w:tblCellSpacing    border-spacing: 10pt ............... 133 -> 100
                           the default stylesheet's 2px ....... 20 -> 15
@@ -107,8 +107,8 @@ Changes in Version 17.3.5
 
   w:tblCellSpacing is still half the CSS value: Word leaves the spacing twice, between cells
   and between a cell and the table's border.  Image sizes, and a row height from CSS, were
-  right already, and are unchanged.  A width: 100% table is now 7.1in, the width openhtmltopdf
-  lays out at; the docx's text may be narrower, and Word fits the table to it.
+  right already, and are unchanged.  A table that fills its line is as wide as the docx's text,
+  since the layout is now at that width (below, CR-009).
 
 - Cell padding (w:tcMar) and a bordered paragraph's border space (w:space) follow the CSS's
   unit, as openhtmltopdf lays them out.  Before, the number was read as pixels, whatever its
@@ -135,6 +135,36 @@ Changes in Version 17.3.5
 
 - A paragraph's double border has the w:sz of one of its three lines, as a table's already did:
   p border: 3pt double, 32 -> 8.  See docs/change-requests/CR-008.
+
+- The XHTML is laid out at the docx's text width: the writable width of the package's last
+  section.  Before, openhtmltopdf laid it out on its own A4 page, less 0.5in margins and the
+  body's 8px, so width: 100% was 7.1in whatever the docx's page.  Word fitted a table that wide
+  to an A4 portrait line, but on a landscape or A3 page a table that filled its line stopped
+  short: 73% of an A4 landscape line, where 17.3.4's widths, a third too large, were fitted to
+  it.  Word doesn't fit an image to the line, so a width: 100% image ran 0.83in into an A4
+  page's right margin, in 17.3.4 too.  Percentage widths of tables and images are now of the
+  line, and a centred table is centred on it.  The body's margin, border and padding lie outside
+  the line, as the page's margins do, so width: 100% is all of it.  The document's own @page no
+  longer sets the width.  New XHTMLImporterImpl.setTextWidth gives another width, in twips, for
+  content bound for a table cell, a header or another section.  A package with no sectPr is laid
+  out as before.  See docs/change-requests/CR-009.
+
+- A paragraph's indent no longer counts the body's margin, or, in a table cell, the cell's
+  padding and the blocks outside the table (#118).  Outside a list, w:ind/@w:left was the sum of
+  margin-left and padding-left on the paragraph and every block around it, up to the root.  So
+  the default stylesheet's 8px body margin gave every paragraph w:ind 120 (6pt), and a paragraph
+  in a cell repeated the cell's padding, which is its w:tcMar, and took the indents of the
+  blocks around the table.  The sum now stops at the body and at a table cell.  A table outside
+  a list now gets its w:tblInd from the blocks around it too, as a paragraph does: a table in a
+  div with margin-left: 1in is indented 1in, where before it wasn't indented at all.  A list in
+  a cell of an indented table keeps its numbering's indent; before, the table's own margin-left
+  was taken off it.
+
+- A table with a set width keeps that width beside its horizontal margins (#119).  openhtmltopdf
+  takes margin-left and margin-right off a table's width (openhtmltopdf #59, so that a width:
+  100% table with a margin fits its page), so width: 4in; margin-left: 1in came out 3in wide, in
+  17.3.4 too.  The columns now get the margins back, in proportion, as far as the line has room
+  beside the margins, so a width: 100% table with a margin still fits.
 
 
 Version 17.3.4
