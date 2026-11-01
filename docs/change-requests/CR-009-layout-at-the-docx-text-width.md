@@ -3,13 +3,13 @@
 Status: ACCEPTED 2026-11-01 (Jason: "CR-009's decisions, D1 to D6 as recommended"): D1 (b) the
 text width plus the body's margins; D2 (a) the last section; D3 (a) a setter for another width;
 D4 (a) the docx's section over `@page`; D5 (a) the Word check alongside phase 1; D6 (a) 17.3.5.
-Phase 0 done 2026-11-01, Word as predicted; phase 1 done 2026-11-01, uncommitted (§4). Proposed
-2026-11-01. This is CR-008's D6 (b), "the layout's width is a CR of its own", registered
+Phase 0 done 2026-11-01, Word as predicted; phase 1 done 2026-11-01; both commit fd1dcf5 (§4).
+Proposed 2026-11-01. This is CR-008's D6 (b), "the layout's width is a CR of its own", registered
 until then as the deferred xhtml/CR-008.2. Jason, the same day, on the 17.3.5 summary: "let's
 investigate the possible problem on wide pages; we could potentially do the layout-width CR before
 our 17.3.5 release", then "we should fix the 2 issues you also found (file a github issue first),
-then draft CR-009". Those two are #118 and #119, fixed outside this CR (§1). Drafted by Claude
-Opus 5.5 in the docx4j-ImportXHTML session, with each finding measured first (§2).
+then draft CR-009". Those two are #118 and #119, fixed outside this CR, in 9414632 (§1). Drafted
+by Claude Opus 5.5 in the docx4j-ImportXHTML session, with each finding measured first (§2).
 Scope:
 - the width `DocxRenderer` lays the document out at, which becomes the target docx's text width;
 - a way to give another width, for content bound for somewhere narrower (D3);
@@ -39,7 +39,7 @@ that filled its line came out 9.44in, and Word fitted that to any narrower line.
 regression from 17.3.4. This came up on 2026-11-01, while drafting the 17.3.5 release summary.
 
 Two more problems turned up while measuring this. Each has a GitHub issue and is fixed outside
-this CR. The fixes were uncommitted when this was drafted.
+this CR. The fixes were uncommitted when this was drafted, and are commit 9414632.
 - **#118:** a paragraph's `w:ind` counted the body's margin, so every paragraph got 120 (6pt).
   In a table cell it also counted the cell's padding, which is already its `w:tcMar`, and the
   blocks outside the table, which itself got no `w:tblInd`. Now the sum stops at the body and
@@ -158,8 +158,8 @@ Each section starts with a red-bordered paragraph that spans the text, margin to
 1a 10229 and 1b 9027 (the columns' sum, in twips); 2a 7.10in and 2b 6.27in wide; 3a `w:tblInd`
 3652 and 3b 3051; 4a 10229, 4b 13638 and 4c 12960. A copy is in the archive's `word-check/`.
 
-**Done 2026-11-01.** Jason: "__tmp/xhtml-cr009/round1/ is good i think (3a?)", with Word's PDF
-beside the README. Every case is as predicted. Round 3 of core-tests'
+**Done 2026-11-01** (commit fd1dcf5). Jason: "__tmp/xhtml-cr009/round1/ is good i think (3a?)",
+with Word's PDF beside the README. Every case is as predicted. Round 3 of core-tests'
 `word-check/evidence/word-open-results.md` has the measurements:
 - **1a and 1b** are both fitted to the line, 6.27in, margin to margin.
 - **2a** is kept at 7.10in and runs 0.83in into the right margin. **2b** fills the line. Word fits
@@ -181,7 +181,7 @@ As §3, on top of #118 and #119. Tests (`LayoutWidthTest`):
 
 Measured as CR-008's phase 1 was: the suite's converts before and after, listing what changes.
 
-**Done 2026-11-01, uncommitted** (on a1bb15d, with #118 and #119):
+**Done 2026-11-01** (commit fd1dcf5, on 9414632, which has #118 and #119):
 - **`DocxRenderer.setTextWidth(int dots)`** (and its getter). When set, `getInitialExtents`
   lays out at that width plus the horizontal margin, border and padding of the html element and
   its body, so the body's content box is that width (D1 (b)). Otherwise it uses openhtmltopdf's
