@@ -115,10 +115,10 @@ public class WordRangeTest {
 		Converted c = convert("p.far{margin-left:5000pt}p.back{margin-left:-5000pt}",
 				"<p class=\"far\">FAR</p><p class=\"back\">BACK</p>");
 		Assert.assertTrue(c.xml, c.xml.contains("<w:ind w:left=\"32767\"/>"));
-		// -99880 is read as 31192 by Word: text moved off the page lands to the right
+		// -100000 is read as 31072 by Word: text moved off the page lands to the right
 		Assert.assertTrue(c.xml, c.xml.contains("<w:ind w:left=\"-32768\"/>"));
-		assertWarned(c, "w:ind/@w:left 100120 (from margin-left and padding-left)", "-32768..32767", 32767);
-		assertWarned(c, "w:ind/@w:left -99880 (from margin-left and padding-left)", "-32768..32767", -32768);
+		assertWarned(c, "w:ind/@w:left 100000 (from margin-left and padding-left)", "-32768..32767", 32767);
+		assertWarned(c, "w:ind/@w:left -100000 (from margin-left and padding-left)", "-32768..32767", -32768);
 
 		// in the numbering part
 		c = convert("ul{padding-left:5000pt}", "<ul><li>x</li></ul>");
@@ -127,7 +127,7 @@ public class WordRangeTest {
 
 		c = convert("table{margin-left:5000pt}", "<table><tr><td>x</td></tr></table>");
 		Assert.assertTrue(c.xml, c.xml.contains("<w:tblInd w:w=\"32767\" w:type=\"dxa\"/>"));
-		assertWarned(c, "w:tblInd 100000 (from margin-left on a table)", "-32768..32767", 32767);
+		assertWarned(c, "w:tblInd 100000 (from margin-left on a table and the blocks around it)", "-32768..32767", 32767);
 	}
 
 	@Test

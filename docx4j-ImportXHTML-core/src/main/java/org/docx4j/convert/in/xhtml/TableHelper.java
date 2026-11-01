@@ -35,6 +35,7 @@ import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.docx4j.UnitsOfMeasurement;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl.TableProperties;
@@ -77,8 +78,11 @@ import com.openhtmltopdf.css.constants.CSSName;
 import com.openhtmltopdf.css.constants.IdentValue;
 import com.openhtmltopdf.css.parser.FSColor;
 import com.openhtmltopdf.css.parser.FSRGBColor;
+import com.openhtmltopdf.css.style.CalculatedStyle;
 import com.openhtmltopdf.css.style.FSDerivedValue;
+import com.openhtmltopdf.css.style.derived.BorderPropertySet;
 import com.openhtmltopdf.css.style.derived.RectPropertySet;
+import com.openhtmltopdf.layout.LayoutContext;
 import com.openhtmltopdf.newtable.TableBox;
 import com.openhtmltopdf.newtable.TableCellBox;
 import com.openhtmltopdf.newtable.TableSectionBox;
@@ -94,6 +98,10 @@ public class TableHelper {
 	public static Logger log = LoggerFactory.getLogger(TableHelper.class);
 	    
 	private XHTMLImporterImpl importer;
+
+	// tables whose w:tblInd is a list's indent, which tableIndentContrib takes off a list inside them (#118)
+	private final Set<Tbl> listIndentedTables = Collections.newSetFromMap(new IdentityHashMap<Tbl, Boolean>());
+
     protected TableHelper(XHTMLImporterImpl importer) {
     	this.importer=importer;
     }
@@ -146,6 +154,7 @@ public class TableHelper {
 		// But want just margin.left
 		
         log.debug("list depth:" + importer.getListHelper().getDepth());
+        int indentOutsideList = importer.getListHelper().getDepth()>0 ? 0 : tableIndent(cssTable);
         if (importer.getListHelper().getDepth()>0 ) { 
 
     		TblWidth tblInd = tblPr.getTblInd();
@@ -154,6 +163,7 @@ public class TableHelper {
     			tblPr.setTblInd(tblInd);
     		}
     		tblInd.setType(TblWidth.TYPE_DXA);
+    		listIndentedTables.add(tbl);
         	
         	// Handle using the same logic we use for indenting a paragraph
     		int totalPadding = importer.getListHelper().getAbsoluteIndent(cssTable);
@@ -177,14 +187,11 @@ public class TableHelper {
             } 
         	
     		
-        } else if (cssTable.getMargin(importer.getRenderer().getLayoutContext()) !=null
-				&& cssTable.getMargin(importer.getRenderer().getLayoutContext()).left()>0) {
+        } else if (indentOutsideList > 0) {
         	
-			log.debug("Calculating TblInd from margin.left: " + cssTable.getMargin(importer.getRenderer().getLayoutContext()).left() );
+			log.debug("Calculating TblInd from margin.left and the blocks around the table: " + indentOutsideList );
     		TblWidth tblInd = Context.getWmlObjectFactory().createTblWidth();
-    		tblInd.setW( WordRange.TBL_IND.clamp( Math.round(importer.layoutDotsToTwip(
-    				cssTable.getMargin(importer.getRenderer().getLayoutContext()).left()
-    				)), "margin-left on a table"));
+    		tblInd.setW( WordRange.TBL_IND.clamp( indentOutsideList, "margin-left on a table and the blocks around it"));
     		tblInd.setType(TblWidth.TYPE_DXA);
 			tblPr.setTblInd(tblInd);
 			
@@ -270,6 +277,56 @@ public class TableHelper {
     	
     }
     
+    /**
+     * openhtmltopdf's column positions for the table, with the horizontal margins it takes off a
+     * table with a set width given back (#119).  openhtmltopdf's TableBox.getCSSWidth subtracts
+     * margin-left and margin-right from the CSS width, and lays the columns out in what is left
+     * (openhtmltopdf #59, so that a width: 100% table with a margin fits its page); in CSS the
+     * margins lie outside the width.  The columns are widened in proportion, to the CSS width,
+     * but no further than the table's margins leave of its containing block.
+     */
+    int[] columnPositions(TableBox cssTable) throws CyclicStylesException {
+    	int[] colPos = cssTable.getColumnPos();
+    	CalculatedStyle style = cssTable.getStyle();
+    	int laidOut = cssTable.getContentWidth();
+    	if (style.isAutoWidth() || laidOut<=0 || colPos.length<2) {
+    		return colPos;
+    	}
+    	LayoutContext c = importer.getRenderer().getLayoutContext();
+    	RectPropertySet margin = cssTable.getMargin(c);
+    	int taken = (style.isAutoLeftMargin() ? 0 : (int)margin.left()) 
+    			+ (style.isAutoRightMargin() ? 0 : (int)margin.right());
+    	if (taken<=0) {
+    		return colPos;
+    	}
+    	
+    	// what openhtmltopdf took off, given back, as far as the line has room beside the margins
+    	int containing = cssTable.getContainingBlock().getContentWidth();
+    	BorderPropertySet border = cssTable.getBorder(c);
+    	RectPropertySet padding = cssTable.getPadding(c);
+    	int borderAndPadding = (int)border.left() + (int)border.right()
+    			+ (style.isCollapseBorders() ? 0 : (int)padding.left() + (int)padding.right());
+    	int room = containing - taken - borderAndPadding;
+    	int css = (int)style.getFloatPropertyProportionalWidth(CSSName.WIDTH, containing, c) - borderAndPadding;
+    	int spacing = cssTable.marginsBordersPaddingAndSpacing(c, true) - taken - borderAndPadding; // at most
+    	int wanted;
+    	if (laidOut > css - taken + spacing + 1) {
+    		// widened to its content's minimum: as wide as that, or as the CSS width if that's more
+    		wanted = Math.min(css + spacing, room);
+    	} else {
+    		wanted = Math.min(laidOut + taken, room);
+    	}
+    	wanted = Math.max(laidOut, wanted);
+    	if (wanted==laidOut) {
+    		return colPos;
+    	}
+    	int[] widened = new int[colPos.length];
+    	for (int i=0; i<colPos.length; i++) {
+    		widened[i] = Math.round((float)colPos[i] * wanted / laidOut);
+    	}
+    	return widened;
+    }
+
     /**
      * @return column col's width (from 1), in twips.  openhtmltopdf's column positions are in dots;
      * each is converted before they're subtracted, so the columns add up to the table (CR-008).
@@ -790,6 +847,16 @@ public class TableHelper {
     }
 
     /**
+     * Outside a list: the table's own margin-left, plus the margin-left and padding-left of the
+     * blocks around it, as a paragraph's indent has them (#118).  In twips.
+     */
+    private int tableIndent(TableBox cssTable) throws CyclicStylesException {
+    	float margin = cssTable.getMargin(importer.getRenderer().getLayoutContext()).left();
+    	int own = margin>0 ? Math.round(importer.layoutDotsToTwip(margin)) : 0;
+    	return own + importer.getAncestorIndentation(cssTable.getContainingBlock());
+    }
+
+    /**
      * Where list item indentation is affected by the presence of tables,
      * we could adjust for this in the numbering, or in an ad hoc property.
      * Which is better?  Ad hoc property is better, since in a contrived
@@ -806,7 +873,7 @@ public class TableHelper {
     		
     		log.debug(ca.getClass().getName());
     		
-    		if (ca instanceof Tbl) {
+    		if (ca instanceof Tbl && listIndentedTables.contains(ca)) {
     			Tbl tbl = (Tbl)ca;
     			if (tbl.getTblPr()!=null
     					&& tbl.getTblPr().getTblInd()!=null

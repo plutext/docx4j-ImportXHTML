@@ -1602,6 +1602,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	            
 	    		tableProperties = new TableProperties();
 	    		tableProperties.setTableBox(tableBox);
+	    		tableProperties.setColumnPos(tableHelper.columnPositions(tableBox)); // a set width keeps its margins (#119)
 
 //		    		log.debug("parent " + parent.getClass().getSimpleName());
 //		    		log.debug("parent " + parent.getElement().getNodeName());
@@ -3192,13 +3193,16 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 
 		// Indentation.  Sum of padding-left and margin-left on ancestor divs
 		// Expectation is that one or other would generally be used.
+		// It stops at a table cell, whose padding is its w:tcMar, and at the body, whose
+		// margin, border and padding lie outside the docx's text, as the page's margins do (#118)
 		int totalPadding = 0;
-		
+
 		Object o = styleable;
-		
+
 		while (o !=null
-				&& o instanceof BlockBox 
-				/* && !(o instanceof com.openhtmltopdf.newtable.TableCellBox) */ //  need to stop if we encounter a table cell? 
+				&& o instanceof BlockBox
+				&& !(o instanceof com.openhtmltopdf.newtable.TableCellBox)
+				&& !isBodyOrHtml((BlockBox)o)
 				) {
 			
 			BlockBox bb = (BlockBox)o;
@@ -3208,7 +3212,14 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 		}
 		return totalPadding;
 	}
-    
+
+	private static boolean isBodyOrHtml(BlockBox bb) {
+		Element e = bb.getElement();
+		if (e==null) return false;
+		String name = e.getLocalName()==null ? e.getNodeName() : e.getLocalName(); // a DOM built without namespaces has no local names
+		return "body".equalsIgnoreCase(name) || "html".equalsIgnoreCase(name);
+	}
+
 	private int getBBIndentContrib(BlockBox bb) {
 
 		int paddingI = 0;
@@ -3437,6 +3448,9 @@ public class XHTMLImporterImpl implements XHTMLImporter {
     	private int[] colPos; 
     	public int[] getColumnPos() {
     		return colPos;
+    	}
+    	void setColumnPos(int[] colPos) {
+    		this.colPos = colPos;
     	}
 		
     	public int getColumnWidth(int col) {
