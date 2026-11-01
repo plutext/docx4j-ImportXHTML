@@ -4,7 +4,7 @@ CHANGELOG
 Version 17.3.5
 ===============
 
-Not yet released.
+1 November 2026
 
 Contributors to this release
 ----------------------------
@@ -18,153 +18,24 @@ Cristian Vat
 Changes in Version 17.3.5
 --------------------------
 
-- Faster import when debug logging is off.  Three log.debug calls in XHTMLImporterImpl
-  serialised a w:p, w:pPr or w:rPr to XML (XmlUtils.marshaltoString) whatever the log level;
-  they are now guarded by log.isDebugEnabled().  The one at the end of addParagraphProperties
-  ran for every paragraph, and accounted for about 40% of import time on table-heavy input.
+**Tables are the size your CSS says.** Since 8.2.0, table and column widths, table indents, cell spacing and border widths were all written a third too large: a 6in table came out 8in wide. They now match the CSS. Word shrinks a table that is wider than the text to fit, so the change shows mostly on tables narrower than the text. Cell padding, and the gap between a paragraph and its border, now follow their CSS unit (pt, in, em) too. Before, the number was read as pixels whatever its unit, so `padding: 0.25in` gave almost none. There is no setting for the old sizes.
 
-- Faster import of tables and paragraphs with solid borders.  CSS's border-style solid isn't an
-  ST_Border value, so STBorder.fromValue threw an IllegalArgumentException for it, caught to give
-  single, once for every bordered side of every table, cell and paragraph.  TableHelper and
-  ParagraphBorderHelper now map solid to single before trying fromValue.  The output is the same.
+**Laid out at your page's width.** The HTML is now laid out at the width of the docx's text, where it used to be laid out at 7.1in whatever the page. So `width: 100%`, and other percentage widths of tables and images, are of the line on portrait and landscape pages alike, and a centred table is centred on it. A `width: 100%` image no longer runs into the right margin of a portrait page, and on a landscape or A3 page a table that fills its line now does. For content bound for a table cell or a header, `setTextWidth` gives another width. A document's own `@page` no longer changes it.
 
-- jsoup, which convertMHT uses where it's present and which docx4j-ImportXHTML-bundle holds, is
-  now 1.23.2, as in docx4j 17.3.5.  1.22.1 is named by two advisories, GHSA-65r4-943x-97jj and
-  GHSA-pmhh-3w7g-xqp8, though neither is reached here: they are in jsoup's XML parser and its
-  Cleaner, and ImportXHTML uses the HTML parser and W3CDom.  One change shows in convertMHT's
-  output: a CDATA section in HTML body text is read as HTML's parsing rules read it, as a comment
-  ending at the first ">", where 1.22.1 kept its content as text.  See docs/dependencies-status.md.
+**Indents.** Paragraphs are no longer indented 6pt by the body's default margin, and a paragraph in a table cell no longer repeats the cell's padding or the indents of the blocks around the table. A table in an indented div is now indented with it. A table with a set width and a margin keeps its width; openhtmltopdf used to take the margin off it.
 
-- convertMHT reads an MHT only as far as its first text/html part, the one it uses, and
-  apache-mime4j is now 0.8.15.  0.8.15 limits the parts (512), the nesting and the headers of
-  a MIME message, against messages built to exhaust memory.  Because the parse stops at the
-  HTML part, an MHT with hundreds of image parts after it still converts.  More than 512 parts
-  before its HTML part gives a Docx4JException.
+**Tall table rows are no longer cut off and no longer leave blank pages.** Every row used to be given the height it was laid out at, as a minimum. When such a row was taller than a page, Word started it on a new page and left the rest of its last page blank. In 17.3.4, a row with about 23 to 45 inches of content was cut off. A row now gets a height only where the CSS sets one on the row or one of its cells; otherwise Word sizes it to its content.
 
-- A br is one w:br.  From openhtmltopdf 1.1.97, which this release moves to (below), the line
-  break its default stylesheet puts before a br splits the br's own box in two, and each part
-  gave a w:br.
+**Better CSS support.** openhtmltopdf, which lays out the HTML before it is converted, is now 1.1.103, up from 1.1.31. It understands `rgba()`, `hsl()` and `hsla()` colours, CSS variables (`var()`, with a fallback), and the `initial` and `unset` keywords, which were dropped before. Word's colours can't be transparent, so a fully transparent colour now gives no shading or border, and a partly transparent one is blended over white. Border colours are always valid hex: `transparent` used to produce invalid WordprocessingML. Cell widths may move by a fraction of a point (up to 0.35pt in what was measured).
 
-- openhtmltopdf is now 1.1.103, from 1.1.31.  It parses rgba(), hsl() and hsla() colours, CSS
-  variables (var(), with a fallback) and the initial and unset keywords, which 1.1.31
-  dropped.  Cell widths can move slightly (by up to 0.35 pt in what was measured), from its
-  font metrics.  It declares PDFBox 3.0.8, the version this project pins.  1.1.103 rather
-  than 1.1.100 for 1.1.102's fix: text with word-wrap or overflow-wrap: break-word that fits
-  only when broken between characters threw an AssertionError on 1.1.100 when Java assertions
-  were enabled, as they are in Maven's test runs.  See docs/change-requests/CR-006.
+**Faster.** Import is quicker, especially for tables. Three debug log statements converted WordprocessingML to XML even with debug logging off, which took about 40% of the time on table-heavy input. Each solid border also cost an exception. Both fixes are from Cristian Vat.
 
-- Colours with alpha.  Word's colours have no alpha, so a fully transparent colour
-  (rgba(..., 0), or transparent) is no colour: no shading, and no border.  On 1.1.100 alone,
-  rgba(0,0,0,0) gave a black background.  Partial alpha is blended over white:
-  rgba(255,255,0,0.4) gives FFFF99.  A border colour is now always hex.  Before, transparent
-  (and, on 1.1.100, an rgba colour) went into w:color as its CSS text, which isn't valid
-  WordprocessingML; that was so in 17.3.4 too.  New CssColorForWord.
+**Values out of range no longer wrap around.** Word stores each measurement in a fixed number of bits and silently wraps a value that doesn't fit, so a very large negative indent could come out positive. Such a value is now written as the nearest one Word can store, and a warning is logged (logger `org.docx4j.convert.in.xhtml.WordRange`) naming the attribute, the value and, where known, the CSS property.
 
-- page-break-inside gives w:keepLines only where the document's own CSS sets it (a style
-  attribute, a style element or a linked stylesheet), on the paragraph or an ancestor.  From
-  1.1.79, openhtmltopdf's default stylesheet sets it on thead, which gave w:keepLines to every
-  paragraph in a header row.
+**MHT and dependency updates.** apache-mime4j is now 0.8.15, which limits how many parts (512), how much nesting and how many headers a MIME message may have, to guard against messages built to exhaust memory. convertMHT stops reading at the HTML part it uses, so an MHT with hundreds of images after that part still converts. jsoup is now 1.23.2. 1.22.1 was named in two security advisories, though neither affected ImportXHTML. One change shows in convertMHT's output: a CDATA section in HTML body text is now read as HTML's parsing rules read it, as a comment, where before its content was kept as text.
 
-- -core's jar no longer carries XhtmlNamespaceHandler.css and xhtmlrenderer.conf.
-  The openhtmltopdf this project uses doesn't read them: its default stylesheet is its own
-  copy, in its jar.
+Some miscellaneous fixes.  For more details see https://github.com/plutext/docx4j-ImportXHTML/blob/3dc4c58348f176456b1b8807ff55238c15173590/CHANGELOG.md
 
-- Integer attributes are kept within Word's range.  Word stores each in a fixed width and wraps
-  a value outside it, with no error: a negative indent past -32768 twips comes out positive, and
-  in 17.3.4 a row whose content was 22.8 to 45.5 inches tall got a height Word reads as exact,
-  so it was cut off.  A value outside the range is now written as the nearest end of it, with a
-  WARN (logger org.docx4j.convert.in.xhtml.WordRange) naming the attribute, the value and, where
-  it's known, the CSS property.  This covers w:ind/@w:left (in the document and the numbering
-  part), w:tblInd, w:tcW, w:gridCol, w:tblCellSpacing, w:tcMar, w:trHeight, a border's w:sz
-  (0..255) and w:space (0..31), and, after docx4j's converters, w:spacing and a run's w:sz and
-  w:spacing.  The ranges are in docs/change-requests/CR-007 §3.
-
-- A row's w:trHeight comes only from a CSS height on the row or one of its cells, as atLeast
-  the greatest of them.  Before, every row got its laid-out height (285 for a line of text).
-  Word gives a row split across pages a last part at least that tall, and starts a row whose
-  height is over a page on a page of its own, so a row taller than a page left the rest of its
-  last page blank.  A row sized by its content now gets no w:trHeight, and Word sizes it to its
-  content.  A percentage height counts as none.
-
-- Table widths, table indents, cell spacing and border widths are written as the CSS gives
-  them.  Since 8.2.0, each was openhtmltopdf's own unit (a dot, 3/4 of a twip) written as
-  twips, so a third too large: a 6in table was written 8in wide.  Word fits a table wider than
-  the text to the text, so the difference shows on tables narrower than the text.  Before and
-  now:
-
-      w:gridCol, w:tcW    a 6in table, two columns ........... 5760 + 5760 -> 4320 + 4320
-                          td width: 1in ...................... 1920 -> 1440
-                          a table that fills its line ........ 9.44in -> the line's width
-      w:tblInd            table margin-left: 1in ............. 1920 -> 1440
-      w:tblCellSpacing    border-spacing: 10pt ............... 133 -> 100
-                          the default stylesheet's 2px ....... 20 -> 15
-      a border's w:sz     1px, thin .......................... 8 -> 6
-      (table, td or p)    0.5pt .............................. 5 -> 4
-                          1pt ................................ 11 -> 8
-                          2px, medium ........................ 16 -> 12
-                          thick .............................. 24 -> 18
-                          4pt ................................ 43 -> 32
-
-  w:tblCellSpacing is still half the CSS value: Word leaves the spacing twice, between cells
-  and between a cell and the table's border.  Image sizes, and a row height from CSS, were
-  right already, and are unchanged.  A table that fills its line is as wide as the docx's text,
-  since the layout is now at that width (below, CR-009).
-
-- Cell padding (w:tcMar) and a bordered paragraph's border space (w:space) follow the CSS's
-  unit, as openhtmltopdf lays them out.  Before, the number was read as pixels, whatever its
-  unit.  Before and now:
-
-      w:tcMar (twips)     padding: 10pt ...................... 150 -> 200
-                          0.25in ............................. 4 -> 360
-                          1em (16px text) .................... 15 -> 240
-                          1em at font-size: 20pt ............. 15 -> 400
-                          5% ................................. 75 -> 0
-                          0 .................................. 15 -> 0
-      w:space (points)    padding: 24pt ...................... 18 -> 24
-                          4pt ................................ 3 -> 4
-                          1em ................................ 1 -> 12
-                          0.25in ............................. none -> 18
-
-  Padding in px is unchanged, and a cell with no padding of its own still gets 15, from the
-  default stylesheet's 1px.  A percentage gives 0, since openhtmltopdf lays a cell's percentage
-  padding out as none.
-
-- w:space is written only on a side with a border.  A paragraph with padding and no border got
-  w:pBdr sides holding only w:space, which isn't valid WordprocessingML (a border needs w:val);
-  it now gets no w:pBdr.
-
-- A paragraph's double border has the w:sz of one of its three lines, as a table's already did:
-  p border: 3pt double, 32 -> 8.  See docs/change-requests/CR-008.
-
-- The XHTML is laid out at the docx's text width: the writable width of the package's last
-  section.  Before, openhtmltopdf laid it out on its own A4 page, less 0.5in margins and the
-  body's 8px, so width: 100% was 7.1in whatever the docx's page.  Word fitted a table that wide
-  to an A4 portrait line, but on a landscape or A3 page a table that filled its line stopped
-  short: 73% of an A4 landscape line, where 17.3.4's widths, a third too large, were fitted to
-  it.  Word doesn't fit an image to the line, so a width: 100% image ran 0.83in into an A4
-  page's right margin, in 17.3.4 too.  Percentage widths of tables and images are now of the
-  line, and a centred table is centred on it.  The body's margin, border and padding lie outside
-  the line, as the page's margins do, so width: 100% is all of it.  The document's own @page no
-  longer sets the width.  New XHTMLImporterImpl.setTextWidth gives another width, in twips, for
-  content bound for a table cell, a header or another section.  A package with no sectPr is laid
-  out as before.  See docs/change-requests/CR-009.
-
-- A paragraph's indent no longer counts the body's margin, or, in a table cell, the cell's
-  padding and the blocks outside the table (#118).  Outside a list, w:ind/@w:left was the sum of
-  margin-left and padding-left on the paragraph and every block around it, up to the root.  So
-  the default stylesheet's 8px body margin gave every paragraph w:ind 120 (6pt), and a paragraph
-  in a cell repeated the cell's padding, which is its w:tcMar, and took the indents of the
-  blocks around the table.  The sum now stops at the body and at a table cell.  A table outside
-  a list now gets its w:tblInd from the blocks around it too, as a paragraph does: a table in a
-  div with margin-left: 1in is indented 1in, where before it wasn't indented at all.  A list in
-  a cell of an indented table keeps its numbering's indent; before, the table's own margin-left
-  was taken off it.
-
-- A table with a set width keeps that width beside its horizontal margins (#119).  openhtmltopdf
-  takes margin-left and margin-right off a table's width (openhtmltopdf #59, so that a width:
-  100% table with a margin fits its page), so width: 4in; margin-left: 1in came out 3in wide, in
-  17.3.4 too.  The columns now get the margins back, in proportion, as far as the line has room
-  beside the margins, so a width: 100% table with a margin still fits.
 
 
 Version 17.3.4

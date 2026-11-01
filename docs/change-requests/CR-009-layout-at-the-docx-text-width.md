@@ -4,8 +4,9 @@ Status: ACCEPTED 2026-11-01 (Jason: "CR-009's decisions, D1 to D6 as recommended
 text width plus the body's margins; D2 (a) the last section; D3 (a) a setter for another width;
 D4 (a) the docx's section over `@page`; D5 (a) the Word check alongside phase 1; D6 (a) 17.3.5.
 Phase 0 done 2026-11-01, Word as predicted; phase 1 done 2026-11-01; both commit fd1dcf5 (§4).
-Proposed 2026-11-01. This is CR-008's D6 (b), "the layout's width is a CR of its own", registered
-until then as the deferred xhtml/CR-008.2. Jason, the same day, on the 17.3.5 summary: "let's
+Phase 2 done 2026-11-01 (§4), apart from the release, which is 17.3.5's. Proposed 2026-11-01.
+This is CR-008's D6 (b), "the layout's width is a CR of its own", registered until then as the
+deferred xhtml/CR-008.2. Jason, the same day, on the 17.3.5 summary: "let's
 investigate the possible problem on wide pages; we could potentially do the layout-width CR before
 our 17.3.5 release", then "we should fix the 2 issues you also found (file a github issue first),
 then draft CR-009". Those two are #118 and #119, fixed outside this CR, in 9414632 (§1). Drafted
@@ -208,6 +209,13 @@ The probes are in the archive's `out/` (`*-phase1*`).
 ### Phase 2: the release
 
 The CHANGELOG, and the release (D6).
+
+**Done 2026-11-01,** apart from the release, which is 17.3.5's (Jason: "CHANGELOG as suggested").
+The full list, commit 3dc4c58, has an entry for this CR, before #118's and #119's. CR-008's entry
+there now gives a table that fills its line as the line's width, not 7.08in. Jason's summary of
+17.3.5 links to that list. It has a paragraph for this CR, "Laid out at your page's width", which
+says from phase 0 that a `width: 100%` image no longer runs into a portrait page's right margin,
+and one for #118 and #119, "Indents".
 
 ## 5. Decisions (for Jason; each with a recommendation)
 
