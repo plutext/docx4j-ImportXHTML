@@ -1,16 +1,17 @@
 # CR-008: CSS lengths in their own units
 
-Status: ACCEPTED 2026-10-28 (Jason: "CR-008 D1 to D7: decisions as recommended"): D1 (a) all of
-§2.1 and §2.2; D2 (a) padding from the layout; D3 (a) keep `w:tblCellSpacing`'s halving; D4 (a) a
-paragraph's double border divided by 3; D5 (a) `padding: 0` writes 0; D6 (b) the layout's width is
-a CR of its own, so phase 2 leaves this one; D7 (a) no setting for the old values. Phase 0 done
-2026-10-28, by Jason's run in Word 365 (§4). Phase 1 done 2026-10-28 (§4), commit f2c8202, with
-D8 (a), decided the same day (Jason: "write the space only on sides that have a border, folded into
-CR-008"): `w:space` only on a paragraph side with a border. Phase 3 done 2026-10-28 (§4), apart from
-the release, which is 17.3.5's. Proposed 2026-10-28, from CR-007's D3, which Jason decided the same
-day: "CR-007 decisions as recommended; the new D3 CR should also be in the 17.3.5 release". So the
-release is decided: 17.3.5, with CR-006 and CR-007. Drafted by Claude Opus 5.5 in the
-docx4j-ImportXHTML session, with each finding measured first (§2).
+Status: DONE 2026-11-01, released in docx4j-ImportXHTML 17.3.5 (§4, phase 3). Accepted 2026-10-28
+(Jason: "CR-008 D1 to D7: decisions as recommended"): D1 (a) all of §2.1 and §2.2; D2 (a) padding
+from the layout; D3 (a) keep `w:tblCellSpacing`'s halving; D4 (a) a paragraph's double border
+divided by 3; D5 (a) `padding: 0` writes 0; D6 (b) the layout's width is a CR of its own, so phase
+2 leaves this one; D7 (a) no setting for the old values. Phase 0 done 2026-10-28, by Jason's run in
+Word 365 (§4). Phase 1 done 2026-10-28 (§4), commit f2c8202, with D8 (a), decided the same day
+(Jason: "write the space only on sides that have a border, folded into CR-008"): `w:space` only on
+a paragraph side with a border. Phase 3 done 2026-10-28 (§4), apart from the release, which is
+17.3.5's. Proposed 2026-10-28, from CR-007's D3, which Jason decided the same day: "CR-007
+decisions as recommended; the new D3 CR should also be in the 17.3.5 release". So the release is
+decided: 17.3.5, with CR-006 and CR-007. Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML
+session, with each finding measured first (§2).
 Scope:
 - the measures ImportXHTML converts from openhtmltopdf's layout itself, in `TableHelper` and
   `ParagraphBorderHelper`: column widths, table indent, cell spacing, cell margins, border `w:sz`
@@ -270,6 +271,11 @@ entries, after CR-007's two:
   a cell with no padding still gets 15;
 - `w:space` only on a side with a border (D8);
 - a paragraph's double border (D4).
+
+**Released 2026-11-01** in 17.3.5, with CR-006, CR-007 and CR-009. CR-006 §5, phase 3, has the
+release. Before it, the first entry's sentence on `width: 100%` was corrected (3dc4c58): CR-009
+lays the document out at the docx's text width, so a table that fills its line is the line's
+width, not 7.1 inches.
 
 ## 5. Decisions (for Jason; each with a recommendation)
 

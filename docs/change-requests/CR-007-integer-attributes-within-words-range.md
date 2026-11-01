@@ -1,19 +1,19 @@
 # CR-007: integer attributes within Word's range
 
-Status: ACCEPTED 2026-10-28 (Jason: "CR-007 decisions as recommended; the new D3 CR should also be
-in the 17.3.5 release"): D1 (a) clamp, with a WARN; D2 (a) at the writers, with the scanning test;
-D3 (a) the units are a CR of their own, CR-008, also for 17.3.5; D4 the two points, for the docx4j
-session in phase 2; D5 (a) 17.3.5. Phase 0 done 2026-10-28, by Jason's run in Word 365 (§4):
-Word cuts the row off, so D5 (a) stands. Clamped, every line shows, but the row's last page is
-left blank below it. D6 (c), decided the same day (Jason: "CR-007 D6: let's do the word check"):
-round 2, also run the same day (§4), shows Word keeps a split row's last part at least its
-minimum height, in today's output too. D6 (d), decided the same day: a `w:trHeight` only from a
-CSS height. Phase 1 done 2026-10-28 (§4), commit a788fbf. Phase 2 done 2026-10-28 (§4), apart from
-the release, which is 17.3.5's: the CHANGELOG, and D4's two points sent to the docx4j session.
-Proposed 2026-10-26, at Jason's request ("draft the CR"), after docx4j-25's hand-off of docx4j
-CR-066 phase 2 the same day: "your own CR decides whether ImportXHTML should throw, clamp or leave
-it". Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session, with each finding measured first
-(§2).
+Status: DONE 2026-11-01, released in docx4j-ImportXHTML 17.3.5 (§4, phase 2). Accepted 2026-10-28
+(Jason: "CR-007 decisions as recommended; the new D3 CR should also be in the 17.3.5 release"): D1
+(a) clamp, with a WARN; D2 (a) at the writers, with the scanning test; D3 (a) the units are a CR of
+their own, CR-008, also for 17.3.5; D4 the two points, for the docx4j session in phase 2; D5 (a)
+17.3.5. Phase 0 done 2026-10-28, by Jason's run in Word 365 (§4): Word cuts the row off, so D5 (a)
+stands. Clamped, every line shows, but the row's last page is left blank below it. D6 (c), decided
+the same day (Jason: "CR-007 D6: let's do the word check"): round 2, also run the same day (§4),
+shows Word keeps a split row's last part at least its minimum height, in today's output too. D6
+(d), decided the same day: a `w:trHeight` only from a CSS height. Phase 1 done 2026-10-28 (§4),
+commit a788fbf. Phase 2 done 2026-10-28 (§4), apart from the release, which is 17.3.5's: the
+CHANGELOG, and D4's two points sent to the docx4j session. Proposed 2026-10-26, at Jason's request
+("draft the CR"), after docx4j-25's hand-off of docx4j CR-066 phase 2 the same day: "your own CR
+decides whether ImportXHTML should throw, clamp or leave it". Drafted by Claude Opus 5.5 in the
+docx4j-ImportXHTML session, with each finding measured first (§2).
 Scope:
 - the integer attributes ImportXHTML computes itself: `TableHelper`, `ParagraphBorderHelper`,
   `ListHelper.createIndent`, and `XHTMLImporterImpl`'s paragraph indent;
@@ -338,6 +338,9 @@ The CHANGELOG, the release (D5), and the message to docx4j-25 (D4).
   docx4j-12 took both the same day, in docx4j 5480ccc1c (its CR-066 §10.7). The first is recorded
   there as a case the inspector catches and the save-time WARN misses, with no change. For the
   second, the WARN now ends "Word reads it modulo 16 bits if written as is (CR-066)".
+
+**Released 2026-11-01** in 17.3.5, with CR-006, CR-008 and CR-009. CR-006 §5, phase 3, has the
+release.
 
 ## 5. Decisions (for Jason; each with a recommendation)
 

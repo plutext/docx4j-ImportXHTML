@@ -1,17 +1,17 @@
 # CR-006: openhtmltopdf 1.1.100: colours with alpha, thead's keepLines, and the move
 
-Status: ACCEPTED 2026-10-24 (Jason: "D5 (b); others as recommended"): all four phases in 17.3.5,
-and D1 to D4 and D6 as recommended. Proposed the same day, at Jason's request ("yes" to "draft
-CR-006 for openhtmltopdf"), after the 17.3.4 dependency review kept openhtmltopdf at 1.1.31
-(Appendix A). Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session, with each finding
-measured first (§1). The doubled `w:br` it found was fixed outside this CR, for 17.3.5 (§1, row 1).
-Phases 0 to 3 implemented 2026-10-24 (suite 178/0/0, BundleIT 3/0/0; §5), commit 6da82a2. Phase 1
-needs 1.1.100's alpha, so the move came with it. The release is 17.3.5's. Phase 3 amended
-2026-10-30 (§5; Jason: "move to 1.1.103"): openhtmltopdf 1.1.103, for 1.1.102's fix, by D6's own
-rule, commit 4486504. The review's notes, `docs/dependencies-status.md`, were folded into this CR
-on 2026-11-01 (§1, §4, phase 3 and Appendix A), and the file deleted (Jason: "fold the relevant
-parts of it into CR-006 and update CR-006 references so that docs/dependencies-status.md can be
-deleted").
+Status: DONE 2026-11-01, released in docx4j-ImportXHTML 17.3.5 (§5, phase 3). Accepted 2026-10-24
+(Jason: "D5 (b); others as recommended"): all four phases in 17.3.5, and D1 to D4 and D6 as
+recommended. Proposed the same day, at Jason's request ("yes" to "draft CR-006 for openhtmltopdf"),
+after the 17.3.4 dependency review kept openhtmltopdf at 1.1.31 (Appendix A). Drafted by Claude
+Opus 5.5 in the docx4j-ImportXHTML session, with each finding measured first (§1). The doubled
+`w:br` it found was fixed outside this CR, for 17.3.5 (§1, row 1). Phases 0 to 3 implemented
+2026-10-24 (suite 178/0/0, BundleIT 3/0/0; §5), commit 6da82a2. Phase 1 needs 1.1.100's alpha, so
+the move came with it. The release is 17.3.5's. Phase 3 amended 2026-10-30 (§5; Jason: "move to
+1.1.103"): openhtmltopdf 1.1.103, for 1.1.102's fix, by D6's own rule, commit 4486504. The review's
+notes, `docs/dependencies-status.md`, were folded into this CR on 2026-11-01 (§1, §4, phase 3 and
+Appendix A), and the file deleted (Jason: "fold the relevant parts of it into CR-006 and update
+CR-006 references so that docs/dependencies-status.md can be deleted").
 Scope:
 - colour handling: `TableHelper` and `ParagraphBorderHelper` (border colours), and the CSS
   values the importer hands to docx4j's `PropertyFactory` (text colour and shading);
@@ -270,6 +270,22 @@ out.
 - **Newest on Central** that day: openhtmltopdf 1.1.105; pdfbox 3.0.8, apache-mime4j-core 0.8.15
   and jsoup 1.23.2, as pinned.
 - Probes: `~/claude-scratch-archive/docx4j-ImportXHTML/ohtp-1.1.101-105-2026-10-30/`.
+
+**Released 2026-11-01** as 17.3.5, with CR-007 to CR-009 and the fixes for #118 and #119.
+- **The version commit** is Jason's a148528 ("prepare for 17.3.5 release"), against docx4j
+  17.3.5. Its CHANGELOG headings name the openhtmltopdf each release uses: 1.1.103 for 17.3.5,
+  1.1.31 for 17.3.4.
+- **The CHANGELOG** has a summary of the release (b5d4275, with 18e555d's sentence on slf4j) and
+  links to the full list at 3dc4c58.
+- **On Central:** docx4j-ImportXHTML-core and docx4j-ImportXHTML-bundle 17.3.5, each with its
+  sources, javadoc and CycloneDX files, and signed with Jason's key (4F12076D...AFA87A3B). Checked
+  the same day:
+  - -core's sources jar is a148528's `src/main/java`, file for file, and its classes are Java 11
+    bytecode;
+  - -core's pom names openhtmltopdf 1.1.103, docx4j 17.3.5, slf4j-api 2.0.20, mime4j 0.8.15 and
+    PDFBox 3.0.8. It doesn't name jsoup, which is optional, as 17.3.4's didn't;
+  - the bundle holds openhtmltopdf 1.1.103, graphics2d 3.0.1, pdfbox and xmpbox 3.0.8, mime4j
+    0.8.15 and jsoup 1.23.2, and its pom's one dependency is docx4j-bundle 17.3.5.
 
 ## 6. Decisions (for Jason; each with a recommendation)
 
