@@ -60,3 +60,35 @@ Recorded in CR-007 and CR-008, §4, phase 0.
 | D 40 lines, 21690 atLeast (as written today) | as A | as A: the heading's page is otherwise empty; 24 and 16 lines; the cell runs on to the bottom margin, 246.6pt empty; R2D_AFTER on the next page |
 
 Recorded in CR-007 §4, round 2, and §5, D6.
+
+## Round 3: CR-009 phase 0, 1 November 2026
+
+- Specimen: `__tmp/xhtml-cr009/round1/cr009-layout-width-r1.docx`, with its `README.txt`. SHA-256
+  `7e3f784eb5f38e6fef2909255368614d95fdf46bfa68a53f11122ca943b4a087`. Built by
+  `LayoutWidthProbeBuilder` (this module's test tree, uncommitted then) on CR-009 phase 1's code,
+  uncommitted on a1bb15d with #118 and #119. Each case was converted with `setTextWidth` set to
+  7.1in, as 17.3.5 laid out before CR-009, or to the line. The builder then made 4b's widths a
+  third larger than 4a's, as 17.3.4 wrote them.
+- Predictions: CR-009 §4, phase 0.
+- Word: Word for Microsoft 365, as the PDF's producer says. The version and build weren't given.
+  No prompt or repair was reported.
+- Returned: Jason's note, "__tmp/xhtml-cr009/round1/ is good i think (3a?)", and the document
+  saved as PDF, `cr009-layout-width-r1-word365.pdf`, SHA-256
+  `3c5f5a9426f5799744abe192d1f4cc43b8f0b7b5d554a48127a8a3523dfe4005`. Measured as round 1.
+  Positions are from the paper's left edge. The text runs from 72.0 to 523.4pt on the A4 page and
+  from 72.0 to 720.0pt on the Letter landscape one. Each section's red ruler runs about 1.5pt past
+  the text on each side (70.6 to 525.1pt, and 70.6 to 721.7pt).
+
+| Case | Looked for | Word 365 |
+|---|---|---|
+| 1a A4, `width: 100%` table written 10229 (7.10in) | fitted to the line? | fitted: 72.0 to 523.4pt (6.27in), margin to margin |
+| 1b written 9027 (6.27in) | as 1a | as 1a |
+| 2a A4, `width: 100%` image, 7.10 × 1.78in | runs 0.83in into the margin, or shrunk? | kept: 72.0 to 583.5pt (7.10in), 128.0pt (1.78in) tall, so 60.1pt (0.83in) past the right margin and 11.9pt short of the paper's edge |
+| 2b 6.27 × 1.57in | the line | 72.0 to 523.2pt (6.27in), 112.9pt tall |
+| 3a A4, a centred 2in table, `w:tblInd` 3652 | about 0.4in right of centre | 254.7 to 401.7pt: 182.7pt in from the left margin and 121.7pt from the right, its centre 30.5pt (0.42in) right of the line's |
+| 3b `w:tblInd` 3051 | centred | 224.5 to 371.7pt, at the top of page 2: 152.5pt and 151.7pt from the margins, centred to 0.4pt |
+| 4a Letter landscape, `width: 100%` table written 10229 (7.10in) | kept, 1.9in short of the margin | kept: 72.0 to 584.3pt (7.12in with its borders), 135.7pt (1.88in) short of the right margin |
+| 4b written 13638 (9.47in), as 17.3.4 | fitted to the line | fitted: 72.0 to 720.0pt (9.00in) |
+| 4c written 12960 (9.00in) | the line | 72.0 to 720.0pt |
+
+Recorded in CR-009 §4, phase 0.

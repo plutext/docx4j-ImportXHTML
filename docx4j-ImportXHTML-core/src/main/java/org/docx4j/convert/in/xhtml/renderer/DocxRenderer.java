@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import com.openhtmltopdf.bidi.SimpleBidiReorderer;
 import com.openhtmltopdf.context.StyleReference;
 import com.openhtmltopdf.css.sheet.StylesheetInfo;
+import com.openhtmltopdf.css.style.CalculatedStyle;
 import com.openhtmltopdf.extend.FSCacheEx;
 import com.openhtmltopdf.extend.FSCacheValue;
 import com.openhtmltopdf.extend.FSDOMMutator;
@@ -270,10 +271,65 @@ public class DocxRenderer {
 		_layoutContext = c;
 	}
 
+	private int _textWidth = -1;
+
+	/**
+	 * The width of the text the document is laid out into, in dots, or -1 (the default) for
+	 * openhtmltopdf's own first page: A4 less its 0.5in margins, or the document's @page.  The
+	 * body's horizontal margin, border and padding are laid out outside it, so the body's content
+	 * is this wide, and width: 100% is all of it.  XHTMLImporterImpl sets the docx's text width
+	 * before each layout (CR-009).
+	 *
+	 * @since 17.3.5
+	 */
+	public void setTextWidth(int dots) {
+		_textWidth = dots;
+	}
+
+	/**
+	 * @return the width set by setTextWidth, in dots, or -1
+	 * @since 17.3.5
+	 */
+	public int getTextWidth() {
+		return _textWidth;
+	}
+
 	private Rectangle getInitialExtents(LayoutContext c) {
 		PageBox first = Layer.createPageBox(c, "first");
 
-		return new Rectangle(0, 0, first.getContentWidth(c), first.getContentHeight(c));
+		int width = _textWidth > 0 ? _textWidth + outsideTheText(c, _textWidth) : first.getContentWidth(c);
+		return new Rectangle(0, 0, width, first.getContentHeight(c));
+	}
+
+	/**
+	 * The horizontal margin, border and padding of the html element and its body, which lie
+	 * outside the docx's text, as the page's margins do (CR-009 D1, as #118 for indents).
+	 */
+	private int outsideTheText(LayoutContext c, int textWidth) {
+		int outside = 0;
+		Element root = _doc.getDocumentElement();
+		if (isNamed(root, "html")) {
+			outside += horizontalMarginBorderPadding(c, root, textWidth);
+			for (Node n = root.getFirstChild(); n != null; n = n.getNextSibling()) {
+				if (n instanceof Element && isNamed((Element)n, "body")) {
+					outside += horizontalMarginBorderPadding(c, (Element)n, textWidth);
+					break;
+				}
+			}
+		}
+		return outside;
+	}
+
+	private int horizontalMarginBorderPadding(LayoutContext c, Element e, int width) {
+		CalculatedStyle style = c.getSharedContext().getStyle(e);
+		return Math.round(style.getMarginRect(width, c).left() + style.getMarginRect(width, c).right()
+				+ style.getBorder(c).left() + style.getBorder(c).right()
+				+ style.getPaddingRect(width, c).left() + style.getPaddingRect(width, c).right());
+	}
+
+	private static boolean isNamed(Element e, String name) {
+		String n = e.getLocalName()==null ? e.getNodeName() : e.getLocalName();
+		return name.equalsIgnoreCase(n);
 	}
 
 

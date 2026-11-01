@@ -75,6 +75,7 @@ import org.docx4j.convert.out.html.HtmlCssHelper;
 import org.docx4j.jaxb.Context;
 import org.docx4j.math.CTOMathPara;
 import org.docx4j.model.PropertyResolver;
+import org.docx4j.model.structure.SectionWrapper;
 import org.docx4j.model.properties.Property;
 import org.docx4j.model.properties.PropertyFactory;
 import org.docx4j.model.properties.paragraph.AbstractParagraphProperty;
@@ -464,6 +465,51 @@ public class XHTMLImporterImpl implements XHTMLImporter {
 	@Override
 	public void setMaxWidth(int maxWidth, String tableStyle) {
 	    xHTMLImageHandler.setMaxWidth(maxWidth, tableStyle);
+	}
+
+	private Integer textWidth = null;
+
+	/**
+	 * The width of the text the converted content will go into, in twips.  The XHTML is laid
+	 * out at this width, so width: 100% and the other percentage widths of tables and images
+	 * are of it, and a centred table is centred on it.  The body's own margins, border and
+	 * padding lie outside it, as the page's margins do.
+	 *
+	 * <p>By default (null), it's the writable width of the package's last section, where
+	 * content is usually added; a package with no sectPr is laid out on openhtmltopdf's A4,
+	 * less 0.5in margins.  Set it for content bound for somewhere narrower or wider: a table
+	 * cell, a header, or another section.  The document's own @page doesn't change it (CR-009).
+	 *
+	 * @param twips the width, or null for the last section's
+	 * @since 17.3.5
+	 */
+	public void setTextWidth(Integer twips) {
+		this.textWidth = twips;
+	}
+
+	/**
+	 * @return the width given to setTextWidth, in twips, or null for the last section's
+	 * @since 17.3.5
+	 */
+	public Integer getTextWidth() {
+		return textWidth;
+	}
+
+	/**
+	 * The text width for the layout, in the renderer's dots, or -1 for openhtmltopdf's own page.
+	 */
+	private int textWidthInDots() {
+		Integer twips = textWidth;
+		if (twips==null && wordMLPackage!=null) {
+			List<SectionWrapper> sections = wordMLPackage.getDocumentModel().getSections();
+			if (!sections.isEmpty()) {
+				twips = sections.get(sections.size()-1).getPageDimensions().getWritableWidthTwips();
+			}
+		}
+		if (twips==null || twips<=0) {
+			return -1;
+		}
+		return Math.round(twips * renderer.getSharedContext().getDPI() / 1440f);
 	}
 	
 	
@@ -1185,6 +1231,7 @@ public class XHTMLImporterImpl implements XHTMLImporter {
         int start = imports.getContent().size();
         try {
             displayNoneHelper.prepare(renderer); // before layout
+            renderer.setTextWidth(textWidthInDots()); // the docx's text, not openhtmltopdf's A4 (CR-009)
             renderer.layout();
 
             traverse(renderer.getRootBox(), null);
