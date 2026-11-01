@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-Version 17.3.5
+Version 17.3.5  (uses openhtmltopdf 1.1.103)
 ===============
 
 1 November 2026
@@ -9,11 +9,12 @@ Version 17.3.5
 Contributors to this release
 ----------------------------
 
-Jason Harrop
-
 Claude Opus 5.5
 
 Cristian Vat
+
+Jason Harrop
+
 
 Changes in Version 17.3.5
 --------------------------
@@ -38,7 +39,7 @@ Some miscellaneous fixes.  For more details see https://github.com/plutext/docx4
 
 
 
-Version 17.3.4
+Version 17.3.4 (uses openhtmltopdf 1.1.31)
 ===============
 
 Release date
