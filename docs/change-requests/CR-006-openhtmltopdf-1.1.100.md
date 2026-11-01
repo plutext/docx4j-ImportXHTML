@@ -2,28 +2,41 @@
 
 Status: ACCEPTED 2026-10-24 (Jason: "D5 (b); others as recommended"): all four phases in 17.3.5,
 and D1 to D4 and D6 as recommended. Proposed the same day, at Jason's request ("yes" to "draft
-CR-006 for openhtmltopdf"), after `docs/dependencies-status.md` §3 kept openhtmltopdf at 1.1.31
-for 17.3.4. Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session, with each finding
+CR-006 for openhtmltopdf"), after the 17.3.4 dependency review kept openhtmltopdf at 1.1.31
+(Appendix A). Drafted by Claude Opus 5.5 in the docx4j-ImportXHTML session, with each finding
 measured first (§1). The doubled `w:br` it found was fixed outside this CR, for 17.3.5 (§1, row 1).
 Phases 0 to 3 implemented 2026-10-24 (suite 178/0/0, BundleIT 3/0/0; §5), commit 6da82a2. Phase 1
 needs 1.1.100's alpha, so the move came with it. The release is 17.3.5's. Phase 3 amended
 2026-10-30 (§5; Jason: "move to 1.1.103"): openhtmltopdf 1.1.103, for 1.1.102's fix, by D6's own
-rule, commit 4486504.
+rule, commit 4486504. The review's notes, `docs/dependencies-status.md`, were folded into this CR
+on 2026-11-01 (§1, §4, phase 3 and Appendix A), and the file deleted (Jason: "fold the relevant
+parts of it into CR-006 and update CR-006 references so that docs/dependencies-status.md can be
+deleted").
 Scope:
 - colour handling: `TableHelper` and `ParagraphBorderHelper` (border colours), and the CSS
   values the importer hands to docx4j's `PropertyFactory` (text colour and shading);
 - `page-break-inside` from openhtmltopdf's default stylesheet;
 - -core's openhtmltopdf version;
-- tests in core-tests, the CHANGELOG, and `docs/dependencies-status.md`.
+- tests in core-tests, the CHANGELOG, and the dependency review's notes (now Appendix A).
 
 Branch: `VERSION_17_3_5`. Phases (§5): 0. a wider measurement; 1. colours; 2. the default
 stylesheet's `page-break-inside`; 3. the move.
 
 ## 1. Measured (2026-10-23 and 24)
 
-Each input was converted on 1.1.31 and on 1.1.100, with the same -core, and the WML compared.
-`docs/dependencies-status.md` §2 and §3 have the method. The probes are in
-`~/claude-scratch-archive/docx4j-ImportXHTML/dependency-bumps-2026-10-23/`.
+Each input was converted on 1.1.31 and on 1.1.100, with the same -core, and the main document
+and numbering parts compared. The probes are in
+`~/claude-scratch-archive/docx4j-ImportXHTML/dependency-bumps-2026-10-23/` (its `README.txt` says
+how each was run), and the follow-ups of 24 October in its `followups-2026-10-24/`. The inputs:
+- ten documents: two from core-tests (`numbering/*.html`), seven from the samples' `sample-docs`,
+  and `css-mix.xhtml`, written for this (margins, borders, units, lists, a table with a thead,
+  `pre`). The output of seven of them changes;
+- `br.xhtml`, five `<br/>` in paragraphs, a `div` and a table cell;
+- `colours.xhtml`, for rows 3 to 7, on 24 October.
+
+In a copy of 24439a2 (`git archive`) with openhtmltopdf at 1.1.100 and mime4j at
+0.8.15 together, `mvn clean verify` passed: the enforcer (bytecode 11, dependency convergence),
+the suite at 166/0/0, and `BundleIT` at 3/0/0.
 
 | # | input | 1.1.31 | 1.1.100 |
 |---|---|---|---|
@@ -38,7 +51,12 @@ Each input was converted on 1.1.31 and on 1.1.100, with the same -core, and the 
 
 - **Row 1's cause:** openhtmltopdf's default stylesheet has `br:before { content: "\A"; }`. From
   1.1.97, that content is laid out inside the br's own `InlineBox`, so the line break splits the
-  box in two. The importer now makes the `w:br` only where the box starts.
+  box in two. On 1.1.31 each br box starts and ends in place; on 1.1.100 each br gives a pair of
+  boxes, one where it starts and one where it ends, and `processInlineBoxContent` gave a `w:br`
+  for each. `br.xhtml` had 5 breaks on 1.1.31 and 10 on 1.1.100; the soft return in
+  `sample-docxv2.html` was doubled, and `Image-Samples.html` went from 2 to 4. The importer now
+  makes the `w:br` only where the box starts, which changes nothing on 1.1.31. `LineBreakTest`
+  checks for one `w:br` per `<br/>`: without the fix it fails on 1.1.100, with 10 instead of 5.
 - **Row 2's cause:** 1.1.79 adds `page-break-inside: avoid` to `thead` in that stylesheet. docx4j's
   `KeepLines` is that property. `page-break-inside` isn't inherited in CSS, and how the thead's
   value reaches the th paragraphs wasn't traced.
@@ -92,10 +110,19 @@ It applies in three places:
 ## 4. The move
 
 -core's `openhtmltopdf-core` and `-pdfbox` go to the version phase 0 measures (D6): 1.1.100, if
-phase 0 starts now. openhtmltopdf publishes a release for each merge (§7). 1.1.100 declares PDFBox 3.0.8, the
-version -core pins, where 1.1.31 declared 3.0.3. The API -core uses has additions only
-(`dependencies-status.md` §3). The CHANGELOG names rows 3 and 8, and any of the not-measured
-list that phase 0 finds.
+phase 0 starts now. openhtmltopdf publishes a release for each merge to its `main` (§7), so 1.1.32
+to 1.1.99 are all on Central; 1.1.31 is from 8 September 2025, and 1.1.100 from 22 October 2026.
+The CHANGELOG names rows 3 and 8, and any of the not-measured list that phase 0 finds.
+
+Otherwise the move is safe:
+- **PDFBox:** 1.1.100 declares 3.0.8, the version -core pins, where 1.1.31 declared 3.0.3, which
+  -core overrides.
+- **Java and modules:** still Java 8 bytecode. There's no `Automatic-Module-Name`, so the module
+  names stay `openhtmltopdf.core` and `openhtmltopdf.pdfbox`.
+- **API:** a `javap` comparison of the 71 types -core imports found additions only.
+  `OutputDevice` gains an abstract `paintBoxShadow`, which `AbstractOutputDevice` implements.
+- **Security:** nothing pressing. The only security item in the range is the PDFBox 3.0.8 bump,
+  for CVE-2026-33929, which is in PDFBox's examples module, not the library.
 
 ## 5. Phases
 
@@ -125,7 +152,7 @@ Record what moves, here.
     and a `br` inside an inline element;
   - the samples, as in §1;
   - through `convertMHT`, a Word "Save as Web Page" document and the HTML5 edge cases of
-    `dependencies-status.md` §5.
+    Appendix A.3's jsoup check.
 - **Gains on 1.1.100,** which 1.1.31 dropped, for the CHANGELOG:
   - `var()` and its fallback apply, to colour and margins;
   - `font-weight: initial` and `text-align: initial` reset, as CSS says.
@@ -192,7 +219,8 @@ As §3, with D1.
 
 ### Phase 3: the move
 
-As §4. The CHANGELOG, `docs/dependencies-status.md` §3, and the release (D5).
+As §4. The CHANGELOG, the dependency review's notes (folded into this CR since), and the release
+(D5).
 
 **Done 2026-10-24** (commit 6da82a2), apart from the release, which is 17.3.5's:
 - **The pins:** `openhtmltopdf-core` and `-pdfbox` at 1.1.100 (D6), moved with phase 1.
@@ -209,24 +237,38 @@ As §4. The CHANGELOG, `docs/dependencies-status.md` §3, and the release (D5).
   Every `w:color` in every output is hex.
 - **Still true on 1.1.100:** the README's fetch timeouts (10 s and 30 s, the same constants)
   and its nesting note. With `-Xss1m`, 825 nested divs convert on both versions.
-- **The CHANGELOG** (17.3.5) and `docs/dependencies-status.md` §1 and §3 are updated.
+- **The CHANGELOG** (17.3.5) and the dependency review's notes (folded into this CR since) are
+  updated.
 
 **Amended 2026-10-30: 1.1.103** (Jason: "move to 1.1.103"; commit 4486504). D6 takes a newer release
-"only for a reason, such as a fix", with phase 0 rerun on it. 1.1.102 has such a fix (openhtmltopdf
-issue 258). Text with `word-wrap: break-word` that fits only when broken between characters made
-1.1.100 throw an `AssertionError` from `LineBreakContext.checkConsistency` when Java assertions are
-enabled, as in Maven's test runs. Through ImportXHTML with `-ea`, the issue's reproducer threw on
-1.1.100 and converted on 17.3.4 (1.1.31), so it would have been a regression in 17.3.5. 1.1.103 is
-the smallest step with the fix. 1.1.104's line-layout changes and 1.1.105 are left out.
-`docs/dependencies-status.md` §3 has what each release from 1.1.101 to 1.1.105 changes.
+"only for a reason, such as a fix", with phase 0 rerun on it. With 17.3.5's release near, Jason
+asked whether 1.1.101 to 1.1.105 (27 to 29 October) hold a fix we need. One does: 1.1.102's
+(openhtmltopdf issue 258). Text with `word-wrap` or `overflow-wrap: break-word` that fits only
+when broken between characters made 1.1.100 throw an `AssertionError` from
+`LineBreakContext.checkConsistency` when Java assertions are enabled, as Maven's Surefire and
+Failsafe enable them. Without assertions the layout is the same. Through ImportXHTML with `-ea`,
+the issue's reproducer threw on 1.1.100 and converted on 17.3.4 (1.1.31), so it would have been a
+regression in 17.3.5. The other releases don't reach what the importer writes:
+- 1.1.101: kerning, off unless a document sets `font-kerning: normal`;
+- 1.1.103: a bottom margin added twice for a block moved to the next page; the importer doesn't
+  read block positions;
+- 1.1.104: trailing spaces hang at a line end, and line alignment and line heights follow CSS;
+  the importer writes no laid-out line or row height (CR-007);
+- 1.1.105: a block image centred by `margin: auto`; the importer doesn't read its position.
+
+1.1.103 is the smallest step with the fix, so 1.1.104's line-layout changes and 1.1.105 are left
+out.
 - **The pins:** `openhtmltopdf-core` and `-pdfbox` at 1.1.103. It declares the same dependencies
-  as 1.1.100 (PDFBox and xmpbox 3.0.8, graphics2d 3.0.1) and the same licence.
+  as 1.1.100 (PDFBox and xmpbox 3.0.8, graphics2d 3.0.1) and the same licence, LGPL 2.1 or later,
+  so `legals/NOTICE` is unchanged.
 - **Phase 0's comparison, rerun** on the current branch, 1.1.100 against 1.1.103: the suite's 380
   converts are byte-identical.
 - **`BreakWordTest`:** the issue's reproducer, which skips if openhtmltopdf's assertions are off.
   It fails on 1.1.100 and passes on 1.1.103.
 - **The CHANGELOG** entry names 1.1.103 and why. Its sentence on row heights moving is gone,
   since CR-007 writes no laid-out row height.
+- **Newest on Central** that day: openhtmltopdf 1.1.105; pdfbox 3.0.8, apache-mime4j-core 0.8.15
+  and jsoup 1.23.2, as pinned.
 - Probes: `~/claude-scratch-archive/docx4j-ImportXHTML/ohtp-1.1.101-105-2026-10-30/`.
 
 ## 6. Decisions (for Jason; each with a recommendation)
@@ -308,10 +350,138 @@ Decided 2026-10-24 (Jason: "D5 (b); others as recommended"):
 
 ## 8. Sources
 
-- `docs/dependencies-status.md` §2 and §3, and the archive's `followups-2026-10-24/README.txt`.
-- openhtmltopdf's releases, https://github.com/openhtmltopdf/openhtmltopdf/releases, and its
-  `XhtmlNamespaceHandler.css` and `XhtmlCssOnlyNamespaceHandler` at 1.1.31 and 1.1.100.
+- The archive's `dependency-bumps-2026-10-23/README.txt` and its `followups-2026-10-24/README.txt`.
+- openhtmltopdf:
+  - releases: https://github.com/openhtmltopdf/openhtmltopdf/releases
+  - the release-per-merge workflow:
+    https://github.com/openhtmltopdf/openhtmltopdf/blob/main/.github/workflows/release.yml
+  - the PDFBox 3.0.8 bump: https://github.com/openhtmltopdf/openhtmltopdf/pull/256
+  - versions and poms: https://repo1.maven.org/maven2/io/github/openhtmltopdf/openhtmltopdf-core/
+  - its `XhtmlNamespaceHandler.css` and `XhtmlCssOnlyNamespaceHandler` at 1.1.31 and 1.1.100.
+- PDFBox security (CVE-2026-33929, examples module only): https://pdfbox.apache.org/security.html
 - docx4j's `model/properties/PropertyFactory.java`, `run/RShading.java`,
   `paragraph/PShading.java` and `table/tc/Shading.java`.
 - This repository: `XHTMLImporterImpl.processInlineBoxContent`, `TableHelper`,
   `ParagraphBorderHelper`, `DisplayNoneHelper`, and CR-002 §2 and §7.
+- For Appendix A:
+  - mime4j's changelog,
+    https://github.com/apache/james-mime4j/blob/apache-mime4j-project-0.8.15/CHANGELOG.md; the
+    changes,
+    https://github.com/apache/james-mime4j/compare/apache-mime4j-project-0.8.13...apache-mime4j-project-0.8.15;
+    and `MimeConfig` at 0.8.15,
+    https://github.com/apache/james-mime4j/blob/apache-mime4j-project-0.8.15/core/src/main/java/org/apache/james/mime4j/stream/MimeConfig.java
+  - jsoup's releases, https://github.com/jhy/jsoup/releases, and its advisories,
+    https://github.com/advisories/GHSA-65r4-943x-97jj and
+    https://github.com/jhy/jsoup/security/advisories/GHSA-pmhh-3w7g-xqp8
+  - this repository's `XHTMLImporterImpl.convertMHT`, `JsoupHtml` and -core's `pom.xml`;
+    docx4j's `docx4j-core/src/main/java/org/docx4j/model/text/JsoupHtml.java`, and the jsoup and
+    fontbox pins in its parent `pom.xml`.
+
+## Appendix A. The 17.3.4 dependency review
+
+This CR came out of a review of -core's dependencies for the 17.3.4 release, on 23 October 2026
+(`VERSION_17_3_4` at 24439a2). Jason had run Maven's versions plugin, which listed four newer
+versions, and asked "please determine whether we should bump to some or all of these updates".
+Claude Opus 5.5 measured them in the docx4j-ImportXHTML session, and read the release notes and
+advisories the same day (sources in §8). The notes were `docs/dependencies-status.md` until
+2026-11-01, when they were folded in here: openhtmltopdf's into §1, §4 and phase 3, the rest
+below. The probes are in the archive's `dependency-bumps-2026-10-23/`.
+
+### A.1 What was decided
+
+None of the four went into 17.3.4. All of them went into 17.3.5.
+
+| dependency | 17.3.4 | 17.3.5 | why it waited |
+|---|---|---|---|
+| `io.github.openhtmltopdf:openhtmltopdf-core`, `-pdfbox` | 1.1.31 | 1.1.103 (this CR) | one `<br/>` gave two `w:br` (§1, row 1) |
+| `org.apache.james:apache-mime4j-core` | 0.8.13 | 0.8.15 (A.2) | an MHT of more than 512 parts failed |
+| `org.jsoup:jsoup` (optional) | 1.22.1 | 1.23.2 (A.3) | docx4j 17.3.4 pinned 1.22.1, and neither advisory reaches either project |
+
+The versions plugin listed nothing else. pdfbox, xmpbox and fontbox were at 3.0.8; docx4j 17.3.4
+pins fontbox 3.0.8, and docx4j-bundle holds fontbox and pdfbox-io at 3.0.8.
+
+### A.2 mime4j 0.8.13 → 0.8.15
+
+0.8.14 is from 21 April 2026, and 0.8.15 from 3 September 2026. Neither fixes a CVE: NVD's newest
+mime4j entry is CVE-2024-21742, fixed in 0.8.10. 0.8.15 adds hardening against denial of
+service, which fits CR-005: limits on the number of parts, on nesting, on the total header count
+and on total header size, and MIME parameters accumulated linearly rather than quadratically.
+`MimeConfig`'s defaults are 512 parts, nesting 64, 16,384 headers and 1 MiB of headers.
+
+- **Why it waited:** `convertMHT` read the whole MHT, with `new MimeStreamParser()` and no
+  `MimeConfig`, though it uses only the first text/html part. With 513 or 600 parts, 0.8.15
+  threw `Docx4JException: Maximum part count limit (512) exceeded`, from
+  `MaxPartCountLimitException`; 0.8.13 converted them. A Word MHT holds a part for each image
+  file, plus a few of its own, so a long illustrated document could pass 512.
+- **Otherwise safe:**
+  - the suite, with its `convertMHT` tests, passed on 0.8.15 (§1's build);
+  - `Field` gained an abstract `getSafeRaw()` in 0.8.14 (MIME4J-333), which breaks only
+    implementers, and -core only reads fields. `MimeStreamParser`, `ContentHandler` and
+    `BodyDescriptor` are unchanged;
+  - still Java 8 bytecode, and the module is still `apache.mime4j.core`;
+  - only -core uses it. docx4j-bundle doesn't hold it, and our bundle shades it.
+- **Moved for 17.3.5** on 24 October, at Jason's word ("yes"), as a small change rather than a CR
+  (da56ff5):
+  - `convertMHT` stops parsing once the text/html part is read. Its handler, an anonymous
+    subclass of `MHTContentHandler` inside `convertMHT`, throws a private `MimeException`
+    subclass, which `convertMHT` catches. Code that uses the public class with its own parser is
+    unaffected.
+  - mime4j's own `stop()` doesn't do this. `MimeEntity.stopSoft()` drops only what is buffered,
+    and the parser refills. On 0.8.15 it stopped after one body on 10 parts, but went on to the
+    limit, 512 bodies, on 513 and 5,000. Throwing stopped after one body on 10, 513 and 5,000
+    parts, on 0.8.13 and 0.8.15.
+  - The limits still hold for whatever comes before the HTML part, and for its headers.
+  - `MHTImportTest`: `manyPartsAfterTheHtml`, 1,000 image parts after the HTML, converts, and
+    without the fix it fails on 0.8.15; `tooManyPartsBeforeTheHtml`, the same parts before the
+    HTML, gives a `Docx4JException`.
+  - Suite 169/0/0, `BundleIT` 3/0/0. The bundle holds mime4j 0.8.15.
+
+### A.3 jsoup 1.22.1 → 1.23.2
+
+- **Two advisories affect 1.22.1:**
+  - GHSA-65r4-943x-97jj (CVE-2026-75140), High, fixed in 1.23.2. Deeply nested, uniquely
+    namespaced XML makes `XmlTreeBuilder` quadratic in time and memory.
+  - GHSA-pmhh-3w7g-xqp8 (CVE-2026-71497), Moderate, fixed in 1.23.1. A `Cleaner` whose custom
+    `Safelist` permits raw-text elements can be bypassed.
+- **Neither reaches ImportXHTML or docx4j.** Both parse with the HTML parser, then convert with
+  `W3CDom`:
+  - -core's `JsoupHtml`: `Jsoup.parse` then `W3CDom.convert`;
+  - docx4j's `model/text/JsoupHtml`: `Parser.htmlParser()` then `W3CDom.fromJsoup`.
+
+  Neither uses the XML parser or `Cleaner`. `W3CDom` had the same quadratic pattern, which 1.23.2
+  fixed as a performance change (#2559), with no advisory. On 1.22.1, elements nested 8,000 deep,
+  each with its own prefix and namespace, parse in 15 ms and convert in 20 ms (1.23.2: 18 ms and
+  36 ms). The HTML parser stops nesting at 512, so the depth never reaches `W3CDom`.
+- **Why it waited:** docx4j 17.3.4 pinned 1.22.1. With docx4j-bundle, docx4j's HTML altChunk
+  reader runs on the jsoup our bundle ships, because docx4j-bundle has none. jsoup is optional
+  in -core and in docx4j-core, so neither passes it on, and Maven doesn't mediate between the
+  two. So jsoup moves when docx4j's does, to the same version.
+- **Why move at all:** the shaded bundle carries jsoup's `pom.properties`, so a dependency
+  scanner reports the released 17.3.4 bundle's 1.22.1 against both advisories, though neither is
+  reachable.
+- **What 1.22.2 to 1.23.2 change:** `W3CDom`'s namespace and prefix handling is reworked (Word
+  MHT's `o:` and `v:` elements go through it); `noscript` content becomes elements; CDATA in HTML
+  becomes a bogus comment; RCDATA and RAWTEXT follow the spec; `ins`, `del` and `button` become
+  inline.
+- **Moved for 17.3.5** on 24 October, with docx4j, on the rule that both move or neither does.
+  The portfolio session coordinated, and both sessions said go. Jason: "yes, tell both sessions to
+  bump jsoup to 1.23.2 for 17.3.5" (03650a7).
+  - **Assessed** on two `git archive` copies of `VERSION_17_3_5` at 19f38d8, one at each jsoup
+    (the archive's `jsoup-1.23.2-2026-10-24/`): suite 166/0/0 and `BundleIT` 3/0/0 on both, with
+    the same counts in every test class. `BundleIT`'s smoke test runs docx4j's
+    `convertAltChunks` on the bundle's jsoup.
+  - **The jar:** still Java 8 bytecode. The module descriptor is the same apart from its
+    version. `Multi-Release: true`, with a `META-INF/versions/11/` holding `module-info` and the
+    HTTP client classes, so the Multi-Release note in the bundle's pom (CR-004 §3) still holds.
+  - **`convertMHT`'s output,** with only the jsoup jar swapped, on Word "Save as Web Page" HTML
+    (`o:`, `v:`, `w:` and `m:` elements, conditional comments and `mso-list` paragraphs) and on
+    HTML5 edge cases (`noscript`, CDATA, `ins`/`del`, `button`, unclosed elements, entities
+    without semicolons, 600 nested `div`s). One thing moved: a CDATA section in body text. 1.22.1
+    kept `<![CDATA[ <b>raw</b> & ]]>` as the text `<b>raw</b> & `. 1.23.2 reads `<![CDATA[ <b>`
+    as a comment, as HTML's parsing rules do, and gives `raw` then ` & ]]>`. The Word output was
+    identical.
+  - **docx4j's side,** from docx4j-25: its suite, 2,047 tests, the same on both versions; its 93
+    tests that run through this importer pass with 1.23.2; no golden file moved.
+  - **Done** in -core, -core-tests and the bundle's `build-dependencies` profile: suite 166/0/0,
+    `BundleIT` 3/0/0. The bundle's jsoup `pom.properties` says 1.23.2, and the flattened pom
+    doesn't name jsoup.
